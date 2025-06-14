@@ -277,7 +277,7 @@ export default function MarketingPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="w-full max-w-2xl">
-              <PlayerProfileForm clubId={clubId} onSuccess={() => setShowAddPlayer(false)} />
+              <PlayerProfileForm clubId={userData?.clubId || user?.uid || ''} onSuccess={() => setShowAddPlayer(false)} />
               <Button variant="outline" className="w-full mt-4" onClick={() => setShowAddPlayer(false)}>
                 إغلاق
               </Button>
