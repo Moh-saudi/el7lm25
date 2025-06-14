@@ -8,12 +8,7 @@ import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import dynamic from 'next/dynamic';
-
-const FaFacebookF = dynamic(() => import('react-icons/fa').then(mod => ({ default: mod.FaFacebookF })), { ssr: false });
-const FaInstagram = dynamic(() => import('react-icons/fa').then(mod => ({ default: mod.FaInstagram })), { ssr: false });
-const FaLinkedinIn = dynamic(() => import('react-icons/fa').then(mod => ({ default: mod.FaLinkedinIn })), { ssr: false });
-const FaTiktok = dynamic(() => import('react-icons/fa').then(mod => ({ default: mod.FaTiktok })), { ssr: false });
+import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTiktok } from 'react-icons/fa';
 
 export default function Page() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
