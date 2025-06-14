@@ -83,7 +83,7 @@ interface PlayerState {
   technical_skills: Record<string, number>;
   physical_skills: Record<string, number>;
   social_skills: Record<string, number>;
-  objectives: Record<string, boolean>;
+  objectives: Record<string, boolean> & { other: string };
   profile_image: string | null;
   additional_images: string[];
   videos: { url: string; desc: string }[];
@@ -163,8 +163,13 @@ interface PlayerFormData {
   physical_skills: Record<string, number>;
   social_skills: Record<string, number>;
   objectives: {
-    [key: string]: boolean;
     other: string;
+    professional: boolean;
+    trials: boolean;
+    local_leagues: boolean;
+    arab_leagues: boolean;
+    european_leagues: boolean;
+    training: boolean;
   };
   profile_image: { url: string } | null;
   additional_images: Array<{ url: string }>;
