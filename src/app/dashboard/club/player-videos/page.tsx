@@ -291,45 +291,45 @@ export default function ClubPlayerVideosPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="w-12 h-12 border-t-2 border-b-2 rounded-full animate-spin border-primary"></div>
       </div>
     );
   }
 
   return (
     <>
-      <div className="p-4 flex flex-col gap-4 bg-white dark:bg-gray-900">
+      <div className="flex flex-col gap-4 p-4 bg-white dark:bg-gray-900">
         <div className="flex gap-2 mb-2">
           <input
             type="text"
             placeholder="ابحث باسم اللاعب أو الوصف..."
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            className="p-2 rounded border w-full dark:bg-gray-800 dark:text-white"
+            className="w-full p-2 border rounded dark:bg-gray-800 dark:text-white"
           />
         </div>
-        <div className="h-screen w-full overflow-y-scroll snap-y snap-mandatory transition-all duration-500 bg-white dark:bg-gray-900" onScroll={handleScroll}>
+        <div className="w-full h-screen overflow-y-scroll transition-all duration-500 bg-white snap-y snap-mandatory dark:bg-gray-900" onScroll={handleScroll}>
           <AnimatePresence initial={false}>
             {filteredVideos.map((video, index) => (
               <motion.div
                 key={video.id}
-                className="h-screen w-full flex items-center justify-center transition-all duration-500"
+                className="flex items-center justify-center w-full h-screen transition-all duration-500"
                 style={{ transition: 'opacity 0.5s' }}
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.4 }}
               >
-                <div className="flex flex-col md:flex-row items-center justify-center gap-8" style={{width: '100%', maxWidth: '900px', position: 'relative'}}>
+                <div className="flex flex-col items-center justify-center gap-8 md:flex-row" style={{width: '100%', maxWidth: '900px', position: 'relative'}}>
                   <div
                     className="md:absolute md:right-[-170px] md:top-1/2 md:-translate-y-1/2 z-10 flex items-center gap-3 bg-white/90 dark:bg-gray-800/90 rounded-xl shadow-lg px-5 py-3 border border-gray-200 dark:border-gray-700 w-full max-w-xs md:max-w-[260px] mx-auto md:mx-0 mb-4 md:mb-0"
                     style={{ direction: 'rtl' }}
                   >
-                    <img src={video.playerImage} alt={video.playerName} className="w-14 h-14 rounded-full object-cover border-2 border-gray-300" />
+                    <img src={video.playerImage} alt={video.playerName} className="object-cover border-2 border-gray-300 rounded-full w-14 h-14" />
                     <div className="flex flex-col items-end flex-1">
-                      <span className="font-bold text-lg md:text-lg text-gray-900 dark:text-white">{video.playerName}</span>
-                      <span className="text-sm md:text-base text-blue-700 dark:text-blue-300 font-semibold">{video.playerPosition || '—'}</span>
-                      <span className="text-xs md:text-sm text-gray-500 mt-1">{dayjs(video.createdAt).locale('ar').fromNow()}</span>
+                      <span className="text-lg font-bold text-gray-900 md:text-lg dark:text-white">{video.playerName}</span>
+                      <span className="text-sm font-semibold text-blue-700 md:text-base dark:text-blue-300">{video.playerPosition || '—'}</span>
+                      <span className="mt-1 text-xs text-gray-500 md:text-sm">{dayjs(video.createdAt).locale('ar').fromNow()}</span>
                     </div>
                   </div>
                   <div
@@ -345,9 +345,9 @@ export default function ClubPlayerVideosPage() {
                   >
                     {isDirectVideo(video.url) ? (
                       <video
-                        ref={el => videoRefs.current[index] = el}
+                        ref={el => { videoRefs.current[index] = el; }}
                         src={video.url}
-                        className="w-full h-full object-contain rounded-2xl"
+                        className="object-contain w-full h-full rounded-2xl"
                         loop
                         playsInline
                         autoPlay={index === currentVideoIndex}
@@ -371,7 +371,7 @@ export default function ClubPlayerVideosPage() {
                       />
                     )}
                   </div>
-                  <div className="flex flex-col gap-4 items-center justify-center">
+                  <div className="flex flex-col items-center justify-center gap-4">
                     <button
                       onClick={() => handleFollow(video.playerId)}
                       className={
@@ -395,14 +395,14 @@ export default function ClubPlayerVideosPage() {
                     </button>
                     <button
                       onClick={() => router.push(`/dashboard/club/players/${video.playerId}`)}
-                      className="px-4 py-2 rounded-full font-bold bg-blue-600 text-white hover:bg-blue-700 transition"
+                      className="px-4 py-2 font-bold text-white transition bg-blue-600 rounded-full hover:bg-blue-700"
                       title="الذهاب لملف اللاعب"
                     >
                       ملف اللاعب
                     </button>
                   </div>
                 </div>
-                <div className="absolute right-4 bottom-20 flex flex-col items-center space-y-6">
+                <div className="absolute flex flex-col items-center space-y-6 right-4 bottom-20">
                   <button
                     onClick={() => handleLike(video.id)}
                     className="flex flex-col items-center text-white"
