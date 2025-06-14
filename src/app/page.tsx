@@ -8,7 +8,6 @@ import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTiktok } from 'react-icons/fa';
 
 export default function Page() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -766,10 +765,18 @@ export default function Page() {
             <div>
               <h3 className="mb-4 text-lg font-bold text-white">تابعنا</h3>
               <div className="flex gap-4 mt-2">
-                <FaFacebookF size={28} color="#fff" />
-                <FaInstagram size={28} color="#fff" />
-                <FaLinkedinIn size={28} color="#fff" />
-                <FaTiktok size={28} color="#fff" />
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#3b2667] to-[#bc78ec] shadow-lg">
+                  <img src="/images/medialogo/facebook.svg" alt="فيسبوك" width={28} height={28} />
+                </span>
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#bc2a8d] to-[#e94057] shadow-lg">
+                  <img src="/images/medialogo/instagram.svg" alt="إنستجرام" width={28} height={28} />
+                </span>
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#0077b5] to-[#0a2342] shadow-lg">
+                  <img src="/images/medialogo/linkedin.svg" alt="لينكدإن" width={28} height={28} />
+                </span>
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#000000] to-[#636363] shadow-lg">
+                  <img src="/images/medialogo/tiktok.svg" alt="تيك توك" width={28} height={28} />
+                </span>
               </div>
             </div>
           </div>
