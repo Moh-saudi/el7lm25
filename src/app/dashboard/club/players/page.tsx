@@ -41,7 +41,7 @@ interface SelectOption {
   label: string;
 }
 
-interface Player {
+interface PlayerData {
   id: string;
   name: string;
   position: string;
@@ -70,6 +70,33 @@ interface Player {
   primary_position: string;
 }
 
+interface DetailedPlayerData extends PlayerData {
+  biography?: string;
+  achievements?: string[];
+  socialMedia?: {
+    twitter?: string;
+    instagram?: string;
+    facebook?: string;
+  };
+  videos?: string[];
+  documents?: string[];
+  notFound?: boolean;
+  error?: boolean;
+  city?: string;
+  full_name?: string;
+  technical_skills?: Record<string, number>;
+  physical_skills?: Record<string, number>;
+  profile_image?: {
+    url?: string;
+  };
+  images?: string[];
+  image?: string;
+}
+
+type MultiSelectOption = SelectOption & {
+  isDisabled?: boolean;
+}
+
 // أضف الكلاسات المخصصة للـ flip في الأعلى (يمكنك نقلها لملف CSS خارجي)
 const cardFlipStyles = `
   .preserve-3d { transform-style: preserve-3d; }
@@ -94,7 +121,7 @@ const positionsMap: Record<string, { x: number; y: number; label: string; color:
 export default function PlayersSearchPage() {
   const router = useRouter();
   const { user, userData, loading: authLoading } = useAuth();
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<PlayerData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
@@ -103,10 +130,10 @@ export default function PlayersSearchPage() {
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
   const [goalsRange, setGoalsRange] = useState<[number, number]>([0, 50]);
   const [profileCompletion, setProfileCompletion] = useState<number>(0);
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerData | null>(null);
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [error, setError] = useState('');
-  const [detailedPlayer, setDetailedPlayer] = useState<any>(null);
+  const [detailedPlayer, setDetailedPlayer] = useState<DetailedPlayerData | null>(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
 
   // متغيرات آمنة لتفاصيل اللاعب
@@ -122,7 +149,7 @@ export default function PlayersSearchPage() {
   const allCountries = Array.from(new Set(players.map(p => p.country).filter(Boolean)));
   const allClubs = Array.from(new Set(players.map(p => p.currentClub).filter(Boolean)));
   // حساب نسبة اكتمال الملف
-  function getProfileCompletion(player: Player): number {
+  function getProfileCompletion(player: PlayerData): number {
     let filled = 0, total = 6;
     if (player.imageUrl) filled++;
     if (player.stats && Object.values(player.stats).some(v => v > 0)) filled++;
@@ -213,16 +240,17 @@ export default function PlayersSearchPage() {
             stats: typeof data.stats === 'object' && data.stats !== null ? data.stats : { goals: 0, assists: 0, matches: 0, yellowCards: 0, redCards: 0 },
             skills: typeof data.skills === 'object' && data.skills !== null ? data.skills : { shooting: 0, passing: 0, dribbling: 0, defending: 0, physical: 0 }
           };
-        }) as Player[];
+        }) as PlayerData[];
         console.log('Processed players data:', playersData);
         setPlayers(playersData);
       } else {
         console.log('No players found in Firebase');
         setError('لم يتم العثور على لاعبين في قاعدة البيانات');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching from Firebase:', error);
-      setError('حدث خطأ أثناء جلب بيانات اللاعبين من قاعدة البيانات');
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير معروف';
+      setError(`حدث خطأ أثناء جلب بيانات اللاعبين من قاعدة البيانات: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -268,7 +296,7 @@ export default function PlayersSearchPage() {
     );
   });
 
-  const handleCardClick = (player: Player) => {
+  const handleCardClick = (player: PlayerData) => {
     setSelectedPlayer(player);
     setIsCardFlipped(true);
   };
@@ -285,12 +313,19 @@ export default function PlayersSearchPage() {
       const playerRef = doc(db, 'players', playerId);
       const playerDoc = await getDoc(playerRef);
       if (playerDoc.exists()) {
-        setDetailedPlayer(playerDoc.data());
+        const data = playerDoc.data();
+        setDetailedPlayer({
+          ...data,
+          id: playerId,
+        } as DetailedPlayerData);
       } else {
-        setDetailedPlayer({ notFound: true });
+        setDetailedPlayer({ notFound: true } as DetailedPlayerData);
       }
-    } catch (err) {
-      setDetailedPlayer({ error: true });
+    } catch (error: unknown) {
+      console.error('Error fetching player details:', error);
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير معروف';
+      setDetailedPlayer({ error: true } as DetailedPlayerData);
+      toast.error(`حدث خطأ أثناء جلب تفاصيل اللاعب: ${errorMessage}`);
     }
   };
 
@@ -352,24 +387,28 @@ export default function PlayersSearchPage() {
         </div>
         {/* فلتر متعدد للمراكز (Dropdown احترافي) */}
         <div className="min-w-[180px]">
-          <Select<SelectOption, true>
+          <Select<MultiSelectOption, true>
             isMulti
             options={allPositions.map(pos => ({ value: pos, label: pos }))}
             value={selectedPositions.map(pos => ({ value: pos, label: pos }))}
             onChange={(opts) => setSelectedPositions((opts ?? []).map(opt => opt.value))}
             placeholder="اختر المركز..."
             classNamePrefix="react-select"
+            isClearable
+            isSearchable
           />
         </div>
         {/* فلتر متعدد للدولة (Dropdown احترافي) */}
         <div className="min-w-[180px]">
-          <Select<SelectOption, true>
+          <Select<MultiSelectOption, true>
             isMulti
             options={allCountries.map(c => ({ value: c, label: c }))}
             value={selectedCountries.map(c => ({ value: c, label: c }))}
-            onChange={(opts) => setSelectedCountries(opts.map(opt => opt.value))}
+            onChange={(opts) => setSelectedCountries((opts ?? []).map(opt => opt.value))}
             placeholder="اختر الدولة..."
             classNamePrefix="react-select"
+            isClearable
+            isSearchable
           />
         </div>
         {/* فلتر العمر (نطاق ديناميكي) */}
@@ -636,15 +675,13 @@ export default function PlayersSearchPage() {
               {/* صورة واسم اللاعب */}
               <div className="flex flex-col items-center gap-4">
                 <img
-                  src={
-                    (detailedPlayer.profile_image && detailedPlayer.profile_image.url) ||
-                    detailedPlayer.imageUrl ||
-                    detailedPlayer.image ||
-                    (Array.isArray(detailedPlayer.images) && detailedPlayer.images[0]) ||
-                    '/default-avatar.png'
-                  }
+                  src={getPlayerImage(detailedPlayer)}
                   alt={detailedPlayer.full_name || detailedPlayer.name}
                   className="w-36 h-36 object-cover rounded-full shadow-lg border-4 border-blue-500"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/default-avatar.png';
+                  }}
                 />
                 <h2 className="text-2xl font-bold text-blue-800 dark:text-blue-200 flex items-center gap-2">
                   <User className="w-6 h-6 text-blue-400" />
@@ -688,9 +725,9 @@ export default function PlayersSearchPage() {
               {/* المهارات الفنية (رادار) */}
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow">
                 <h3 className="font-bold mb-4 text-blue-700 dark:text-blue-300">المهارات الفنية</h3>
-                {detailedPlayer.technical_skills && Object.keys(detailedPlayer.technical_skills).length > 0 ? (
+                {hasTechnicalSkills(detailedPlayer) ? (
                   <ResponsiveContainer width="100%" height={250}>
-                    <RadarChart data={Object.entries(detailedPlayer.technical_skills).map(([key, value]) => ({ skill: key, value: Number(value) }))}>
+                    <RadarChart data={formatTechnicalSkills(detailedPlayer.technical_skills)}>
                       <PolarGrid />
                       <PolarAngleAxis dataKey="skill" />
                       <PolarRadiusAxis angle={30} domain={[0, 100]} />
@@ -759,4 +796,25 @@ export default function PlayersSearchPage() {
       </Dialog>
     </div>
   );
+}
+
+// Helper functions
+function getPlayerImage(player: DetailedPlayerData): string {
+  if (player.profile_image?.url) return player.profile_image.url;
+  if (player.imageUrl) return player.imageUrl;
+  if (player.image) return player.image;
+  if (Array.isArray(player.images) && player.images[0]) return player.images[0];
+  return '/default-avatar.png';
+}
+
+function hasTechnicalSkills(player: DetailedPlayerData): boolean {
+  return !!player.technical_skills && Object.keys(player.technical_skills).length > 0;
+}
+
+function formatTechnicalSkills(skills: Record<string, number> | undefined): Array<{ skill: string; value: number }> {
+  if (!skills) return [];
+  return Object.entries(skills).map(([key, value]) => ({
+    skill: key,
+    value: Number(value)
+  }));
 } 
