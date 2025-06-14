@@ -121,7 +121,7 @@ const VideoManager: React.FC<VideoManagerProps> = ({
       const uploadedUrl = await uploadVideo(
         file, 
         currentUser.uid, 
-        (progress) => setUploadProgress(progress)
+        (progress: number) => setUploadProgress(progress)
       );
       
       setNewVideo(prev => ({ ...prev, url: uploadedUrl }));
