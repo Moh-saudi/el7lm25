@@ -231,7 +231,7 @@ export default function MarketingPage() {
 
   // Fetch club players
   useEffect(() => {
-    const clubId = userData?.clubId || user?.uid;
+    const clubId: string = (userData?.clubId as string) || (user?.uid as string) || "";
     if (!clubId) return;
     const fetchPlayers = async () => {
       const playersRef = collection(db, 'clubs', clubId, 'players');
@@ -277,7 +277,7 @@ export default function MarketingPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="w-full max-w-2xl">
-              <PlayerProfileForm clubId={userData?.clubId || user?.uid} onSuccess={() => setShowAddPlayer(false)} />
+              <PlayerProfileForm clubId={clubId} onSuccess={() => setShowAddPlayer(false)} />
               <Button variant="outline" className="w-full mt-4" onClick={() => setShowAddPlayer(false)}>
                 إغلاق
               </Button>
