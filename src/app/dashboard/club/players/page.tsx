@@ -91,6 +91,10 @@ interface DetailedPlayerData extends PlayerData {
   };
   images?: string[];
   image?: string;
+  phone?: string;
+  email?: string;
+  whatsapp?: string;
+  brief?: string;
 }
 
 type MultiSelectOption = SelectOption & {
