@@ -63,6 +63,7 @@ export default function MarketingPage() {
   });
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [clubPlayers, setClubPlayers] = useState<any[]>([]);
+  const clubId: string = (userData?.clubId as string) || (user?.uid as string) || "";
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -231,7 +232,6 @@ export default function MarketingPage() {
 
   // Fetch club players
   useEffect(() => {
-    const clubId: string = (userData?.clubId as string) || (user?.uid as string) || "";
     if (!clubId) return;
     const fetchPlayers = async () => {
       const playersRef = collection(db, 'clubs', clubId, 'players');
@@ -239,7 +239,7 @@ export default function MarketingPage() {
       setClubPlayers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
     fetchPlayers();
-  }, [userData?.clubId, user?.uid, showAddPlayer]);
+  }, [clubId, showAddPlayer]);
 
   if (loading) {
     return (
