@@ -21,6 +21,7 @@ export default function Page() {
   const [activePartner, setActivePartner] = useState(0);
   const [activeClub, setActiveClub] = useState(0);
   const [activeSection, setActiveSection] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
 
   const slides = [
     {
@@ -126,6 +127,15 @@ export default function Page() {
     window.addEventListener('scroll', handleScroll);
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return (
@@ -240,24 +250,24 @@ export default function Page() {
                 className="w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px]"
               >
                 {[
-                  { image: '/slider/1.png', title: 'صورة السلايدر 1' },
-                  { image: '/slider/2.png', title: 'صورة السلايدر 2' },
-                  { image: '/slider/3.png', title: 'صورة السلايدر 3' },
-                  { image: '/slider/4.png', title: 'صورة السلايدر 4' },
-                  { image: '/slider/5.png', title: 'صورة السلايدر 5' },
-                  { image: '/slider/6.png', title: 'صورة السلايدر 6' },
-                  { image: '/slider/7.png', title: 'صورة السلايدر 7' },
+                  { desktop: '/slider/1.png', mobile: '/slider/slider mobil/1.png', title: 'صورة السلايدر 1' },
+                  { desktop: '/slider/2.png', mobile: '/slider/slider mobil/2.png', title: 'صورة السلايدر 2' },
+                  { desktop: '/slider/3.png', mobile: '/slider/slider mobil/3.png', title: 'صورة السلايدر 3' },
+                  { desktop: '/slider/4.png', mobile: '/slider/slider mobil/4.png', title: 'صورة السلايدر 4' },
+                  { desktop: '/slider/5.png', mobile: '/slider/slider mobil/5.png', title: 'صورة السلايدر 5' },
+                  { desktop: '/slider/6.png', mobile: '/slider/slider mobil/6.png', title: 'صورة السلايدر 6' },
+                  { desktop: '/slider/7.png', mobile: '/slider/slider mobil/7.png', title: 'صورة السلايدر 7' },
                 ].map((slide, index) => (
                   <SwiperSlide key={index}>
                     <div className="relative min-h-[600px]">
                       <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/30" />
                       <div className="relative w-full h-full flex items-center justify-center bg-gray-100" style={{ aspectRatio: '16/9' }}>
                         <Image
-                          src={slide.image}
+                          src={isMobile ? slide.mobile : slide.desktop}
                           alt={slide.title}
                           fill
-                          className="object-contain"
-                          sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, (max-width: 1024px) 100vw, 100vw"
+                          className="object-cover"
+                          sizes="(max-width: 767px) 100vw, 100vw"
                           priority={index === 0}
                         />
                       </div>
