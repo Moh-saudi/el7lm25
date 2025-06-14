@@ -8,10 +8,7 @@ import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import FaFacebookF from 'react-icons/fa/FaFacebookF';
-import FaInstagram from 'react-icons/fa/FaInstagram';
-import FaLinkedinIn from 'react-icons/fa/FaLinkedinIn';
-import FaTiktok from 'react-icons/fa/FaTiktok';
+import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTiktok } from 'react-icons/fa';
 
 export default function Page() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
