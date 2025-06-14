@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X, ChevronRight, Star, MapPin, Mail, Phone, ChevronLeft, Brain, Trophy, Network, Globe, FileText, Truck } from 'lucide-react';
+import { Menu, X, ChevronRight, Star, MapPin, Mail, Phone, ChevronLeft, Brain, Trophy, Network, Globe, FileText, Truck, Heart } from 'lucide-react';
 import Image from 'next/image';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
@@ -204,45 +204,61 @@ export default function Page() {
           <div className="relative z-10 py-20">
             <div className="hero-slider rounded-[2rem] overflow-hidden shadow-2xl">
               <Swiper
-                modules={[Navigation, Pagination, Autoplay]}
+                modules={[Autoplay, Pagination, Navigation]}
                 spaceBetween={0}
                 slidesPerView={1}
-                navigation
-                pagination={{ clickable: true }}
+                navigation={{
+                  enabled: true,
+                  hideOnClick: true,
+                }}
+                pagination={{ 
+                  clickable: true,
+                  dynamicBullets: true,
+                }}
                 autoplay={{
                   delay: 5000,
                   disableOnInteraction: false,
                 }}
-                className="hero-swiper"
+                breakpoints={{
+                  320: {
+                    slidesPerView: 1,
+                    spaceBetween: 0,
+                  },
+                  640: {
+                    slidesPerView: 1,
+                    spaceBetween: 0,
+                  },
+                  768: {
+                    slidesPerView: 1,
+                    spaceBetween: 0,
+                  },
+                  1024: {
+                    slidesPerView: 1,
+                    spaceBetween: 0,
+                  },
+                }}
+                className="w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px]"
               >
                 {[
-                  {
-                    image: '/slider/1.png'
-                  },
-                  {
-                    image: '/slider/2.png'
-                  },
-                  {
-                    image: '/slider/3.png'
-                  },
-                  {
-                    image: '/slider/5.png'
-                  },
-                  {
-                    image: '/slider/6.png'
-                  }
+                  { image: '/slider/1.png', title: 'صورة السلايدر 1' },
+                  { image: '/slider/2.png', title: 'صورة السلايدر 2' },
+                  { image: '/slider/3.png', title: 'صورة السلايدر 3' },
+                  { image: '/slider/4.png', title: 'صورة السلايدر 4' },
+                  { image: '/slider/5.png', title: 'صورة السلايدر 5' },
+                  { image: '/slider/6.png', title: 'صورة السلايدر 6' },
+                  { image: '/slider/7.png', title: 'صورة السلايدر 7' },
                 ].map((slide, index) => (
                   <SwiperSlide key={index}>
                     <div className="relative min-h-[600px]">
-                      <div className="absolute inset-0">
-                        <img
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/30" />
+                      <div className="relative w-full h-full flex items-center justify-center">
+                        <Image
                           src={slide.image}
-                          alt="صورة السلايدر"
-                          className="object-cover w-full h-full"
-                          onError={(e) => {
-                            console.error(`Error loading image: ${slide.image}`);
-                            e.currentTarget.src = '/slider/7.png';
-                          }}
+                          alt={slide.title}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, (max-width: 1024px) 100vw, 100vw"
+                          priority={index === 0}
                         />
                       </div>
                     </div>
@@ -785,14 +801,14 @@ export default function Page() {
           </div>
         </div>
         {/* جزء محفور في أسفل الصفحة */}
-        <div className="fixed bottom-2 left-1/2 -translate-x-1/2 z-50 select-none pointer-events-none">
-          <span className="tajawal-engraved">
-            صُنع بكل حب
-            <span role="img" aria-label="قلب" style={{marginRight: '0.3em', color: '#e53935', fontSize: '1.2em'}}>❤️</span>
-            في مصر
-            <span role="img" aria-label="أهرامات" style={{margin: '0 0.2em'}}>🗻</span>
-            <span role="img" aria-label="علم مصر">🇪🇬</span>
-          </span>
+        <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-gray-100 py-2 z-50">
+          <div className="container mx-auto">
+            <p className="text-center text-sm text-gray-500 font-arabic flex items-center justify-center gap-1.5">
+              <span>صنع بكل حب في</span>
+              <span className="text-red-500 font-medium">مصر</span>
+              <Heart className="w-3.5 h-3.5 text-red-500" />
+            </p>
+          </div>
         </div>
       </footer>
     </div>
