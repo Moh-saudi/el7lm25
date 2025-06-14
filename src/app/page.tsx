@@ -247,7 +247,7 @@ export default function Page() {
                     spaceBetween: 0,
                   },
                 }}
-                className="w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px]"
+                className="w-full aspect-square sm:h-[400px] md:h-[500px] lg:h-[600px]"
               >
                 {[
                   { desktop: '/slider/1.png', mobile: '/slider/slider mobil/1.png', title: 'صورة السلايدر 1' },
@@ -259,9 +259,9 @@ export default function Page() {
                   { desktop: '/slider/7.png', mobile: '/slider/slider mobil/7.png', title: 'صورة السلايدر 7' },
                 ].map((slide, index) => (
                   <SwiperSlide key={index}>
-                    <div className="relative min-h-[600px]">
+                    <div className={`relative w-full ${isMobile ? 'aspect-square' : 'aspect-[16/9]'} bg-gray-100`}>
                       <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/30" />
-                      <div className="relative w-full h-full flex items-center justify-center bg-gray-100" style={{ aspectRatio: '16/9' }}>
+                      <div className="relative w-full h-full flex items-center justify-center">
                         <Image
                           src={isMobile ? slide.mobile : slide.desktop}
                           alt={slide.title}
