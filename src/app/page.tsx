@@ -8,7 +8,10 @@ import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTiktok } from 'react-icons/fa';
+import FaFacebookF from 'react-icons/fa/FaFacebookF';
+import FaInstagram from 'react-icons/fa/FaInstagram';
+import FaLinkedinIn from 'react-icons/fa/FaLinkedinIn';
+import FaTiktok from 'react-icons/fa/FaTiktok';
 
 export default function Page() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -766,10 +769,10 @@ export default function Page() {
             <div>
               <h3 className="mb-4 text-lg font-bold text-white">تابعنا</h3>
               <div className="flex gap-4 mt-2">
-                {FaFacebookF ? <FaFacebookF size={28} color="#fff" /> : null}
-                {FaInstagram ? <FaInstagram size={28} color="#fff" /> : null}
-                {FaLinkedinIn ? <FaLinkedinIn size={28} color="#fff" /> : null}
-                {FaTiktok ? <FaTiktok size={28} color="#fff" /> : null}
+                <FaFacebookF size={28} color="#fff" />
+                <FaInstagram size={28} color="#fff" />
+                <FaLinkedinIn size={28} color="#fff" />
+                <FaTiktok size={28} color="#fff" />
               </div>
             </div>
           </div>
