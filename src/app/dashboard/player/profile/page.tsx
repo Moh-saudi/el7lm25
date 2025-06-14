@@ -413,7 +413,9 @@ const SOCIAL_SKILLS = [
   { key: 'punctuality', label: 'الالتزام بالمواعيد' },
 ];
 
-const OBJECTIVES_CHECKBOXES = [
+type ObjectiveKey = 'professional' | 'trials' | 'local_leagues' | 'arab_leagues' | 'european_leagues' | 'training';
+
+const OBJECTIVES_CHECKBOXES: { key: ObjectiveKey; label: string }[] = [
   { key: 'professional', label: 'الاحتراف الكامل' },
   { key: 'trials', label: 'معايشات احترافية' },
   { key: 'local_leagues', label: 'المشاركة في دوريات محلية' },
@@ -2087,7 +2089,7 @@ export default function ProfilePage(props: Record<string, never>) {
 
   const validateObjectives = (data: PlayerFormData) => {
     const errors: Partial<FormErrors> = {};
-    const hasAny = OBJECTIVES_CHECKBOXES.some(obj => data.objectives?.[obj.key]) ||
+    const hasAny = OBJECTIVES_CHECKBOXES.some(obj => data.objectives?.[obj.key as ObjectiveKey]) ||
       (typeof data.objectives?.other === 'string' && data.objectives.other.trim() !== '');
     if (!hasAny) errors.objectives = 'يرجى اختيار هدف واحد على الأقل أو كتابة هدف آخر';
     return errors;
