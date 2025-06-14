@@ -44,7 +44,7 @@ interface SearchResult {
   };
 }
 
-export default function SearchPage(props) {
+export default function SearchPage(props: {}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [filterLocation, setFilterLocation] = useState('');
