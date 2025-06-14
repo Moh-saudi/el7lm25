@@ -131,11 +131,12 @@ const VideoManager: React.FC<VideoManagerProps> = ({
       console.error('خطأ في رفع الفيديو:', error);
       let errorMessage = 'فشل في رفع الفيديو. يرجى المحاولة مرة أخرى.';
       
-      if (error.code === 'storage/unauthorized') {
+      const typedError = error as { code: string };
+      if (typedError.code === 'storage/unauthorized') {
         errorMessage = 'ليس لديك صلاحية لرفع الملفات.';
-      } else if (error.code === 'storage/quota-exceeded') {
+      } else if (typedError.code === 'storage/quota-exceeded') {
         errorMessage = 'تم تجاوز حصة التخزين المتاحة.';
-      } else if (error.code === 'storage/invalid-format') {
+      } else if (typedError.code === 'storage/invalid-format') {
         errorMessage = 'تنسيق الملف غير صالح.';
       }
       
