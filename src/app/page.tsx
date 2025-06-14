@@ -251,12 +251,12 @@ export default function Page() {
                   <SwiperSlide key={index}>
                     <div className="relative min-h-[600px]">
                       <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/30" />
-                      <div className="relative w-full h-full flex items-center justify-center">
+                      <div className="relative w-full h-full flex items-center justify-center bg-gray-100" style={{ aspectRatio: '16/9' }}>
                         <Image
                           src={slide.image}
                           alt={slide.title}
                           fill
-                          className="object-cover"
+                          className="object-contain"
                           sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, (max-width: 1024px) 100vw, 100vw"
                           priority={index === 0}
                         />
