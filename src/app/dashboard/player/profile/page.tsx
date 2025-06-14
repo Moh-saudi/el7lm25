@@ -162,7 +162,10 @@ interface PlayerFormData {
   technical_skills: Record<string, number>;
   physical_skills: Record<string, number>;
   social_skills: Record<string, number>;
-  objectives: Record<string, boolean> & { other?: string };
+  objectives: {
+    [key: string]: boolean;
+    other: string;
+  };
   profile_image: { url: string } | null;
   additional_images: Array<{ url: string }>;
   videos: { url: string; desc: string }[];
@@ -297,7 +300,15 @@ const defaultPlayerFields: PlayerFormData = {
   technical_skills: {},
   physical_skills: {},
   social_skills: {},
-  objectives: {},
+  objectives: {
+    other: '',
+    professional: false,
+    trials: false,
+    local_leagues: false,
+    arab_leagues: false,
+    european_leagues: false,
+    training: false
+  },
   profile_image: null,
   additional_images: [],
   videos: [],
@@ -1025,11 +1036,12 @@ export default function ProfilePage(props: Record<string, never>) {
                 disabled={!isEditing}
                 onChange={e => {
                   if (!isEditing) return;
+                  const fieldName = e.target.name.split('.')[1];
                   setEditFormData(prev => ({
                     ...prev,
                     objectives: {
                       ...prev.objectives,
-                      [obj.key]: e.target.checked
+                      [fieldName]: e.target.checked
                     }
                   }));
                 }}
@@ -1489,19 +1501,91 @@ export default function ProfilePage(props: Record<string, never>) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="block mb-1">اسم المسؤول</label>
-            {renderField('official_contact.name')}
+            {isEditing ? (
+              <input
+                type="text"
+                name="official_contact.name"
+                value={editFormData.official_contact.name}
+                onChange={e => {
+                  setEditFormData(prev => ({
+                    ...prev,
+                    official_contact: {
+                      ...prev.official_contact,
+                      name: e.target.value
+                    }
+                  }));
+                }}
+                className="w-full p-2 border rounded"
+              />
+            ) : (
+              <div className="p-2 bg-gray-100 rounded">{formData.official_contact.name}</div>
+            )}
           </div>
           <div>
             <label className="block mb-1">الصفة</label>
-            {renderField('official_contact.title')}
+            {isEditing ? (
+              <input
+                type="text"
+                name="official_contact.title"
+                value={editFormData.official_contact.title}
+                onChange={e => {
+                  setEditFormData(prev => ({
+                    ...prev,
+                    official_contact: {
+                      ...prev.official_contact,
+                      title: e.target.value
+                    }
+                  }));
+                }}
+                className="w-full p-2 border rounded"
+              />
+            ) : (
+              <div className="p-2 bg-gray-100 rounded">{formData.official_contact.title}</div>
+            )}
           </div>
           <div>
             <label className="block mb-1">رقم الجوال</label>
-            {renderField('official_contact.phone')}
+            {isEditing ? (
+              <input
+                type="text"
+                name="official_contact.phone"
+                value={editFormData.official_contact.phone}
+                onChange={e => {
+                  setEditFormData(prev => ({
+                    ...prev,
+                    official_contact: {
+                      ...prev.official_contact,
+                      phone: e.target.value
+                    }
+                  }));
+                }}
+                className="w-full p-2 border rounded"
+              />
+            ) : (
+              <div className="p-2 bg-gray-100 rounded">{formData.official_contact.phone}</div>
+            )}
           </div>
           <div>
             <label className="block mb-1">البريد الإلكتروني</label>
-            {renderField('official_contact.email')}
+            {isEditing ? (
+              <input
+                type="email"
+                name="official_contact.email"
+                value={editFormData.official_contact.email}
+                onChange={e => {
+                  setEditFormData(prev => ({
+                    ...prev,
+                    official_contact: {
+                      ...prev.official_contact,
+                      email: e.target.value
+                    }
+                  }));
+                }}
+                className="w-full p-2 border rounded"
+              />
+            ) : (
+              <div className="p-2 bg-gray-100 rounded">{formData.official_contact.email}</div>
+            )}
           </div>
         </div>
       </div>
