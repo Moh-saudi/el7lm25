@@ -97,8 +97,9 @@ const VideoManager: React.FC<VideoManagerProps> = ({
 
     // التحقق من صحة الملف
     const validation = validateVideoFile(file, { allowedTypes });
-    if (!validation.isValid) {
-      alert(validation.errors.join('\n'));
+    const validationResult = validation as { isValid: boolean; errors: string[] };
+    if (!validationResult.isValid) {
+      alert(validationResult.errors.join('\n'));
       return;
     }
 
