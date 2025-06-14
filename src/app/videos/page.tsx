@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/lib/firebase/auth-provider';
 import { db } from '@/lib/firebase/config';
-import { collection, query, orderBy, getDocs, limit, doc, updateDoc, increment, where } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, limit, doc, updateDoc, increment, where, getDoc } from 'firebase/firestore';
 import { Heart, MessageCircle, Share2, Music } from 'lucide-react';
 import Comments from '@/components/video/Comments';
 
