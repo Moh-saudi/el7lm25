@@ -766,26 +766,10 @@ export default function Page() {
             <div>
               <h3 className="mb-4 text-lg font-bold text-white">تابعنا</h3>
               <div className="flex gap-4 mt-2">
-                <a href="https://www.facebook.com/profile.php?id=61566841904953" target="_blank" rel="noopener noreferrer" title="فيسبوك" className="hover:scale-110 transition-transform">
-                  <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#3b2667] to-[#bc78ec] shadow-lg">
-                    <FaFacebookF size={28} color="#fff" />
-                  </span>
-                </a>
-                <a href="https://www.instagram.com/hagzzqa/" target="_blank" rel="noopener noreferrer" title="إنستجرام" className="hover:scale-110 transition-transform">
-                  <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#bc2a8d] to-[#e94057] shadow-lg">
-                    <FaInstagram size={28} color="#fff" />
-                  </span>
-                </a>
-                <a href="https://www.linkedin.com/company/hagzz" target="_blank" rel="noopener noreferrer" title="لينكدإن" className="hover:scale-110 transition-transform">
-                  <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#0077b5] to-[#0a2342] shadow-lg">
-                    <FaLinkedinIn size={28} color="#fff" />
-                  </span>
-                </a>
-                <a href="https://www.tiktok.com/@hagzz25" target="_blank" rel="noopener noreferrer" title="تيك توك" className="hover:scale-110 transition-transform">
-                  <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#000000] to-[#636363] shadow-lg">
-                    <FaTiktok size={28} color="#fff" />
-                  </span>
-                </a>
+                {FaFacebookF ? <FaFacebookF size={28} color="#fff" /> : null}
+                {FaInstagram ? <FaInstagram size={28} color="#fff" /> : null}
+                {FaLinkedinIn ? <FaLinkedinIn size={28} color="#fff" /> : null}
+                {FaTiktok ? <FaTiktok size={28} color="#fff" /> : null}
               </div>
             </div>
           </div>
