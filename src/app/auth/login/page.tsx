@@ -32,6 +32,17 @@ export default function LoginPage() {
 
   const handleInputChange = (e: { target: { name: string; value: string; type: string; checked: boolean; }; }) => {
     const { name, value, type, checked } = e.target;
+    
+    // إذا كان الحقل هو رقم الهاتف، نتأكد من أنه يحتوي فقط على أرقام
+    if (name === 'phone') {
+      const numbersOnly = value.replace(/[^0-9]/g, '');
+      setFormData((prev) => ({
+        ...prev,
+        [name]: numbersOnly,
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
@@ -58,6 +69,13 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     setMessage('');
+
+    // التحقق من صحة رقم الهاتف
+    if (!/^[0-9]{10}$/.test(formData.phone)) {
+      setError('يرجى إدخال رقم هاتف صحيح مكون من 10 أرقام');
+      setLoading(false);
+      return;
+    }
 
     try {
       await loginUser(formData.phone, formData.password);

@@ -95,6 +95,24 @@ const PAYMENT_METHODS = [
   { id: 'wallet', name: 'تحويل على محفظة', icon: '👛' }
 ];
 
+// دول الخليج
+const GULF_COUNTRIES = ['QA', 'SA', 'AE', 'KW', 'BH', 'OM'];
+
+// حسّن دالة تحويل اسم الدولة إلى رمزها القياسي
+function normalizeCountry(val: string | undefined | null): string {
+  if (!val) return '';
+  const map: Record<string, string> = {
+    'قطر': 'QA', 'Qatar': 'QA',
+    'السعودية': 'SA', 'Saudi Arabia': 'SA',
+    'الإمارات': 'AE', 'UAE': 'AE', 'United Arab Emirates': 'AE',
+    'الكويت': 'KW', 'Kuwait': 'KW',
+    'البحرين': 'BH', 'Bahrain': 'BH',
+    'عمان': 'OM', 'Oman': 'OM',
+    'مصر': 'EG', 'Egypt': 'EG',
+  };
+  return map[val.trim()] || val.trim().toUpperCase();
+}
+
 export default function PaymentPage() {
   const router = useRouter();
   const [user, loading] = useAuthState(auth);
@@ -118,6 +136,10 @@ export default function PaymentPage() {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string>('');
   const [paidAmount, setPaidAmount] = useState('');
+  const [userCurrency, setUserCurrency] = useState({ code: 'SAR', symbol: 'ر.س' });
+  const [userCountry, setUserCountry] = useState('');
+  const [savedTokens, setSavedTokens] = useState<string[]>([]);
+  const [cardDetails, setCardDetails] = useState<any[]>([]);
 
   // كود تشخيصي
   console.log('user:', user, 'loading:', loading);
@@ -134,37 +156,87 @@ export default function PaymentPage() {
     setPaidAmount(PACKAGES[selectedPackage].price.toString());
   }, [selectedPackage]);
 
+  // حسّن منطق جلب الدولة والعملة
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          let userData = {};
+          if (userDoc.exists()) {
+            userData = userDoc.data();
+          }
+          // جلب الدولة من Firestore أو من user أو قيمة افتراضية
+          let country = normalizeCountry(userData.country) || normalizeCountry((user as any)?.country) || normalizeCountry((user as any)?.metadata?.country) || '';
+          if (!country && userData.address) {
+            // محاولة استخراج الدولة من العنوان إذا كان موجودًا
+            const match = userData.address.match(/(قطر|السعودية|الإمارات|الكويت|البحرين|عمان|مصر|Qatar|Saudi Arabia|UAE|United Arab Emirates|Kuwait|Bahrain|Oman|Egypt)/);
+            if (match) {
+              country = normalizeCountry(match[1]);
+            }
+          }
+          setUserCountry(country || '');
+          // جلب العملة من Firestore أو user أو افتراضية حسب الدولة
+          let currency = userData.currency || user?.currency || '';
+          let currencySymbol = userData.currencySymbol || user?.currencySymbol || '';
+          if (!currency) {
+            switch (country) {
+              case 'QA': currency = 'QAR'; currencySymbol = 'ر.ق'; break;
+              case 'SA': currency = 'SAR'; currencySymbol = 'ر.س'; break;
+              case 'AE': currency = 'AED'; currencySymbol = 'د.إ'; break;
+              case 'KW': currency = 'KWD'; currencySymbol = 'د.ك'; break;
+              case 'BH': currency = 'BHD'; currencySymbol = 'د.ب'; break;
+              case 'OM': currency = 'OMR'; currencySymbol = 'ر.ع'; break;
+              default: currency = 'SAR'; currencySymbol = 'ر.س'; break;
+            }
+          }
+          setUserCurrency({ code: currency, symbol: currencySymbol });
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      }
+    };
+    fetchUserData();
+  }, [user]);
+
+  // جلب التوكنات من Firestore عند تحميل الصفحة
+  useEffect(() => {
+    const fetchTokensAndCards = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          let userData: any = userDoc.exists() ? userDoc.data() : {};
+          const tokens: string[] = userData?.tokens || [];
+          setSavedTokens(tokens);
+          if (tokens.length > 0) {
+            // جلب تفاصيل البطاقات من SkipCash
+            const ids = tokens.join('|');
+            const res = await fetch(`/api/skipcash/cards?ids=${ids}`);
+            const data = await res.json();
+            setCardDetails(data.resultObj || []);
+          }
+        } catch (err) {
+          console.error('Error fetching tokens/cards:', err);
+        }
+      }
+    };
+    fetchTokensAndCards();
+  }, [user]);
+
   // معالجة تقديم الدفع
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user || !transactionNumber || !paymentMethod) {
-      setError('يرجى إكمال جميع البيانات المطلوبة');
-      return;
-    }
-    if (!user.uid) {
-      setError('تعذر تحديد المستخدم. يرجى إعادة تسجيل الدخول.');
-      return;
-    }
-    if (!paidAmount || isNaN(Number(paidAmount)) || Number(paidAmount) <= 0) {
-      setError('يرجى إدخال قيمة المبلغ المحول بشكل صحيح');
-      return;
-    }
-    if (!receiptInfo.senderName || !receiptInfo.transferDate) {
-      setError('يرجى إدخال جميع بيانات الإيصال');
-      return;
-    }
-    if (paymentMethod === 'bank' && (!bankInfo.accountName || !bankInfo.accountNumber || !bankInfo.bankName)) {
-      setError('يرجى إدخال جميع بيانات الكارت البنكي');
-      return;
-    }
-    setSubmitting(true);
     setError('');
+    if (!validateForm()) return;
+
+    setSubmitting(true);
     try {
       const months = selectedPackage === '3months' ? 3 : selectedPackage === '6months' ? 6 : 12;
       const startDate = new Date();
       const endDate = new Date();
       endDate.setMonth(endDate.getMonth() + months);
       setSubscriptionEnd(endDate.toLocaleDateString('ar-EG'));
+
       // جلب بيانات العميل من قاعدة البيانات
       type UserProfile = {
         name?: string;
@@ -172,6 +244,8 @@ export default function PaymentPage() {
         phone?: string;
         address?: string;
         taxNumber?: string;
+        currency?: string;
+        currencySymbol?: string;
       };
       let userProfile: UserProfile = {};
       try {
@@ -182,6 +256,7 @@ export default function PaymentPage() {
       } catch (e) {
         console.warn('تعذر جلب بيانات العميل من قاعدة البيانات:', e);
       }
+
       // حفظ بيانات الدفع
       await setDoc(doc(db, 'payments', `${user.uid}-${Date.now()}`), {
         transactionNumber: transactionNumber || '',
@@ -194,8 +269,11 @@ export default function PaymentPage() {
         subscriptionEnd: endDate,
         receiptInfo: receiptInfo || {},
         bankInfo: paymentMethod === 'bank' ? bankInfo : null,
-        status: 'pending'
+        status: 'pending',
+        currency: userCurrency.code,
+        currencySymbol: userCurrency.symbol
       });
+
       // تفعيل الاشتراك في users
       await setDoc(doc(db, 'users', user.uid), {
         subscription: {
@@ -205,6 +283,7 @@ export default function PaymentPage() {
           status: 'active'
         }
       }, { merge: true });
+
       // حفظ بيانات الاشتراك في subscriptions
       await setDoc(doc(db, 'subscriptions', user.uid), {
         plan_name: PACKAGES[selectedPackage]?.title || '',
@@ -213,7 +292,8 @@ export default function PaymentPage() {
         status: 'pending',
         payment_method: paymentMethod || '',
         amount: PACKAGES[selectedPackage]?.price || 0,
-        currency: 'جنيه',
+        currency: userCurrency.code,
+        currencySymbol: userCurrency.symbol,
         paidAmount: Number(paidAmount),
         receiptInfo: receiptInfo || {},
         bankInfo: paymentMethod === 'bank' ? bankInfo : null,
@@ -227,6 +307,7 @@ export default function PaymentPage() {
         tax_number: userProfile.taxNumber || '',
         payment_date: receiptInfo.transferDate || startDate.toISOString(),
       });
+
       setShowSuccessPopup(true);
       setSuccess(true);
       setTimeout(() => {
@@ -234,9 +315,109 @@ export default function PaymentPage() {
         router.push('/dashboard');
       }, 6000);
     } catch (error) {
-      // طباعة تفاصيل الخطأ في الكونسول للمطور
       console.error('تفاصيل الخطأ أثناء حفظ بيانات الدفع أو الاشتراك:', error);
       setError('حدث خطأ أثناء معالجة الدفع. يرجى التأكد من اتصالك بالإنترنت وصلاحيات الحساب. إذا استمرت المشكلة راجع الإدارة.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // دالة الدفع باستخدام بطاقة محفوظة (tokenId)
+  const handleTokenPayment = async (tokenId: string) => {
+    if (!user) return setError('يجب تسجيل الدخول أولاً');
+    setSubmitting(true);
+    setError('');
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData: any = userDoc.exists() ? userDoc.data() : {};
+      const firstName = userData?.name?.split(' ')[0] || user?.displayName?.split(' ')[0] || '';
+      const lastName = userData?.name?.split(' ')[1] || user?.displayName?.split(' ')[1] || '';
+      const phone = userData?.phone || user?.phoneNumber || '';
+      const email = userData?.email || user?.email || `${phone}@yourdomain.com`;
+      const transactionId = `${user.uid}-${Date.now()}`;
+      const amount = PACKAGES[selectedPackage]?.price?.toFixed(2) || '0.00';
+      const subject = PACKAGES[selectedPackage]?.title || 'اشتراك';
+      const description = `دفع اشتراك باقة ${PACKAGES[selectedPackage]?.title || ''}`;
+      // إرسال الطلب إلى API مع tokenId
+      const response = await fetch('/api/skipcash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          firstName,
+          lastName,
+          phone,
+          email,
+          transactionId,
+          subject,
+          description,
+          tokenId,
+        }),
+      });
+      const data = await response.json();
+      if (data.payUrl) {
+        window.location.href = data.payUrl;
+      } else {
+        setError(
+          data.errorMessage ||
+          data.error ||
+          data.message ||
+          JSON.stringify(data, null, 2) ||
+          'حدث خطأ أثناء إنشاء طلب الدفع عبر البطاقة المحفوظة'
+        );
+      }
+    } catch (err: any) {
+      setError(err.message || 'حدث خطأ أثناء معالجة الدفع عبر البطاقة المحفوظة');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // أضف دالة الدفع عبر QPAY (يجب أن تكون داخل PaymentPage)
+  const handleSkipCashPayment = async () => {
+    if (!user) return setError('يجب تسجيل الدخول أولاً');
+    setSubmitting(true);
+    setError('');
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData: any = userDoc.exists() ? userDoc.data() : {};
+      const firstName = userData?.name?.split(' ')[0] || user?.displayName?.split(' ')[0] || '';
+      const lastName = userData?.name?.split(' ')[1] || user?.displayName?.split(' ')[1] || '';
+      const phone = userData?.phone || user?.phoneNumber || '';
+      const email = userData?.email || user?.email || `${phone}@yourdomain.com`;
+      const transactionId = `${user.uid}-${Date.now()}`;
+      const amount = PACKAGES[selectedPackage]?.price?.toFixed(2) || '0.00';
+      const subject = PACKAGES[selectedPackage]?.title || 'اشتراك';
+      const description = `دفع اشتراك باقة ${PACKAGES[selectedPackage]?.title || ''}`;
+      // إرسال الطلب إلى API
+      const response = await fetch('/api/skipcash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          firstName,
+          lastName,
+          phone,
+          email,
+          transactionId,
+          subject,
+          description,
+        }),
+      });
+      const data = await response.json();
+      if (data.payUrl) {
+        window.location.href = data.payUrl;
+      } else {
+        setError(
+          data.errorMessage ||
+          data.error ||
+          data.message ||
+          JSON.stringify(data, null, 2) ||
+          'حدث خطأ أثناء إنشاء طلب الدفع عبر QPAY'
+        );
+      }
+    } catch (err: any) {
+      setError(err.message || 'حدث خطأ أثناء معالجة الدفع عبر QPAY');
     } finally {
       setSubmitting(false);
     }
@@ -245,6 +426,38 @@ export default function PaymentPage() {
   // عرض حالة التحميل
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">جاري التحميل...</div>;
+  }
+
+  // منطق طرق الدفع حسب الدولة
+  let paymentMethods: { id: string, name: string, icon: string }[] = [];
+  if (GULF_COUNTRIES.includes(userCountry)) {
+    paymentMethods = [
+      { id: 'qpay', name: 'الدفع عبر QPAY (بطاقة خليجية)', icon: '💳' },
+      { id: 'apple', name: 'أبل باي', icon: '🍎' },
+      { id: 'google', name: 'جوجل باي', icon: '🟢' },
+      { id: 'wallet', name: 'تحويل على محفظة (97472053188)', icon: '👛' },
+      { id: 'fawry', name: 'فوري', icon: '💸' },
+    ];
+  } else if (userCountry === 'EG') {
+    paymentMethods = [
+      { id: 'bank', name: 'تحويل بنكي', icon: '🏦' },
+      { id: 'fawry', name: 'فوري', icon: '💸' },
+      { id: 'wallet', name: 'تحويل على محفظة', icon: '👛' },
+    ];
+  } else {
+    paymentMethods = [];
+  }
+
+  // إذا لم تتوفر الدولة، أظهر رسالة تنبيه
+  if (!userCountry) {
+    return (
+      <div className="p-4 mb-6 text-yellow-800 bg-yellow-100 border-2 border-yellow-300 rounded-xl">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">⚠️</span>
+          <p>يرجى تحديد الدولة في الملف الشخصي حتى تظهر لك جميع خيارات الدفع المناسبة.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -284,8 +497,8 @@ export default function PaymentPage() {
 
                 {/* السعر */}
                 <div className="flex items-center justify-center gap-2 mb-4">
-                  <span className="text-2xl font-bold text-blue-600">{pkg.price} جنيه</span>
-                  <span className="text-sm text-gray-500 line-through">{pkg.originalPrice} جنيه</span>
+                  <span className="text-2xl font-bold text-blue-600">{pkg.price} {userCurrency.symbol}</span>
+                  <span className="text-sm text-gray-500 line-through">{pkg.originalPrice} {userCurrency.symbol}</span>
                   <span className="px-2 py-1 text-xs font-medium text-white bg-green-500 rounded-full">
                     {pkg.discount} خصم
                   </span>
@@ -312,44 +525,67 @@ export default function PaymentPage() {
           </div>
 
           {/* طرق الدفع */}
-          <div className="p-6 mb-8 bg-white rounded-2xl shadow-lg">
-            <h3 className="mb-4 text-xl font-bold text-gray-900">اختر طريقة الدفع</h3>
-            <div className="grid gap-4 md:grid-cols-4">
-              {PAYMENT_METHODS.map(method => (
-                <label
-                  key={method.id}
-                  className={`flex flex-col items-center p-4 transition-all duration-200 border-2 rounded-xl cursor-pointer hover:border-blue-300 ${
-                    paymentMethod === method.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value={method.id}
-                    checked={paymentMethod === method.id}
-                    onChange={() => setPaymentMethod(method.id)}
-                    className="hidden"
-                  />
-                  <span className="mb-2 text-2xl">{method.icon}</span>
-                  <span className="text-sm font-medium text-gray-700">{method.name}</span>
-                </label>
-              ))}
+          {paymentMethods.length === 0 ? (
+            <div className="p-4 mb-6 text-yellow-800 bg-yellow-100 border-2 border-yellow-300 rounded-xl">
+              <span>طرق الدفع غير متاحة حالياً لدولتك.</span>
             </div>
-          </div>
+          ) : (
+            <div className="p-6 mb-8 bg-white rounded-2xl shadow-lg">
+              <h3 className="mb-4 text-xl font-bold text-gray-900">اختر طريقة الدفع</h3>
+              <div className="grid gap-4 md:grid-cols-4">
+                {paymentMethods.map(method => (
+                  <label
+                    key={method.id}
+                    className={`flex flex-col items-center p-4 transition-all duration-200 border-2 rounded-xl cursor-pointer hover:border-blue-300 ${
+                      paymentMethod === method.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value={method.id}
+                      checked={paymentMethod === method.id}
+                      onChange={() => setPaymentMethod(method.id)}
+                      className="hidden"
+                    />
+                    <span className="mb-2 text-2xl">{method.icon}</span>
+                    <span className="text-sm font-medium text-gray-700">{method.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* تعليمات خاصة عند اختيار تحويل على محفظة */}
           {paymentMethod === 'wallet' && (
             <div className="p-6 mb-8 text-center bg-yellow-50 border-2 border-yellow-200 rounded-2xl">
               <h4 className="mb-3 text-lg font-bold text-yellow-800">تعليمات التحويل</h4>
               <p className="mb-2 text-yellow-700">
-                يرجى التحويل على محفظة <b>فودافون كاش</b> أو <b>انستا باي</b> على الرقم:
+                {userCountry === 'EG'
+                  ? <>يرجى التحويل على محفظة <b>فودافون كاش</b> أو <b>انستا باي</b> على الرقم:</>
+                  : <>يرجى التحويل على محفظة محلية (مثل <b>STC Pay</b> أو <b>فودافون قطر</b>) على الرقم:</>
+                }
               </p>
               <div className="p-3 mb-3 text-xl font-bold text-yellow-900 bg-yellow-100 rounded-lg select-all">
-                01017799580
+                {userCountry === 'EG' ? '01017799580' : '97472053188'}
               </div>
               <p className="text-sm text-yellow-600">
                 يرجى رفع صورة إيصال التحويل بعد الدفع
               </p>
+            </div>
+          )}
+
+          {/* عند اختيار QPAY، أظهر زر الدفع */}
+          {paymentMethod === 'qpay' && (
+            <div className="flex flex-col items-center gap-4 my-6">
+              <button
+                type="button"
+                onClick={handleSkipCashPayment}
+                className="w-full p-4 text-white font-bold rounded-xl bg-blue-700 hover:bg-blue-800 transition-all duration-200 shadow-lg text-lg"
+              >
+                الدفع عبر QPAY (بطاقة خليجية)
+              </button>
+              <p className="text-sm text-gray-600">سيتم تحويلك لبوابة الدفع الآمنة لإتمام العملية عبر بطاقة خليجية.</p>
             </div>
           )}
 
@@ -485,6 +721,29 @@ export default function PaymentPage() {
               </button>
             </div>
           </form>
+
+          {/* بطاقات الدفع */}
+          {cardDetails.length > 0 && (
+            <div className="p-6 mb-8 bg-white rounded-2xl shadow-lg">
+              <h3 className="mb-4 text-xl font-bold text-gray-900">بطاقاتك المحفوظة</h3>
+              <div className="grid gap-4 md:grid-cols-3">
+                {cardDetails.map((card, idx) => (
+                  <div key={idx} className="flex flex-col items-center p-4 border-2 rounded-xl">
+                    <span className="text-2xl mb-2">{card.cardType === 1 ? '💳 Visa' : card.cardType === 2 ? '💳 MasterCard' : '💳 بطاقة'}</span>
+                    <span className="mb-1">**** **** **** {card.cardNumber}</span>
+                    <span className="mb-1 text-gray-600">تنتهي: {card.cardExpiry}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleTokenPayment(savedTokens[idx])}
+                      className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      الدفع بهذه البطاقة
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {showSuccessPopup && (

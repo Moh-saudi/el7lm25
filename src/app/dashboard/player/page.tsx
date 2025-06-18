@@ -15,6 +15,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 type WelcomePopupProps = {
   onClose: () => void;
@@ -711,6 +712,66 @@ export default function PlayerDashboard() {
     }
   };
 
+  // قسم المهارات المرتبط بالملف الشخصي
+  const renderSkillsSection = () => (
+    <section className="my-8 p-6 bg-white rounded-lg shadow-md">
+      <h2 className="mb-6 text-2xl font-bold text-blue-700">المهارات الشخصية (رسم بياني)</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 my-8">
+        {/* المهارات الفنية */}
+        <div>
+          <h4 className="mb-2 text-lg font-semibold text-blue-600">المهارات الفنية</h4>
+          <div style={{ width: '100%', height: 250 }}>
+            <ResponsiveContainer>
+              <RadarChart data={userData.technical_skills ? Object.entries(userData.technical_skills).map(([key, value]) => ({
+                skill: key === 'ball_control' ? 'التحكم بالكرة' : key === 'passing' ? 'التمرير' : key === 'shooting' ? 'التسديد' : key === 'dribbling' ? 'المراوغة' : key,
+                value,
+              })) : []}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="skill" />
+                <PolarRadiusAxis angle={30} domain={[1, 5]} />
+                <Radar name="المهارات الفنية" dataKey="value" stroke="#2563eb" fill="#2563eb" fillOpacity={0.4} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        {/* المهارات البدنية */}
+        <div>
+          <h4 className="mb-2 text-lg font-semibold text-green-600">المهارات البدنية</h4>
+          <div style={{ width: '100%', height: 250 }}>
+            <ResponsiveContainer>
+              <RadarChart data={userData.physical_skills ? Object.entries(userData.physical_skills).map(([key, value]) => ({
+                skill: key === 'speed' ? 'السرعة' : key === 'strength' ? 'القوة البدنية' : key === 'stamina' ? 'التحمل' : key === 'agility' ? 'الرشاقة' : key === 'balance' ? 'التوازن' : key === 'flexibility' ? 'المرونة' : key,
+                value,
+              })) : []}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="skill" />
+                <PolarRadiusAxis angle={30} domain={[1, 5]} />
+                <Radar name="المهارات البدنية" dataKey="value" stroke="#16a34a" fill="#16a34a" fillOpacity={0.4} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        {/* المهارات الاجتماعية */}
+        <div>
+          <h4 className="mb-2 text-lg font-semibold text-purple-600">المهارات الإنسانية والاجتماعية</h4>
+          <div style={{ width: '100%', height: 250 }}>
+            <ResponsiveContainer>
+              <RadarChart data={userData.social_skills ? Object.entries(userData.social_skills).map(([key, value]) => ({
+                skill: key === 'teamwork' ? 'العمل الجماعي' : key === 'communication' ? 'التواصل' : key === 'discipline' ? 'الانضباط' : key === 'self_confidence' ? 'الثقة بالنفس' : key === 'pressure_handling' ? 'تحمل الضغط' : key === 'punctuality' ? 'الالتزام بالمواعيد' : key,
+                value,
+              })) : []}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="skill" />
+                <PolarRadiusAxis angle={30} domain={[1, 5]} />
+                <Radar name="المهارات الاجتماعية" dataKey="value" stroke="#9333ea" fill="#9333ea" fillOpacity={0.4} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
   return (
     <>
       {showWelcome && <WelcomePopup onClose={handleCloseWelcome} />}
@@ -919,6 +980,8 @@ export default function PlayerDashboard() {
         {selectedTab === 'media' && <MediaTab />}
         {selectedTab === 'contracts' && <ContractsTab />}
         {selectedTab === 'refsource' && <RefSourceTab />}
+        {/* قسم المهارات */}
+        {renderSkillsSection()}
       </div>
     </>
   );

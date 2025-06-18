@@ -1,19 +1,25 @@
 'use client';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/lib/firebase/auth-provider';
 import { auth, db } from "@/lib/firebase/config";
 import { createBrowserClient } from '@supabase/ssr';
 import 'firebase/compat/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Check, Plus, Trash, X, Star, StarHalf } from 'lucide-react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { Check, Plus, Trash, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import { Slider } from "@/components/ui/slider";
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { uploadPlayerProfileImage, uploadPlayerAdditionalImage } from '@/lib/firebase/upload-media';
+import { supabaseUrl, supabaseAnonKey } from '@/lib/supabase/config';
+import { User } from 'firebase/auth';
+import { getSupabaseClient } from '@/lib/supabase/config';
 
+interface ExtendedUser extends User {
+  full_name?: string;
+  phone?: string;
+  country?: string;
+}
 
 // Loading Spinner Component
 const LoadingSpinner: React.FC = () => (
@@ -30,16 +36,6 @@ const SuccessMessage: React.FC<{ message: string }> = ({ message }) => (
         <Check className="w-5 h-5 mr-2 text-green-500" />
         <p className="text-green-700">{message}</p>
       </div>
-    </div>
-  </div>
-);
-
-// Error Message Component
-const ErrorMessage: React.FC<{ message: string }> = ({ message }) => (
-  <div className="p-4 mb-4 bg-red-100 border border-red-400 rounded-md">
-    <div className="flex items-center">
-      <X className="w-5 h-5 mr-2 text-red-500" />
-      <p className="text-red-700">{message}</p>
     </div>
   </div>
 );
@@ -83,7 +79,7 @@ interface PlayerState {
   technical_skills: Record<string, number>;
   physical_skills: Record<string, number>;
   social_skills: Record<string, number>;
-  objectives: Record<string, boolean> & { other: string };
+  objectives: Record<string, boolean>;
   profile_image: string | null;
   additional_images: string[];
   videos: { url: string; desc: string }[];
@@ -125,6 +121,12 @@ interface PlayerState {
 }
 
 interface FormErrors {
+  fetch?: string;
+  submit?: string;
+  profileImage?: string;
+  additionalImage?: string;
+  video?: string;
+  general?: string;
   [key: string]: string | undefined;
 }
 
@@ -162,15 +164,7 @@ interface PlayerFormData {
   technical_skills: Record<string, number>;
   physical_skills: Record<string, number>;
   social_skills: Record<string, number>;
-  objectives: {
-    other: string;
-    professional: boolean;
-    trials: boolean;
-    local_leagues: boolean;
-    arab_leagues: boolean;
-    european_leagues: boolean;
-    training: boolean;
-  };
+  objectives: Record<string, boolean> & { other?: string };
   profile_image: { url: string } | null;
   additional_images: Array<{ url: string }>;
   videos: { url: string; desc: string }[];
@@ -209,23 +203,7 @@ interface PlayerFormData {
     url: string;
     name: string;
   }>;
-  // المهارات الأساسية
-  speed?: number;
-  strength?: number;
-  stamina?: number;
-  flexibility?: number;
-  
-  // المهارات التقنية
-  ball_control?: number;
-  shooting?: number;
-  passing?: number;
-  defending?: number;
-  
-  // المهارات العقلية
-  concentration?: number;
-  decision_making?: number;
-  vision?: number;
-  leadership?: number;
+  address?: string;
 }
 
 // Constants
@@ -305,15 +283,7 @@ const defaultPlayerFields: PlayerFormData = {
   technical_skills: {},
   physical_skills: {},
   social_skills: {},
-  objectives: {
-    other: '',
-    professional: false,
-    trials: false,
-    local_leagues: false,
-    arab_leagues: false,
-    european_leagues: false,
-    training: false
-  },
+  objectives: {},
   profile_image: null,
   additional_images: [],
   videos: [],
@@ -413,9 +383,7 @@ const SOCIAL_SKILLS = [
   { key: 'punctuality', label: 'الالتزام بالمواعيد' },
 ];
 
-type ObjectiveKey = 'professional' | 'trials' | 'local_leagues' | 'arab_leagues' | 'european_leagues' | 'training';
-
-const OBJECTIVES_CHECKBOXES: { key: ObjectiveKey; label: string }[] = [
+const OBJECTIVES_CHECKBOXES = [
   { key: 'professional', label: 'الاحتراف الكامل' },
   { key: 'trials', label: 'معايشات احترافية' },
   { key: 'local_leagues', label: 'المشاركة في دوريات محلية' },
@@ -432,24 +400,309 @@ interface UploadResponse {
   error?: string;
 }
 
-const SUPABASE_URL = "https://ekyerljzfokqimbabzxm.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVreWVybGp6Zm9rcWltYmFienhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2NTcyODMsImV4cCI6MjA2MjIzMzI4M30.Xd6Cg8QUISHyCG-qbgo9HtWUZz6tvqAqG6KKXzuetBY";
-
 const getSupabaseWithAuth = async () => {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error("Supabase URL or Anon Key is missing.");
-    throw new Error("Supabase configuration is missing.");
+  const user = auth.currentUser as ExtendedUser;
+  if (!user) {
+    throw new Error('يجب تسجيل الدخول أولاً');
   }
-  return createBrowserClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
+
+  try {
+    // Get Firebase ID token
+    const firebaseToken = await user.getIdToken();
+    
+    // Get the singleton Supabase client
+    const supabaseClient = getSupabaseClient();
+    
+    // Set the auth header for this request
+    supabaseClient.rest.headers = {
+      ...supabaseClient.rest.headers,
+      Authorization: `Bearer ${firebaseToken}`
+    };
+
+    return supabaseClient;
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    throw new Error('فشل في الحصول على رمز المصادقة');
+  }
 };
 
-export default function ProfilePage(props: Record<string, never>) {
+// --- provinces ---
+const provinces: Record<string, string[]> = {
+  EG: [ "الإسكندرية", "الإسماعيلية", "أسوان", "أسيوط", "الأقصر", "البحيرة", "بني سويف", "بورسعيد", "جنوب سيناء", "الجيزة", "الدقهلية", "دمياط", "سوهاج", "الشرقية", "شمال سيناء", "الغربية", "الفيوم", "القاهرة", "القليوبية", "قنا", "كفر الشيخ", "مطروح", "المنوفية", "المنيا", "الوادى الجديد" ],
+  SA: ["الرياض", "مكة المكرمة", "المدينة المنورة", "القصيم", "الشرقية", "عسير", "تبوك", "حائل", "الحدود الشمالية", "جازان", "نجران", "الباحة", "الجوف"],
+  KW: ["العاصمة", "حولي", "الأحمدي", "الجهراء", "الفروانية", "مبارك الكبير"],
+  DZ: [ "أدرار", "الشلف", "الأغواط", "أم البواقي", "باتنة", "بجاية", "بسكرة", "بشار", "البليدة", "البويرة", "تمنراست", "تبسة", "تلمسان", "تيارت", "تيزي وزو", "الجزائر", "الجلفة", "جيجل", "سطيف", "سعيدة", "سكيكدة", "سيدي بلعباس", "عنابة", "قالمة", "قسنطينة", "المدية", "مستغانم", "المسيلة", "معسكر", "ورقلة", "وهران", "البيض", "إليزي", "برج بوعريريج", "بومرداس", "الطارف", "تندوف", "تيسمسيلت", "الوادي", "خنشلة", "سوق أهراس", "تيبازة", "ميلة", "عين الدفلى", "النعامة", "عين تموشنت", "غرداية", "غليزان", "المغير", "المنيعة"],
+  BH: ["العاصمة", "المحرق", "الشمالية", "الجنوبية"],
+  IQ: ["الأنبار", "بابل", "بغداد", "البصرة", "ذي قار", "ديالى", "دهوك", "أربيل", "الأعظمية", "السماوة", "السليمانية", "النجف", "نينوى", "واسط"],
+  JO: ["عجلون", "العقبة", "البلقاء", "جرش", "الكرك", "مأدبا", "المفرق", "عمان", "إربد", "الزرقاء", "السلط"],
+  LB: ["بيروت", "جبل لبنان", "لبنان الشمالي", "لبنان الجنوبي", "البقاع", "النبطية", "عكار", "بعلبك - الهرمل"],
+  LY: ["الجبل الأخضر", "الخمس", "أوباري", "الزاوية", "بنغازي", "درنة", "الجبل الغربي", "مصراتة", "سبها", "طرابلس"],
+  MA: ["الدار البيضاء", "الرباط", "فاس", "مراكش", "طنجة", "وجدة", "مكناس", "أغادير", "القنيطرة", "طرفاية"],
+  OM: ["الداخليّة", "البريمي", "الوسطى", "الظاهرة", "جنوب الباطنة", "جنوب الشرقية", "مسقط", "مسندم", "شمال الباطنة", "شمال الشرقية", "ظفار"],
+  QA: ["الشمال", "الخور", "الشيحانية", "أم صلال", "الضعاين", "الدوحة", "الريان", "الوكرة"],
+  SO: ["جوبا السفلى", "جوبا الوسطى", "جدو", "باي", "بكول", "شبيلي السفلى", "بنادر", "شبيلي الوسطى", "هيران", "جلجدود", "مدج", "نوجال", "باري", "صول", "سناج", "توغدير", "عيدال", "شبيلي العليا"],
+  SD: ["الجزيرة", "الولاية", "النيل الأزرق", "وسط الإستوائية", "شرق الإستوائية", "جونقلي", "كسلا", "الخرطوم", "البحيرات", "شمال بحر الغزال", "شمال دارفور", "شمال كردفان", "الشمالية", "البحر الأحمر", "نهر النيل", "سنار", "جنوب دارفور", "جنوب كردفان"],
+  SY: ["الحسكة", "اللاذقية", "القنيطرة", "الرقة", "السويداء", "درعا", "دير الزور", "دمشق", "حلب", "حماه", "حمص", "إدلب", "ريف دمشق", "طرطوس"],
+  TN: [ "أريانة", "باجة", "بن عروس", "بنزرت", "قابس", "قفصة", "القصرين", "قرمبالية", "الكاف", "القيروان", "سليانة", "سوسة", "تطاوين", "توزر", "تونس", "زغوان", "مدنين", "المنستير", "المهدية", "نابل" ],
+  AE: [ "أبو ظبي", "عجمان", "دبي", "الفجيرة", "رأس الخيمة", "الشارقة", "أم القيوين" ],
+  YE: [ "أبين", "عدن", "الضالع", "البيضاء", "الحديدة", "الجوف", "المهرة", "المحويت", "أمانة العاصمة", "عمران", "ذمار", "حضرموت", "حجة", "إب", "لحج", "مأرب", "ريمة", "صعدة", "صنعاء", "شبوة", "تعز" ],
+};
+
+// --- country code mapping ---
+const COUNTRY_CODE_MAP: Record<string, string> = {
+  "مصر": "EG",
+  "السعودية": "SA",
+  "الكويت": "KW",
+  "الجزائر": "DZ",
+  "البحرين": "BH",
+  "العراق": "IQ",
+  "الأردن": "JO",
+  "لبنان": "LB",
+  "ليبيا": "LY",
+  "المغرب": "MA",
+  "عمان": "OM",
+  "قطر": "QA",
+  "الصومال": "SO",
+  "السودان": "SD",
+  "سوريا": "SY",
+  "تونس": "TN",
+  "الإمارات": "AE",
+  "اليمن": "YE",
+};
+
+// --- تعديل التحقق ---
+const validatePersonalInfo = (data: PlayerFormData) => {
+  const errors: Partial<FormErrors> = {};
+  if (!data.profile_image) errors.profile_image = 'الصورة الشخصية مطلوبة';
+  if (!data.full_name) errors.full_name = 'الاسم الكامل مطلوب';
+  if (!data.birth_date) {
+    errors.birth_date = 'تاريخ الميلاد مطلوب';
+  } else {
+    // تحقق من العمر >= 7 سنوات
+    const birth = new Date(data.birth_date);
+    const now = new Date();
+    const minDate = new Date(now.getFullYear() - 7, now.getMonth(), now.getDate());
+    if (birth > minDate) errors.birth_date = 'يجب أن يكون عمر اللاعب 7 سنوات أو أكثر';
+  }
+  if (!data.nationality) errors.nationality = 'الجنسية مطلوبة';
+  if (!data.city) errors.city = 'المدينة مطلوبة';
+  if (!data.country) errors.country = 'الدولة مطلوبة';
+  if (!data.address) errors.address = 'العنوان التفصيلي مطلوب';
+  if (!data.phone) errors.phone = 'رقم الهاتف مطلوب';
+  if (!data.whatsapp) errors.whatsapp = 'رقم الواتساب مطلوب';
+  if (!data.email) errors.email = 'البريد الإلكتروني مطلوب';
+  if (!data.brief) errors.brief = 'نبذة مختصرة مطلوبة';
+  return errors;
+};
+
+// --- تعديل واجهة البيانات الشخصية ---
+const renderPersonalInfo = () => (
+  <div className="space-y-6">
+    <h2 className="pr-4 text-2xl font-semibold border-r-4 border-blue-500">البيانات الشخصية</h2>
+    {/* الصورة الشخصية */}
+    <div>
+      <label className="block mb-2 text-sm font-medium text-gray-700">الصورة الشخصية <span className="text-red-500">*</span></label>
+      {isEditing ? (
+        <div className="flex items-center gap-4">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleProfileImageUpload}
+            className="flex-1"
+          />
+          {uploadingProfileImage && <span className="text-blue-600">جاري الرفع...</span>}
+          {editFormData.profile_image?.url && (
+            <div className="relative w-24 h-24">
+              <Image
+                src={editFormData.profile_image.url}
+                alt="Profile"
+                fill
+                className="object-cover rounded-full"
+                sizes="96px"
+                priority
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        formData.profile_image?.url ? (
+          <div className="relative w-24 h-24">
+            <Image
+              src={formData.profile_image.url}
+              alt="Profile"
+              fill
+              className="object-cover rounded-full"
+              sizes="96px"
+              priority
+            />
+          </div>
+        ) : (
+          <span className="text-gray-400">لا توجد صورة شخصية</span>
+        )
+      )}
+      {formErrors.profile_image && <span className="text-xs text-red-500">{formErrors.profile_image}</span>}
+    </div>
+    {/* الاسم وتاريخ الميلاد أولاً */}
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">الاسم الكامل <span className="text-red-500">*</span></label>
+        {renderField('full_name')}
+        {formErrors.full_name && <span className="text-xs text-red-500">{formErrors.full_name}</span>}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">تاريخ الميلاد <span className="text-red-500">*</span></label>
+        {isEditing ? (
+          <input
+            type="date"
+            name="birth_date"
+            value={editFormData.birth_date || ''}
+            onChange={handleInputChange}
+            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            max={new Date(new Date().setFullYear(new Date().getFullYear() - 7)).toISOString().split('T')[0]}
+          />
+        ) : (
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {formData.birth_date || 'غير محدد'}
+          </div>
+        )}
+        {formErrors.birth_date && <span className="text-xs text-red-500">{formErrors.birth_date}</span>}
+        {editFormData.birth_date && (
+          <span className="text-xs text-gray-500">العمر: {Math.floor((new Date().getTime() - new Date(editFormData.birth_date).getTime()) / (365.25*24*60*60*1000))} سنة</span>
+        )}
+      </div>
+    </div>
+    {/* الدولة ثم المدينة (قائمة المحافظات حسب الدولة) */}
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">الدولة <span className="text-red-500">*</span></label>
+        {isEditing ? (
+          <select
+            name="country"
+            value={editFormData.country || ''}
+            onChange={handleInputChange}
+            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+          >
+            <option value="">اختر</option>
+            {COUNTRIES.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        ) : (
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {formData.country || 'غير محدد'}
+          </div>
+        )}
+        {formErrors.country && <span className="text-xs text-red-500">{formErrors.country}</span>}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">المدينة <span className="text-red-500">*</span></label>
+        {isEditing ? (
+          <select
+            name="city"
+            value={editFormData.city || ''}
+            onChange={handleInputChange}
+            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            disabled={!editFormData.country}
+          >
+            <option value="">اختر</option>
+            {(provinces[COUNTRY_CODE_MAP[editFormData.country || '']] || []).map(city => (
+              <option key={city} value={city}>{city}</option>
+            ))}
+          </select>
+        ) : (
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {formData.city || 'غير محدد'}
+          </div>
+        )}
+        {formErrors.city && <span className="text-xs text-red-500">{formErrors.city}</span>}
+      </div>
+    </div>
+    {/* الجنسية ثم بقية الحقول */}
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">الجنسية <span className="text-red-500">*</span></label>
+        {isEditing ? (
+          <select
+            name="nationality"
+            value={editFormData.nationality || ''}
+            onChange={handleInputChange}
+            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+          >
+            <option value="">اختر</option>
+            {NATIONALITIES.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        ) : (
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {formData.nationality || 'غير محدد'}
+          </div>
+        )}
+        {formErrors.nationality && <span className="text-xs text-red-500">{formErrors.nationality}</span>}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">العنوان التفصيلي <span className="text-red-500">*</span></label>
+        {isEditing ? (
+          <input
+            type="text"
+            name="address"
+            value={editFormData.address || ''}
+            onChange={handleInputChange}
+            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+          />
+        ) : (
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {formData.address || 'غير محدد'}
+          </div>
+        )}
+        {formErrors.address && <span className="text-xs text-red-500">{formErrors.address}</span>}
+      </div>
+    </div>
+    {/* بقية الحقول: الهاتف، الواتساب، البريد، نبذة مختصرة ... */}
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">رقم الهاتف <span className="text-red-500">*</span></label>
+        {renderField('phone')}
+        {formErrors.phone && <span className="text-xs text-red-500">{formErrors.phone}</span>}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">رقم الواتساب <span className="text-red-500">*</span></label>
+        {renderField('whatsapp')}
+        {formErrors.whatsapp && <span className="text-xs text-red-500">{formErrors.whatsapp}</span>}
+      </div>
+    </div>
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">البريد الإلكتروني <span className="text-red-500">*</span></label>
+        {renderField('email')}
+        {formErrors.email && <span className="text-xs text-red-500">{formErrors.email}</span>}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">نبذة مختصرة <span className="text-red-500">*</span></label>
+        {isEditing ? (
+          <textarea
+            name="brief"
+            value={editFormData.brief || ''}
+            onChange={handleInputChange}
+            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+          />
+        ) : (
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {formData.brief || 'غير محدد'}
+          </div>
+        )}
+        {formErrors.brief && <span className="text-xs text-red-500">{formErrors.brief}</span>}
+      </div>
+    </div>
+  </div>
+);
+
+export default function PlayerProfile() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [supabase, setSupabase] = useState<any>(null);
+
+  // تعريف جميع المتغيرات اللازمة
   const [playerData, setPlayerData] = useState<PlayerFormData | null>(null);
   const [formData, setFormData] = useState<PlayerFormData>(defaultPlayerFields);
   const [editFormData, setEditFormData] = useState<PlayerFormData>(defaultPlayerFields);
@@ -467,624 +720,1445 @@ export default function ProfilePage(props: Record<string, never>) {
   const [newVideo, setNewVideo] = useState<{ url: string; desc: string }>({ url: '', desc: '' });
   const [showVideoForm, setShowVideoForm] = useState(false);
 
-  // =========== Section Renderers ===========
-  const renderPersonalInfo = () => (
-    <div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">الاسم الكامل</label>
-        {renderField('full_name')}
+  // دوال رفع/حذف الصور
+  const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.uid) return;
+    setUploadingProfileImage(true);
+    setFormErrors(prev => ({ ...prev, profile_image: undefined }));
+    try {
+      const supabase = await getSupabaseWithAuth();
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.uid}.${fileExt}`;
+      // حذف الصورة القديمة إذا وجدت
+      if (editFormData.profile_image?.url) {
+        const oldPath = editFormData.profile_image.url.split('/storage/v1/object/public/')[1];
+        if (oldPath) await supabase.storage.from('avatars').remove([oldPath]);
+      }
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      setEditFormData(prev => ({ ...prev, profile_image: { url: publicUrl } }));
+    } catch (err: any) {
+      console.error('رفع الصورة فشل:', err);
+      setFormErrors(prev => ({ ...prev, profile_image: 'فشل رفع الصورة. حاول مرة أخرى.' }));
+    } finally {
+      setUploadingProfileImage(false);
+    }
+  };
+
+  const handleDeleteProfileImage = async () => {
+    if (!user?.uid || !editFormData.profile_image?.url) return;
+    setUploadingProfileImage(true);
+    setFormErrors(prev => ({ ...prev, profile_image: undefined }));
+    try {
+      const supabase = await getSupabaseWithAuth();
+      const filePath = editFormData.profile_image.url.split('/storage/v1/object/public/')[1];
+      if (filePath) await supabase.storage.from('avatars').remove([filePath]);
+      setEditFormData(prev => ({ ...prev, profile_image: null }));
+    } catch (err: any) {
+      console.error('حذف الصورة فشل:', err);
+      setFormErrors(prev => ({ ...prev, profile_image: 'فشل حذف الصورة.' }));
+    } finally {
+      setUploadingProfileImage(false);
+    }
+  };
+
+  const handleAdditionalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.uid) return;
+    setIsUploading(true);
+    setFormErrors(prev => ({ ...prev, additionalImage: undefined }));
+    try {
+      const supabase = await getSupabaseWithAuth();
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.uid}/${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: false });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      setEditFormData(prev => ({ ...prev, additional_images: [...prev.additional_images, { url: publicUrl }] }));
+    } catch (err: any) {
+      console.error('رفع الصورة الإضافية فشل:', err);
+      setFormErrors(prev => ({ ...prev, additionalImage: 'فشل رفع الصورة الإضافية.' }));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteAdditionalImage = async (idx: number) => {
+    if (!user?.uid || !editFormData.additional_images[idx]?.url) return;
+    setIsUploading(true);
+    setFormErrors(prev => ({ ...prev, additionalImage: undefined }));
+    try {
+      const supabase = await getSupabaseWithAuth();
+      const filePath = editFormData.additional_images[idx].url.split('/storage/v1/object/public/')[1];
+      if (filePath) await supabase.storage.from('avatars').remove([filePath]);
+      setEditFormData(prev => ({ ...prev, additional_images: prev.additional_images.filter((_, i) => i !== idx) }));
+    } catch (err: any) {
+      console.error('حذف الصورة الإضافية فشل:', err);
+      setFormErrors(prev => ({ ...prev, additionalImage: 'فشل حذف الصورة الإضافية.' }));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (playerData) {
+      setFormData(playerData);
+      setEditFormData(playerData);
+      setIsLoading(false);
+    }
+  }, [playerData]);
+
+  // جلب بيانات اللاعب عند توفر المستخدم
+  useEffect(() => {
+    if (user) {
+      fetchPlayerData();
+    }
+  }, [user]);
+
+  const fetchPlayerData = async () => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+      const docRef = doc(db, 'players', user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        // معالجة البيانات كما هو
+        const processedData = {
+          ...defaultPlayerFields,
+          ...data
+        };
+        setPlayerData(processedData);
+        setFormData(processedData);
+        setIsLoading(false);
+        setError(null);
+      } else {
+        // إنشاء مستند افتراضي بالبيانات المتوفرة من user
+        const extendedUser = user as ExtendedUser;
+        const defaultData = {
+          ...defaultPlayerFields,
+          full_name: extendedUser.displayName || extendedUser.full_name || '',
+          phone: extendedUser.phoneNumber || extendedUser.phone || '',
+          country: extendedUser.country || '',
+          email: extendedUser.email || '',
+        };
+        await setDoc(docRef, defaultData, { merge: true });
+        setPlayerData(defaultData);
+        setFormData(defaultData);
+        setIsLoading(false);
+        setError(null);
+      }
+    } catch (err) {
+      setError("حدث خطأ أثناء جلب البيانات. يرجى المحاولة لاحقًا أو التواصل مع الدعم.");
+      setIsLoading(false);
+      console.error('[fetchPlayerData] error:', err);
+    }
+  };
+
+  console.log('PlayerProfile: state initialized', { isLoading, playerData, formData });
+
+  if (isLoading || isUploading) {
+    console.log('PlayerProfile: Rendering loading state', {
+      isLoading,
+      isUploading,
+      authState: isLoading ? 'Auth loading' : 'Auth loaded',
+      dataState: isLoading ? 'Data loading' : 'Data loaded'
+    });
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+          <p className="mt-4 text-gray-600">جاري تحميل البيانات...</p>
+        </div>
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">تاريخ الميلاد</label>
-        {isEditing ? (
-          <input
-            type="date"
-            name="birth_date"
-            value={editFormData.birth_date}
-            onChange={handleInputChange}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+    );
+  }
+
+  if (error || (formErrors && 'fetch' in formErrors)) {
+    console.log('PlayerProfile: Rendering error state', error, formErrors.fetch);
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="p-8 text-center bg-white rounded-lg shadow-md">
+          <h2 className="mb-4 text-2xl font-semibold text-red-600">حدث خطأ</h2>
+          <p className="mb-6 text-gray-600">{typeof error === 'string' ? error : formErrors.fetch}</p>
+          <Button onClick={() => router.push('/auth/login')} className="text-white bg-blue-600 hover:bg-blue-700">
+            العودة إلى صفحة تسجيل الدخول
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    console.log('PlayerProfile: No user found, redirecting to login');
+    router.push('/auth/login');
+    return null;
+  }
+
+  console.log('PlayerProfile: Rendering main form');
+  // =========== Supabase Storage Functions ===========
+
+  /**
+   * رفع صورة البروفايل إلى bucket للصور الشخصية
+   * @param {File} file - ملف الصورة
+   * @param {string} userId - معرف المستخدم
+   * @returns {Promise<string>} - رابط الصورة
+   */
+
+
+  // =========== Form Handling Functions ===========
+
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // دالة التحقق حسب التبويب الحالي
+  const validateCurrentStep = (step: number, data: PlayerFormData) => {
+    if (step === STEPS.PERSONAL) return validatePersonalInfo(data);
+    if (step === STEPS.EDUCATION) return validateEducation(data);
+    if (step === STEPS.MEDICAL) return validateMedical(data);
+    if (step === STEPS.SPORTS) return validateSports(data);
+    if (step === STEPS.SKILLS) return validateSkills(data);
+    if (step === STEPS.OBJECTIVES) return validateObjectives(data);
+    if (step === STEPS.MEDIA) return validateMedia(data);
+    return {};
+  };
+
+  // زر التالي
+  const handleNext = async () => {
+    // تحقق فقط من التبويب الحالي
+    const errors = validateCurrentStep(currentStep, editFormData);
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    // حفظ بيانات التبويب الحالي فقط
+    if (user) {
+      const docRef = doc(db, 'players', user.uid);
+      let updateData = {};
+      if (currentStep === STEPS.PERSONAL) {
+        updateData = {
+          full_name: editFormData.full_name,
+          birth_date: editFormData.birth_date,
+          nationality: editFormData.nationality,
+          city: editFormData.city,
+          country: editFormData.country,
+          phone: editFormData.phone,
+          whatsapp: editFormData.whatsapp,
+          email: editFormData.email,
+          brief: editFormData.brief,
+          profile_image: editFormData.profile_image,
+        };
+      } else if (currentStep === STEPS.EDUCATION) {
+        updateData = {
+          education_level: editFormData.education_level,
+          graduation_year: editFormData.graduation_year,
+          degree: editFormData.degree,
+          english_level: editFormData.english_level,
+          arabic_level: editFormData.arabic_level,
+          spanish_level: editFormData.spanish_level,
+        };
+      } else if (currentStep === STEPS.MEDICAL) {
+        updateData = {
+          blood_type: editFormData.blood_type,
+          height: editFormData.height,
+          weight: editFormData.weight,
+          chronic_conditions: editFormData.chronic_conditions,
+          chronic_details: editFormData.chronic_details,
+          injuries: editFormData.injuries,
+          surgeries: editFormData.surgeries,
+          allergies: editFormData.allergies,
+          medical_notes: editFormData.medical_notes,
+        };
+      } else if (currentStep === STEPS.SPORTS) {
+        updateData = {
+          primary_position: editFormData.primary_position,
+          secondary_position: editFormData.secondary_position,
+          preferred_foot: editFormData.preferred_foot,
+          club_history: editFormData.club_history,
+          experience_years: editFormData.experience_years,
+          sports_notes: editFormData.sports_notes,
+        };
+      } else if (currentStep === STEPS.SKILLS) {
+        updateData = {
+          technical_skills: editFormData.technical_skills,
+          physical_skills: editFormData.physical_skills,
+          social_skills: editFormData.social_skills,
+        };
+      } else if (currentStep === STEPS.OBJECTIVES) {
+        updateData = {
+          objectives: editFormData.objectives,
+        };
+      } else if (currentStep === STEPS.MEDIA) {
+        updateData = {
+          additional_images: editFormData.additional_images,
+          videos: editFormData.videos,
+        };
+      } else if (currentStep === STEPS.CONTRACTS) {
+        updateData = {
+          contract_history: editFormData.contract_history,
+          agent_history: editFormData.agent_history,
+          official_contact: editFormData.official_contact,
+          currently_contracted: editFormData.currently_contracted,
+          achievements: editFormData.achievements,
+          medical_history: editFormData.medical_history,
+          current_club: editFormData.current_club,
+          previous_clubs: editFormData.previous_clubs,
+          documents: editFormData.documents,
+          ref_source: editFormData.ref_source,
+        };
+      }
+      await setDoc(docRef, updateData, { merge: true });
+    }
+    setCurrentStep(currentStep + 1);
+  };
+
+  // زر الحفظ النهائي
+  const handleSave = async () => {
+    if (!user) return;
+    // تحقق من جميع الحقول المطلوبة في كل التبويبات
+    let errors: FormErrors = {};
+    errors = {
+      ...validatePersonalInfo(editFormData),
+      ...validateEducation(editFormData),
+      ...validateMedical(editFormData),
+      ...validateSports(editFormData),
+      ...validateSkills(editFormData),
+      ...validateObjectives(editFormData),
+      ...validateMedia(editFormData),
+    };
+    if (Object.keys(errors).length > 0) {
+      console.warn('الحقول الناقصة أو غير الصحيحة:', errors);
+      setFormErrors(errors);
+      throw new Error('يرجى تصحيح الأخطاء قبل الحفظ');
+    }
+    setEditLoading(true);
+    setEditError('');
+    try {
+      const docRef = doc(db, 'players', user.uid);
+      await setDoc(docRef, editFormData, { merge: true });
+      setPlayerData(editFormData);
+      setFormData(editFormData);
+      setIsEditing(false);
+      setSuccessMessage('تم حفظ البيانات بنجاح');
+    } catch (err) {
+      console.error('خطأ أثناء حفظ البيانات:', err);
+      setEditError('حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Handle Cancel button
+  const handleCancel = () => {
+    setEditFormData({ ...formData });
+    setIsEditing(false);
+    setEditError('');
+  };
+
+  // =========== Media Handling Functions ===========
+
+  // Add/remove images and videos
+  const handleAddImage = (url: string) => {
+    setEditFormData(prev => ({
+      ...prev,
+      additional_images: [...(prev.additional_images || []), { url }]
+    }));
+  };
+
+  const handleRemoveImage = (idx: number) => {
+    setEditFormData(prev => ({
+      ...prev,
+      additional_images: prev.additional_images.filter((_, i) => i !== idx),
+    }));
+  };
+
+  const handleAddVideo = (video: { url: string; desc: string }) => {
+    setEditFormData(prev => ({
+      ...prev,
+      videos: [...(prev.videos || []), video],
+    }));
+  };
+
+  const handleRemoveVideo = (idx: number) => {
+    setEditFormData(prev => ({
+      ...prev,
+      videos: prev.videos.filter((_, i) => i !== idx),
+    }));
+  };
+
+
+
+  // =========== Field Rendering Helpers ===========
+
+  // Render input or value based on edit mode
+  const renderField = (name: keyof PlayerFormData, type: string = 'text') =>
+    isEditing ? (
+      <input
+        type={type}
+        name={name}
+        value={typeof editFormData[name] === 'string' ? editFormData[name] as string : ''}
+        onChange={handleInputChange}
+        className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+      />
+    ) : (
+      <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+        {typeof formData[name] === 'string' ? formData[name] as string :
+         typeof formData[name] === 'object' ? JSON.stringify(formData[name]) : 'غير محدد'}
+      </div>
+    );
+
+  // Render textarea based on edit mode
+  const renderTextarea = (name: keyof PlayerFormData) =>
+    isEditing ? (
+      <textarea
+        name={name}
+        value={typeof editFormData[name] === 'string' ? editFormData[name] as string : ''}
+        onChange={handleInputChange}
+        className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+      />
+    ) : (
+      <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+        {typeof formData[name] === 'string' ? formData[name] as string :
+         typeof formData[name] === 'object' ? JSON.stringify(formData[name]) :
+         'غير محدد'}
+      </div>
+    );
+
+  // Helper to check if a video URL is embeddable
+  const getVideoEmbed = (url: string) => {
+    if (!url) return null;
+
+    // YouTube
+    const ytMatch = url.match(/(?:youtu.be\/|youtube.com\/(?:embed\/|v\/|watch\?v=))([\w-]{11})/);
+    if (ytMatch) {
+      return (
+        <div className="relative w-full pt-[56.25%]">
+          <iframe
+            className="absolute inset-0 w-full h-full rounded-lg"
+            src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
           />
+        </div>
+      );
+    }
+
+    // Vimeo
+    const vimeoMatch = url.match(/vimeo.com\/(\d+)/);
+    if (vimeoMatch) {
+      return (
+        <div className="relative w-full pt-[56.25%]">
+          <iframe
+            className="absolute inset-0 w-full h-full rounded-lg"
+            src={`https://player.vimeo.com/video/${vimeoMatch[1]}`}
+            frameBorder="0"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  // =========== Validation Functions ===========
+  const validateEducation = (data: PlayerFormData) => {
+    const errors: Partial<FormErrors> = {};
+    if (!data.education_level) errors.education_level = 'المؤهل الدراسي مطلوب';
+    if (!data.graduation_year) errors.graduation_year = 'سنة التخرج مطلوبة';
+    if (!data.degree) errors.degree = 'الدرجة مطلوبة';
+    if (!data.english_level) errors.english_level = 'مستوى الإنجليزية مطلوب';
+    return errors;
+  };
+
+  const validateMedical = (data: PlayerFormData) => {
+    const errors: Partial<FormErrors> = {};
+    // الطول والوزن اختياريان لكن يمكن التحقق من الأرقام
+    if (data.height && isNaN(Number(data.height))) errors.height = 'الطول يجب أن يكون رقمًا';
+    if (data.weight && isNaN(Number(data.weight))) errors.weight = 'الوزن يجب أن يكون رقمًا';
+    // إذا كان هناك أمراض مزمنة يجب إدخال التفاصيل
+    if (data.chronic_conditions && !data.chronic_details) errors.chronic_details = 'يرجى إدخال تفاصيل الأمراض المزمنة';
+    // تحقق من الإصابات والعمليات (يمكنك تخصيصه أكثر)
+    return errors;
+  };
+
+  const validateSports = (data: PlayerFormData) => {
+    const errors: Partial<FormErrors> = {};
+    if (!data.primary_position) errors.primary_position = 'المركز الأساسي مطلوب';
+    if (!data.preferred_foot) errors.preferred_foot = 'القدم المفضلة مطلوبة';
+    // تحقق من تاريخ الأندية (يمكن تخصيصه)
+    return errors;
+  };
+
+  const validateSkills = (data: PlayerFormData) => {
+    const errors: Partial<FormErrors> = {};
+    // المهارات اختيارية لكن يمكن التحقق من وجود تقييمات أساسية إذا رغبت
+    return errors;
+  };
+
+  const validateObjectives = (data: PlayerFormData) => {
+    const errors: Partial<FormErrors> = {};
+    const hasAny = OBJECTIVES_CHECKBOXES.some(obj => data.objectives?.[obj.key]) ||
+      (typeof data.objectives?.other === 'string' && data.objectives.other.trim() !== '');
+    if (!hasAny) errors.objectives = 'يرجى اختيار هدف واحد على الأقل أو كتابة هدف آخر';
+    return errors;
+  };
+
+  const validateMedia = (data: PlayerFormData) => {
+    const errors: Partial<FormErrors> = {};
+    if ((data.additional_images || []).length > MAX_IMAGES) errors.additionalImage = `يمكن رفع حتى ${MAX_IMAGES} صور فقط`;
+    if ((data.videos || []).length > MAX_VIDEOS) errors.video = `يمكن رفع حتى ${MAX_VIDEOS} فيديو فقط`;
+    // تحقق من وجود وصف لكل فيديو
+    if ((data.videos || []).some(v => !v || !v.url || !v.desc || v.desc.trim() === '')) errors.video = 'يجب كتابة وصف لكل فيديو';
+    return errors;
+  };
+
+  // --- قائمة المدن حسب الدولة (مثال مختصر) ---
+  const CITIES_BY_COUNTRY: Record<string, string[]> = {
+    'السعودية': ['الرياض', 'جدة', 'مكة', 'الدمام', 'المدينة المنورة'],
+    'مصر': ['القاهرة', 'الإسكندرية', 'الجيزة', 'أسوان', 'الأقصر'],
+    'الأردن': ['عمان', 'إربد', 'الزرقاء'],
+    'الإمارات': ['دبي', 'أبوظبي', 'الشارقة'],
+    // أضف المزيد حسب الحاجة
+  };
+
+  // =========== Section Renderers ===========
+
+  // Render Personal Info Section
+  const renderPersonalInfo = () => (
+    <div className="space-y-6">
+      <h2 className="pr-4 text-2xl font-semibold border-r-4 border-blue-500">البيانات الشخصية</h2>
+      {/* الصورة الشخصية */}
+      <div>
+        <label className="block mb-2 text-sm font-medium text-gray-700">الصورة الشخصية <span className="text-red-500">*</span></label>
+        {isEditing ? (
+          <div className="flex items-center gap-4">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleProfileImageUpload}
+              className="flex-1"
+            />
+            {uploadingProfileImage && <span className="text-blue-600">جاري الرفع...</span>}
+            {editFormData.profile_image?.url && (
+              <div className="relative w-24 h-24">
+                <Image
+                  src={editFormData.profile_image.url}
+                  alt="Profile"
+                  fill
+                  className="object-cover rounded-full"
+                  sizes="96px"
+                  priority
+                />
+              </div>
+            )}
+          </div>
         ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.birth_date}</div>
+          formData.profile_image?.url ? (
+            <div className="relative w-24 h-24">
+              <Image
+                src={formData.profile_image.url}
+                alt="Profile"
+                fill
+                className="object-cover rounded-full"
+                sizes="96px"
+                priority
+              />
+            </div>
+          ) : (
+            <span className="text-gray-400">لا توجد صورة شخصية</span>
+          )
         )}
+        {formErrors.profile_image && <span className="text-xs text-red-500">{formErrors.profile_image}</span>}
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">الجنسية</label>
-        {renderField('nationality')}
+      {/* الاسم وتاريخ الميلاد أولاً */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">الاسم الكامل <span className="text-red-500">*</span></label>
+          {renderField('full_name')}
+          {formErrors.full_name && <span className="text-xs text-red-500">{formErrors.full_name}</span>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">تاريخ الميلاد <span className="text-red-500">*</span></label>
+          {isEditing ? (
+            <input
+              type="date"
+              name="birth_date"
+              value={editFormData.birth_date || ''}
+              onChange={handleInputChange}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              max={new Date(new Date().setFullYear(new Date().getFullYear() - 7)).toISOString().split('T')[0]}
+            />
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.birth_date || 'غير محدد'}
+            </div>
+          )}
+          {formErrors.birth_date && <span className="text-xs text-red-500">{formErrors.birth_date}</span>}
+          {editFormData.birth_date && (
+            <span className="text-xs text-gray-500">العمر: {Math.floor((new Date().getTime() - new Date(editFormData.birth_date).getTime()) / (365.25*24*60*60*1000))} سنة</span>
+          )}
+        </div>
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">المدينة</label>
-        {renderField('city')}
+      {/* الدولة ثم المدينة (قائمة المحافظات حسب الدولة) */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">الدولة <span className="text-red-500">*</span></label>
+          {isEditing ? (
+            <select
+              name="country"
+              value={editFormData.country || ''}
+              onChange={handleInputChange}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            >
+              <option value="">اختر</option>
+              {COUNTRIES.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.country || 'غير محدد'}
+            </div>
+          )}
+          {formErrors.country && <span className="text-xs text-red-500">{formErrors.country}</span>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">المدينة <span className="text-red-500">*</span></label>
+          {isEditing ? (
+            <select
+              name="city"
+              value={editFormData.city || ''}
+              onChange={handleInputChange}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              disabled={!editFormData.country}
+            >
+              <option value="">اختر</option>
+              {(provinces[COUNTRY_CODE_MAP[editFormData.country || '']] || []).map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.city || 'غير محدد'}
+            </div>
+          )}
+          {formErrors.city && <span className="text-xs text-red-500">{formErrors.city}</span>}
+        </div>
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">الدولة</label>
-        {renderField('country')}
+      {/* الجنسية ثم بقية الحقول */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">الجنسية <span className="text-red-500">*</span></label>
+          {isEditing ? (
+            <select
+              name="nationality"
+              value={editFormData.nationality || ''}
+              onChange={handleInputChange}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            >
+              <option value="">اختر</option>
+              {NATIONALITIES.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.nationality || 'غير محدد'}
+            </div>
+          )}
+          {formErrors.nationality && <span className="text-xs text-red-500">{formErrors.nationality}</span>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">العنوان التفصيلي <span className="text-red-500">*</span></label>
+          {isEditing ? (
+            <input
+              type="text"
+              name="address"
+              value={editFormData.address || ''}
+              onChange={handleInputChange}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            />
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.address || 'غير محدد'}
+            </div>
+          )}
+          {formErrors.address && <span className="text-xs text-red-500">{formErrors.address}</span>}
+        </div>
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">رقم الجوال</label>
-        {renderField('phone')}
+      {/* بقية الحقول: الهاتف، الواتساب، البريد، نبذة مختصرة ... */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">رقم الهاتف <span className="text-red-500">*</span></label>
+          {renderField('phone')}
+          {formErrors.phone && <span className="text-xs text-red-500">{formErrors.phone}</span>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">رقم الواتساب <span className="text-red-500">*</span></label>
+          {renderField('whatsapp')}
+          {formErrors.whatsapp && <span className="text-xs text-red-500">{formErrors.whatsapp}</span>}
+        </div>
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">رقم الواتساب</label>
-        {renderField('whatsapp')}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">البريد الإلكتروني</label>
-        {renderField('email')}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">نبذة مختصرة</label>
-        {renderTextarea('brief')}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">البريد الإلكتروني <span className="text-red-500">*</span></label>
+          {renderField('email')}
+          {formErrors.email && <span className="text-xs text-red-500">{formErrors.email}</span>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">نبذة مختصرة <span className="text-red-500">*</span></label>
+          {isEditing ? (
+            <textarea
+              name="brief"
+              value={editFormData.brief || ''}
+              onChange={handleInputChange}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            />
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.brief || 'غير محدد'}
+            </div>
+          )}
+          {formErrors.brief && <span className="text-xs text-red-500">{formErrors.brief}</span>}
+        </div>
       </div>
     </div>
   );
 
+  // Render Education Section
   const renderEducation = () => (
-    <div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">المؤهل الدراسي</label>
-        {isEditing ? (
-          <select
-            name="education_level"
-            value={editFormData.education_level}
-            onChange={handleInputChange}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-          >
-            <option value="">اختر المؤهل</option>
-            {REFERENCE_DATA.educationLevels.map(level => (
-              <option key={level} value={level}>{level}</option>
-            ))}
-          </select>
-        ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.education_level}</div>
-        )}
+    <div className="space-y-6">
+      <h2 className="pr-4 text-2xl font-semibold border-r-4 border-blue-500">المعلومات التعليمية</h2>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+           <label className="block text-sm font-medium text-gray-700">المؤهل الدراسي <span className="text-red-500">*</span></label>
+          {isEditing ? (
+            <select
+              name="education_level"
+              value={editFormData.education_level || ''}
+              onChange={handleInputChange}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            >
+              <option value="">اختر</option>
+               {EDUCATION_LEVELS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.education_level || 'غير محدد'}
+            </div>
+          )}
+           {formErrors.education_level && <span className="text-xs text-red-500">{formErrors.education_level}</span>}
+        </div>
+        <div>
+           <label className="block text-sm font-medium text-gray-700">سنة التخرج <span className="text-red-500">*</span></label>
+           {isEditing ? (
+             <input
+               type="date"
+               name="graduation_year"
+               value={editFormData.graduation_year || ''}
+               onChange={handleInputChange}
+               className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+             />
+           ) : (
+             <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+               {formData.graduation_year || 'غير محدد'}
+       </div>
+           )}
+           {formErrors.graduation_year && <span className="text-xs text-red-500">{formErrors.graduation_year}</span>}
+       </div>
+       </div>
+       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+           <label className="block text-sm font-medium text-gray-700">الدرجة <span className="text-red-500">*</span></label>
+           {isEditing ? (
+             <select
+               name="degree"
+               value={editFormData.degree || ''}
+               onChange={handleInputChange}
+               className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+             >
+               <option value="">اختر</option>
+               {DEGREES.map(opt => (
+                 <option key={opt} value={opt}>{opt}</option>
+               ))}
+             </select>
+           ) : (
+             <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+               {formData.degree || 'غير محدد'}
+             </div>
+           )}
+           {formErrors.degree && <span className="text-xs text-red-500">{formErrors.degree}</span>}
+         </div>
+         <div>
+           <label className="block text-sm font-medium text-gray-700">اللغة الإنجليزية <span className="text-red-500">*</span></label>
+          {isEditing ? (
+            <select
+              name="english_level"
+              value={editFormData.english_level || ''}
+              onChange={handleInputChange}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            >
+              <option value="">اختر</option>
+               {LANGUAGE_LEVELS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.english_level || 'غير محدد'}
+            </div>
+          )}
+           {formErrors.english_level && <span className="text-xs text-red-500">{formErrors.english_level}</span>}
+       </div>
+       </div>
+       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+           <label className="block text-sm font-medium text-gray-700">اللغة العربية</label>
+          {isEditing ? (
+            <select
+              name="arabic_level"
+              value={editFormData.arabic_level || ''}
+              onChange={handleInputChange}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            >
+              <option value="">اختر</option>
+               {LANGUAGE_LEVELS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.arabic_level || 'غير محدد'}
+            </div>
+          )}
+        </div>
+        <div>
+           <label className="block text-sm font-medium text-gray-700">اللغة الإسبانية</label>
+          {isEditing ? (
+            <select
+              name="spanish_level"
+              value={editFormData.spanish_level || ''}
+              onChange={handleInputChange}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            >
+              <option value="">اختر</option>
+               {LANGUAGE_LEVELS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.spanish_level || 'غير محدد'}
+            </div>
+          )}
+        </div>
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">سنة التخرج</label>
-        {isEditing ? (
-          <input
-            type="number"
-            name="graduation_year"
-            value={editFormData.graduation_year}
-            onChange={handleInputChange}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-          />
-        ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.graduation_year}</div>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">الدرجة</label>
-        {renderField('degree')}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">مستوى الإنجليزية</label>
-        {isEditing ? (
-          <select
-            name="english_level"
-            value={editFormData.english_level}
-            onChange={handleInputChange}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-          >
-            <option value="">اختر المستوى</option>
-            {REFERENCE_DATA.languageLevels.map(level => (
-              <option key={level} value={level}>{level}</option>
-            ))}
-          </select>
-        ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.english_level}</div>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">مستوى العربية</label>
-        {isEditing ? (
-          <select
-            name="arabic_level"
-            value={editFormData.arabic_level}
-            onChange={handleInputChange}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-          >
-            <option value="">اختر المستوى</option>
-            {REFERENCE_DATA.languageLevels.map(level => (
-              <option key={level} value={level}>{level}</option>
-            ))}
-          </select>
-        ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.arabic_level}</div>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">مستوى الإسبانية</label>
-        {isEditing ? (
-          <select
-            name="spanish_level"
-            value={editFormData.spanish_level}
-            onChange={handleInputChange}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-          >
-            <option value="">اختر المستوى</option>
-            {REFERENCE_DATA.languageLevels.map(level => (
-              <option key={level} value={level}>{level}</option>
-            ))}
-          </select>
-        ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.spanish_level}</div>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">الدورات التدريبية</label>
+       {/* الكورسات */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">الدورات التدريبية</label>
         {isEditing ? (
           <div>
-            {editFormData.training_courses.map((course, idx) => (
-              <div key={idx} className="flex items-center gap-2 mb-2">
+            {(editFormData.training_courses || []).map((course, idx) => (
+              <div key={idx} className="flex gap-2 mb-2">
                 <input
                   type="text"
                   value={course}
                   onChange={e => {
-                    const newCourses = [...editFormData.training_courses];
-                    newCourses[idx] = e.target.value;
-                    setEditFormData(prev => ({
-                      ...prev,
-                      training_courses: newCourses
-                    }));
+                    const updated = [...editFormData.training_courses];
+                    updated[idx] = e.target.value;
+                    setEditFormData({ ...editFormData, training_courses: updated });
                   }}
                   className="flex-1 p-2 border rounded"
                 />
                 <button
                   type="button"
                   onClick={() => {
-                    setEditFormData(prev => ({
-                      ...prev,
-                      training_courses: prev.training_courses.filter((_, i) => i !== idx)
-                    }));
+                    const updated = [...editFormData.training_courses];
+                    updated.splice(idx, 1);
+                    setEditFormData({ ...editFormData, training_courses: updated });
                   }}
-                  className="px-2 py-1 text-white bg-red-500 rounded"
+                  className="p-1 text-red-500 rounded bg-red-50 hover:bg-red-100"
                 >
-                  حذف
+                  <Trash size={18} />
                 </button>
               </div>
             ))}
             <button
               type="button"
-              onClick={() => {
-                setEditFormData(prev => ({
-                  ...prev,
-                  training_courses: [...prev.training_courses, ""]
-                }));
-              }}
-              className="px-4 py-2 mt-2 text-sm text-white bg-blue-600 rounded"
+              onClick={() => setEditFormData({
+                ...editFormData,
+                training_courses: [...(editFormData.training_courses || []), '']
+              })}
+              className="flex items-center mt-2 text-blue-600 hover:text-blue-700"
             >
-              إضافة دورة جديدة
+              <Plus size={16} className="mr-1" /> إضافة دورة
             </button>
           </div>
         ) : (
-          formData.training_courses && formData.training_courses.length > 0 ? (
-            <ul className="list-disc list-inside">
-              {formData.training_courses.map((course, idx) => (
-                <li key={idx}>{course}</li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-gray-500">لا توجد دورات تدريبية</div>
-          )
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {(formData.training_courses || []).length === 0 ?
+              'لا توجد دورات' :
+              formData.training_courses.map((course, idx) => (
+                <div key={idx} className="py-1">
+                  {idx + 1}. {course}
+                </div>
+              ))
+            }
+          </div>
         )}
       </div>
     </div>
   );
 
+  // Render Medical Record Section
   const renderMedicalRecord = () => (
-    <div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">فصيلة الدم</label>
-        {isEditing ? (
-          <select
-            name="blood_type"
-            value={editFormData.blood_type}
-            onChange={handleInputChange}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-          >
-            <option value="">اختر الفصيلة</option>
-            {REFERENCE_DATA.bloodTypes.map(type => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
-        ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.blood_type}</div>
-        )}
+    <div className="space-y-6">
+      <h2 className="pr-4 text-2xl font-semibold border-r-4 border-blue-500">السجل الطبي</h2>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">فصيلة الدم</label>
+          {isEditing ? (
+            <select
+              name="blood_type"
+              value={editFormData.blood_type || ''}
+              onChange={handleInputChange}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            >
+              <option value="">اختر</option>
+               {BLOOD_TYPES.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.blood_type || 'غير محدد'}
+            </div>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">الطول (سم)</label>
+          {renderField('height', 'number')}
+           {formErrors.height && <span className="text-xs text-red-500">{formErrors.height}</span>}
+           {/* مقارنة بمتوسط اللاعبين */}
+           {editFormData.height && (
+             <span className="text-xs text-gray-500">متوسط الطول العالمي: 175 سم</span>
+           )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">الوزن (كجم)</label>
+          {renderField('weight', 'number')}
+           {formErrors.weight && <span className="text-xs text-red-500">{formErrors.weight}</span>}
+           {/* حساب BMI */}
+           {editFormData.height && editFormData.weight && (
+             <span className="text-xs text-gray-500">BMI: {((Number(editFormData.weight) / Math.pow(Number(editFormData.height)/100, 2)) || 0).toFixed(1)}</span>
+           )}
+        </div>
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">الطول (سم)</label>
-        {isEditing ? (
-          <input
-            type="number"
-            name="height"
-            value={editFormData.height}
-            onChange={handleInputChange}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-          />
-        ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.height}</div>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">الوزن (كجم)</label>
-        {isEditing ? (
-          <input
-            type="number"
-            name="weight"
-            value={editFormData.weight}
-            onChange={handleInputChange}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-          />
-        ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.weight}</div>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">هل لديك أمراض مزمنة؟</label>
-        {isEditing ? (
-          <select
-            name="chronic_conditions"
-            value={editFormData.chronic_conditions ? 'yes' : 'no'}
-            onChange={e => setEditFormData(prev => ({ ...prev, chronic_conditions: e.target.value === 'yes' }))}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-          >
-            <option value="no">لا</option>
-            <option value="yes">نعم</option>
-          </select>
-        ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.chronic_conditions ? 'نعم' : 'لا'}</div>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">تفاصيل الأمراض المزمنة</label>
+       {/* أمراض مزمنة */}
+      <div>
+         <label className="block text-sm font-medium text-gray-700">هل لديك أمراض مزمنة؟</label>
+         {isEditing ? (
+           <input
+             type="checkbox"
+             checked={!!editFormData.chronic_conditions}
+             onChange={e => setEditFormData(prev => ({ ...prev, chronic_conditions: e.target.checked }))}
+             className="mr-2 accent-blue-600"
+           />
+         ) : (
+           <span className="ml-2">{formData.chronic_conditions ? 'نعم' : 'لا'}</span>
+         )}
+       </div>
+       {/* تفاصيل الأمراض المزمنة */}
+       {editFormData.chronic_conditions && (
+         <div>
+           <label className="block text-sm font-medium text-gray-700">تفاصيل الأمراض المزمنة</label>
         {renderTextarea('chronic_details')}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">الحساسية</label>
-        {renderTextarea('allergies')}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">ملاحظات طبية</label>
-        {renderTextarea('medical_notes')}
-      </div>
-    </div>
-  );
-
-  const renderSportsInfo = () => (
-    <div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">المركز الأساسي</label>
-        {renderField('primary_position')}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">المركز الثانوي</label>
-        {renderField('secondary_position')}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">القدم المفضلة</label>
-        {isEditing ? (
-          <select
-            name="preferred_foot"
-            value={editFormData.preferred_foot}
-            onChange={handleInputChange}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-          >
-            <option value="">اختر القدم</option>
-            {REFERENCE_DATA.footPreferences.map(foot => (
-              <option key={foot} value={foot}>{foot}</option>
-            ))}
-          </select>
-        ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.preferred_foot}</div>
+           {formErrors.chronic_details && <span className="text-xs text-red-500">{formErrors.chronic_details}</span>}
+       </div>
         )}
+       {/* الإصابات السابقة */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">الإصابات السابقة</label>
+         {isEditing ? (
+      <div>
+              {(editFormData.injuries || []).map((inj, idx) => (
+                <div key={idx} className="flex flex-col items-center gap-2 mb-2 md:flex-row">
+                  <input
+                    type="text"
+                    placeholder="نوع الإصابة"
+                    value={inj.type || ''}
+                    onChange={e => {
+                      const updated = [...editFormData.injuries];
+                      updated[idx] = { ...updated[idx], type: e.target.value };
+                      setEditFormData({ ...editFormData, injuries: updated });
+                    }}
+                    className="flex-1 p-2 border rounded"
+                  />
+                  <input
+                    type="date"
+                    placeholder="تاريخ الإصابة"
+                    value={inj.date || ''}
+                    onChange={e => {
+                      const updated = [...editFormData.injuries];
+                      updated[idx] = { ...updated[idx], date: e.target.value };
+                      setEditFormData({ ...editFormData, injuries: updated });
+                    }}
+                    className="p-2 border rounded"
+                  />
+                  <input
+                    type="text"
+                    placeholder="حالة التعافي"
+                    value={inj.status || ''}
+                    onChange={e => {
+                      const updated = [...editFormData.injuries];
+                      updated[idx] = { ...updated[idx], status: e.target.value };
+                      setEditFormData({ ...editFormData, injuries: updated });
+                    }}
+                    className="flex-1 p-2 border rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = [...editFormData.injuries];
+                      updated.splice(idx, 1);
+                      setEditFormData({ ...editFormData, injuries: updated });
+                    }}
+                    className="p-1 text-red-500 rounded bg-red-50 hover:bg-red-100"
+                  >
+                    <Trash size={16} />
+                  </button>
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">سنوات الخبرة</label>
-        {renderField('experience_years')}
+             ))}
+             <button
+               type="button"
+               onClick={() => setEditFormData({
+                 ...editFormData,
+                 injuries: [...(editFormData.injuries || []), { type: '', date: '', status: '' }]
+               })}
+               className="flex items-center mt-2 text-blue-600 hover:text-blue-700"
+             >
+               <Plus size={16} className="mr-1" /> إضافة إصابة
+             </button>
+           </div>
+         ) : (
+           <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+             {(formData.injuries || []).length === 0 ?
+               'لا توجد إصابات' :
+               (Array.isArray(formData.injuries) ? formData.injuries : []).map((inj, idx) => (
+                 <div key={idx} className="py-1">
+                   {inj.type} - {inj.date} - {inj.status}
+                 </div>
+               ))
+             }
+           </div>
+         )}
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">تاريخ الأندية</label>
+      {/* العمليات الجراحية */}
+     <div>
+        <label className="block text-sm font-medium text-gray-700">العمليات الجراحية</label>
         {isEditing ? (
           <div>
-            <table className="min-w-full mb-2 text-sm border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">اسم النادي</th>
-                  <th className="p-2 border">من</th>
-                  <th className="p-2 border">إلى</th>
-                  <th className="p-2 border"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {editFormData.club_history.map((club, idx) => (
-                  <tr key={idx}>
-                    <td className="p-2 border">
-                      <input
-                        type="text"
-                        value={club.name}
-                        onChange={e => {
-                          const newArr = [...editFormData.club_history];
-                          newArr[idx] = { ...newArr[idx], name: e.target.value };
-                          setEditFormData(prev => ({ ...prev, club_history: newArr }));
-                        }}
-                        className="p-1 border rounded"
-                      />
-                    </td>
-                    <td className="p-2 border">
-                      <input
-                        type="date"
-                        value={club.from}
-                        onChange={e => {
-                          const newArr = [...editFormData.club_history];
-                          newArr[idx] = { ...newArr[idx], from: e.target.value };
-                          setEditFormData(prev => ({ ...prev, club_history: newArr }));
-                        }}
-                        className="p-1 border rounded"
-                      />
-                    </td>
-                    <td className="p-2 border">
-                      <input
-                        type="date"
-                        value={club.to}
-                        onChange={e => {
-                          const newArr = [...editFormData.club_history];
-                          newArr[idx] = { ...newArr[idx], to: e.target.value };
-                          setEditFormData(prev => ({ ...prev, club_history: newArr }));
-                        }}
-                        className="p-1 border rounded"
-                      />
-                    </td>
-                    <td className="p-2 border">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditFormData(prev => ({
-                            ...prev,
-                            club_history: prev.club_history.filter((_, i) => i !== idx)
-                          }));
-                        }}
-                        className="px-2 py-1 text-white bg-red-500 rounded"
-                      >
-                        حذف
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {(editFormData.surgeries || []).map((surg, idx) => (
+              <div key={idx} className="flex flex-col items-center gap-2 mb-2 md:flex-row">
+                <input
+                  type="text"
+                  placeholder="نوع العملية"
+                  value={surg.type || ''}
+                  onChange={e => {
+                    const updated = [...editFormData.surgeries];
+                    updated[idx] = { ...updated[idx], type: e.target.value };
+                    setEditFormData({ ...editFormData, surgeries: updated });
+                  }}
+                  className="flex-1 p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  placeholder="تاريخ العملية"
+                  value={surg.date || ''}
+                  onChange={e => {
+                    const updated = [...editFormData.surgeries];
+                    updated[idx] = { ...updated[idx], date: e.target.value };
+                    setEditFormData({ ...editFormData, surgeries: updated });
+                  }}
+                  className="p-2 border rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = [...editFormData.surgeries];
+                    updated.splice(idx, 1);
+                    setEditFormData({ ...editFormData, surgeries: updated });
+                  }}
+                  className="p-1 text-red-500 rounded bg-red-50 hover:bg-red-100"
+                >
+                  <Trash size={16} />
+                </button>
+              </div>
+            ))}
             <button
               type="button"
-              onClick={() => {
-                setEditFormData(prev => ({
-                  ...prev,
-                  club_history: [...prev.club_history, { name: '', from: '', to: '' }]
-                }));
-              }}
-              className="px-4 py-2 text-sm text-white bg-blue-600 rounded"
+              onClick={() => setEditFormData({
+                ...editFormData,
+                surgeries: [...(editFormData.surgeries || []), { type: '', date: '' }]
+              })}
+              className="flex items-center mt-2 text-blue-600 hover:text-blue-700"
             >
-              إضافة نادي
+              <Plus size={16} className="mr-1" /> إضافة عملية
             </button>
           </div>
         ) : (
-          formData.club_history && formData.club_history.length > 0 ? (
-            <table className="min-w-full text-sm border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">اسم النادي</th>
-                  <th className="p-2 border">من</th>
-                  <th className="p-2 border">إلى</th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.club_history.map((club, idx) => (
-                  <tr key={idx}>
-                    <td className="p-2 border">{club.name}</td>
-                    <td className="p-2 border">{club.from}</td>
-                    <td className="p-2 border">{club.to}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="text-gray-500">لا يوجد تاريخ أندية</div>
-          )
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {(formData.surgeries || []).length === 0 ?
+              'لا توجد عمليات' :
+              formData.surgeries.map((surg, idx) => (
+                <div key={idx} className="py-1">
+                  {surg.type} - {surg.date}
+                </div>
+              ))
+            }
+          </div>
         )}
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">ملاحظات رياضية</label>
-        {renderTextarea('sports_notes')}
-      </div>
-    </div>
-  );
+     </div>
+   </div>
+ );
 
-  const renderSkills = () => {
-    if (!playerData) return null;
-
-    const renderRating = (rating: number | undefined, field: keyof PlayerFormData) => {
-      const value = rating || 0;
-      
-      return (
-        <div className="flex items-center gap-4 w-full">
-          <div className="w-full">
-            <Slider
-              defaultValue={[value]}
-              max={5}
-              step={0.5}
-              onValueChange={(newValue) => {
-                if (playerData) {
-                  setPlayerData({
-                    ...playerData,
-                    [field]: newValue[0]
-                  });
-                }
-              }}
-              className="w-full"
-            />
+ // Render Sports Info Section
+ const renderSportsInfo = () => (
+   <div className="space-y-6">
+     <h2 className="pr-4 text-2xl font-semibold border-r-4 border-blue-500">المعلومات الرياضية</h2>
+     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+       <div>
+          <label className="block text-sm font-medium text-gray-700">المركز الأساسي <span className="text-red-500">*</span></label>
+         {isEditing ? (
+           <select
+             name="primary_position"
+             value={editFormData.primary_position || ''}
+             onChange={handleInputChange}
+             className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+           >
+             <option value="">اختر</option>
+              {POSITIONS.map(opt => (
+               <option key={opt} value={opt}>{opt}</option>
+             ))}
+           </select>
+         ) : (
+           <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+             {formData.primary_position || 'غير محدد'}
+           </div>
+         )}
+          {formErrors.primary_position && <span className="text-xs text-red-500">{formErrors.primary_position}</span>}
+       </div>
+       <div>
+         <label className="block text-sm font-medium text-gray-700">المركز الثانوي</label>
+         {isEditing ? (
+           <select
+             name="secondary_position"
+             value={editFormData.secondary_position || ''}
+             onChange={handleInputChange}
+             className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+           >
+             <option value="">اختر</option>
+              {POSITIONS.map(opt => (
+               <option key={opt} value={opt}>{opt}</option>
+             ))}
+           </select>
+         ) : (
+           <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+             {formData.secondary_position || 'غير محدد'}
+           </div>
+         )}
+       </div>
+     </div>
+     <div>
+        <label className="block text-sm font-medium text-gray-700">القدم المفضلة <span className="text-red-500">*</span></label>
+       {isEditing ? (
+         <select
+           name="preferred_foot"
+           value={editFormData.preferred_foot || ''}
+           onChange={handleInputChange}
+           className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+         >
+           <option value="">اختر</option>
+            {FOOT_PREFERENCES.map(opt => (
+             <option key={opt} value={opt}>{opt}</option>
+           ))}
+         </select>
+       ) : (
+         <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+           {formData.preferred_foot || 'غير محدد'}
+         </div>
+       )}
+        {formErrors.preferred_foot && <span className="text-xs text-red-500">{formErrors.preferred_foot}</span>}
+     </div>
+      {/* تاريخ الأندية */}
+     <div>
+        <label className="block text-sm font-medium text-gray-700">تاريخ الأندية</label>
+        {isEditing ? (
+     <div>
+            {(editFormData.club_history || []).map((club, idx) => (
+              <div key={idx} className="flex flex-col items-center gap-2 mb-2 md:flex-row">
+                <input
+                  type="text"
+                  placeholder="اسم النادي"
+                  value={club.name || ''}
+                  onChange={e => {
+                    const updated = [...editFormData.club_history];
+                    updated[idx] = { ...updated[idx], name: e.target.value };
+                    setEditFormData({ ...editFormData, club_history: updated });
+                  }}
+                  className="flex-1 p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  placeholder="من"
+                  value={club.from || ''}
+                  onChange={e => {
+                    const updated = [...editFormData.club_history];
+                    updated[idx] = { ...updated[idx], from: e.target.value };
+                    setEditFormData({ ...editFormData, club_history: updated });
+                  }}
+                  className="p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  placeholder="إلى"
+                  value={club.to || ''}
+                  onChange={e => {
+                    const updated = [...editFormData.club_history];
+                    updated[idx] = { ...updated[idx], to: e.target.value };
+                    setEditFormData({ ...editFormData, club_history: updated });
+                  }}
+                  className="p-2 border rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = [...editFormData.club_history];
+                    updated.splice(idx, 1);
+                    setEditFormData({ ...editFormData, club_history: updated });
+                  }}
+                  className="p-1 text-red-500 rounded bg-red-50 hover:bg-red-100"
+                >
+                  <Trash size={16} />
+                </button>
+     </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setEditFormData({
+                ...editFormData,
+                club_history: [...(editFormData.club_history || []), { name: '', from: '', to: '' }]
+              })}
+              className="flex items-center mt-2 text-blue-600 hover:text-blue-700"
+            >
+              <Plus size={16} className="mr-1" /> إضافة نادي
+            </button>
           </div>
-          <span className="text-sm font-medium text-gray-700 min-w-[3rem] text-center">
-            {value.toFixed(1)}
-          </span>
-        </div>
-      );
-    };
-
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* المهارات الأساسية */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">المهارات الأساسية</h3>
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">السرعة</span>
+        ) : (
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {(formData.club_history || []).length === 0 ?
+              'لا يوجد تاريخ أندية' :
+              formData.club_history.map((club, idx) => (
+                <div key={idx} className="py-1">
+                  {club.name} - {club.from} - {club.to}
                 </div>
-                {renderRating(playerData.speed, 'speed')}
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">القوة</span>
-                </div>
-                {renderRating(playerData.strength, 'strength')}
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">التحمل</span>
-                </div>
-                {renderRating(playerData.stamina, 'stamina')}
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">المرونة</span>
-                </div>
-                {renderRating(playerData.flexibility, 'flexibility')}
-              </div>
-            </div>
+              ))
+            }
           </div>
+        )}
+     </div>
+   </div>
+ );
 
-          {/* المهارات التقنية */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">المهارات التقنية</h3>
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">التحكم بالكرة</span>
-                </div>
-                {renderRating(playerData.ball_control, 'ball_control')}
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">التسديد</span>
-                </div>
-                {renderRating(playerData.shooting, 'shooting')}
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">التمرير</span>
-                </div>
-                {renderRating(playerData.passing, 'passing')}
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">الدفاع</span>
-                </div>
-                {renderRating(playerData.defending, 'defending')}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* المهارات العقلية */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">المهارات العقلية</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-700">التركيز</span>
-              </div>
-              {renderRating(playerData.concentration, 'concentration')}
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-700">اتخاذ القرار</span>
-              </div>
-              {renderRating(playerData.decision_making, 'decision_making')}
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-700">الرؤية</span>
-              </div>
-              {renderRating(playerData.vision, 'vision')}
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-700">القيادة</span>
-              </div>
-              {renderRating(playerData.leadership, 'leadership')}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderObjectives = () => (
-    <div>
-      <div className="mb-4">
-        <label className="block mb-2 font-medium">الأهداف والطموحات</label>
-        <div className="space-y-2">
-          {OBJECTIVES_CHECKBOXES.map(obj => (
-            <label key={obj.key} className="flex items-center gap-2">
+ // Render Skills Section
+ const renderSkills = () => (
+   <div className="space-y-8">
+     <h2 className="pr-4 text-2xl font-semibold border-r-4 border-blue-500">المهارات والقدرات</h2>
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        {/* المهارات الفنية */}
+        <div>
+          <label className="block mb-2 text-sm font-medium text-gray-700">المهارات الفنية</label>
+          {TECHNICAL_SKILLS.map(skill => (
+            <div key={skill.key} className="mb-4">
+              <span className="block mb-1 text-xs text-gray-600">{skill.label}</span>
               <input
-                type="checkbox"
-                name={`objectives.${obj.key}`}
-                checked={!!editFormData.objectives?.[obj.key]}
+                type="range"
+                min="1"
+                max="5"
+                step="1"
+                value={editFormData.technical_skills?.[skill.key] || 3}
                 disabled={!isEditing}
                 onChange={e => {
                   if (!isEditing) return;
-                  const fieldName = e.target.name.split('.')[1];
                   setEditFormData(prev => ({
                     ...prev,
-                    objectives: {
-                      ...prev.objectives,
-                      [fieldName]: e.target.checked
-                    }
+                    technical_skills: { ...prev.technical_skills, [skill.key]: Number(e.target.value) }
                   }));
                 }}
+                className="w-full accent-blue-600"
               />
-              <span>{obj.label}</span>
+              <div className="flex gap-1 mt-1">
+                {[1,2,3,4,5].map(i => (
+                  <span key={i} className={
+                    (editFormData.technical_skills?.[skill.key] || 3) >= i ? 'text-yellow-400' : 'text-gray-300'
+                  }>★</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* المهارات البدنية */}
+        <div>
+          <label className="block mb-2 text-sm font-medium text-gray-700">المهارات البدنية</label>
+          {PHYSICAL_SKILLS.map(skill => (
+            <div key={skill.key} className="mb-4">
+              <span className="block mb-1 text-xs text-gray-600">{skill.label}</span>
+              <input
+                type="range"
+                min="1"
+                max="5"
+                step="1"
+                value={editFormData.physical_skills?.[skill.key] || 3}
+                disabled={!isEditing}
+                onChange={e => {
+                  if (!isEditing) return;
+                  setEditFormData(prev => ({
+                    ...prev,
+                    physical_skills: { ...prev.physical_skills, [skill.key]: Number(e.target.value) }
+                  }));
+                }}
+                className="w-full accent-green-600"
+              />
+              <div className="flex gap-1 mt-1">
+                {[1,2,3,4,5].map(i => (
+                  <span key={i} className={
+                    (editFormData.physical_skills?.[skill.key] || 3) >= i ? 'text-yellow-400' : 'text-gray-300'
+                  }>★</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* المهارات الإنسانية والاجتماعية */}
+        <div>
+          <label className="block mb-2 text-sm font-medium text-gray-700">المهارات الإنسانية والاجتماعية</label>
+          {SOCIAL_SKILLS.map(skill => (
+            <div key={skill.key} className="mb-4">
+              <span className="block mb-1 text-xs text-gray-600">{skill.label}</span>
+              <input
+                type="range"
+                min="1"
+                max="5"
+                step="1"
+                value={editFormData.social_skills?.[skill.key] || 3}
+                disabled={!isEditing}
+                onChange={e => {
+                  if (!isEditing) return;
+                  setEditFormData(prev => ({
+                    ...prev,
+                    social_skills: { ...prev.social_skills, [skill.key]: Number(e.target.value) }
+                  }));
+                }}
+                className="w-full accent-purple-600"
+              />
+              <div className="flex gap-1 mt-1">
+                {[1,2,3,4,5].map(i => (
+                  <span key={i} className={
+                    (editFormData.social_skills?.[skill.key] || 3) >= i ? 'text-yellow-400' : 'text-gray-300'
+                  }>★</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+   </div>
+ );
+
+ // Render Objectives Section
+ const renderObjectives = () => (
+   <div className="space-y-6">
+     <h2 className="pr-4 text-2xl font-semibold border-r-4 border-blue-500">الأهداف والطموحات</h2>
+      <div>
+        <label className="block mb-2 text-sm font-medium text-gray-700">اختر أهدافك (يمكن اختيار أكثر من هدف)</label>
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          {OBJECTIVES_CHECKBOXES.map(opt => (
+            <label key={opt.key} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={!!editFormData.objectives?.[opt.key]}
+                disabled={!isEditing}
+                onChange={e => {
+                  if (!isEditing) return;
+                  setEditFormData(prev => ({
+                    ...prev,
+                    objectives: { ...prev.objectives, [opt.key]: e.target.checked }
+                  }));
+                }}
+                className="accent-blue-600"
+              />
+              <span>{opt.label}</span>
             </label>
           ))}
         </div>
         <div className="mt-4">
-          <label className="block mb-1">هدف آخر</label>
-          <input
-            type="text"
-            name="objectives.other"
-            value={editFormData.objectives?.other || ''}
-            disabled={!isEditing}
-            onChange={e => {
-              if (!isEditing) return;
-              setEditFormData(prev => ({
+          <label className="block text-sm font-medium text-gray-700">أهداف أخرى</label>
+          {isEditing ? (
+            <textarea
+              name="objectives.other"
+              value={typeof editFormData.objectives?.other === 'string' ? editFormData.objectives.other : ''}
+              onChange={e => setEditFormData(prev => ({
                 ...prev,
                 objectives: {
-                  ...prev.objectives,
+                  ...(prev.objectives as Record<string, boolean>),
                   other: e.target.value
-                }
-              }));
-            }}
-            className="w-full p-2 border rounded"
-          />
+                } as Record<string, boolean> & { other?: string }
+              }))}
+              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            />
+          ) : (
+            <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+              {formData.objectives?.other || 'غير محدد'}
+            </div>
+          )}
         </div>
+        {formErrors.objectives && <span className="text-xs text-red-500">{formErrors.objectives}</span>}
       </div>
-    </div>
-  );
+   </div>
+ );
 
-  // Render Media Section
+  // دالة لجلب صورة مصغرة للفيديو
+  const getVideoThumbnail = (url: string) => {
+    // يوتيوب
+    const ytMatch = url.match(/(?:youtu.be\/|youtube.com\/(?:embed\/|v\/|watch\?v=))([\w-]{11})/);
+    if (ytMatch) {
+      return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+    }
+    // Vimeo (عرض رمز فيديو افتراضي)
+    const vimeoMatch = url.match(/vimeo.com\/(\d+)/);
+    if (vimeoMatch) {
+      return '/video-icon.png'; // رمز فيديو افتراضي (يمكنك استبداله)
+    }
+    // MP4 أو غير ذلك
+    if (url.endsWith('.mp4')) {
+      return '/video-icon.png';
+    }
+    return '/video-icon.png';
+  };
+
+ // Render Media Section
   const renderMedia = () => {
     return (
-      <div className="space-y-6">
+   <div className="space-y-6">
         {/* Profile Image Section */}
         <div className="p-6 bg-white rounded-lg shadow">
           <h3 className="mb-4 text-lg font-medium text-gray-900">الصورة الشخصية</h3>
@@ -1270,945 +2344,499 @@ export default function ProfilePage(props: Record<string, never>) {
  );
   };
 
+  // Render Contracts Section
   const renderContracts = () => (
-    <div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">تاريخ التعاقدات</label>
+    <div className="space-y-6">
+      <h2 className="pr-4 text-2xl font-semibold border-r-4 border-blue-500">التعاقدات والاتصالات</h2>
+      {/* هل لديك جواز سفر */}
+      <div>
+        <label className="block mb-2 text-sm font-medium text-gray-700">هل لديك جواز سفر؟</label>
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="has_passport"
+              checked={editFormData.has_passport === 'yes'}
+              onChange={() => setEditFormData(prev => ({ ...prev, has_passport: 'yes' }))}
+              disabled={!isEditing}
+            />
+            <span>نعم</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="has_passport"
+              checked={editFormData.has_passport === 'no'}
+              onChange={() => setEditFormData(prev => ({ ...prev, has_passport: 'no' }))}
+              disabled={!isEditing}
+            />
+            <span>لا</span>
+          </label>
+        </div>
+      </div>
+      {/* هل أنت متعاقد حاليًا */}
+      <div>
+        <label className="block mb-2 text-sm font-medium text-gray-700">هل أنت متعاقد حاليًا؟</label>
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="currently_contracted"
+              checked={editFormData.currently_contracted === 'yes'}
+              onChange={() => setEditFormData(prev => ({ ...prev, currently_contracted: 'yes' }))}
+              disabled={!isEditing}
+            />
+            <span>نعم</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="currently_contracted"
+              checked={editFormData.currently_contracted === 'no'}
+              onChange={() => setEditFormData(prev => ({ ...prev, currently_contracted: 'no' }))}
+              disabled={!isEditing}
+            />
+            <span>لا</span>
+          </label>
+        </div>
+      </div>
+      {/* تاريخ التعاقدات السابقة */}
+      <div>
+        <label className="block mb-2 text-sm font-medium text-gray-700">تاريخ التعاقدات السابقة</label>
         {isEditing ? (
           <div>
-            <table className="min-w-full mb-2 text-sm border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">النادي</th>
-                  <th className="p-2 border">الدور</th>
-                  <th className="p-2 border">من</th>
-                  <th className="p-2 border">إلى</th>
-                  <th className="p-2 border"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {editFormData.contract_history.map((contract, idx) => (
-                  <tr key={idx}>
-                    <td className="p-2 border">
-                      <input
-                        type="text"
-                        value={contract.club}
-                        onChange={e => {
-                          const newArr = [...editFormData.contract_history];
-                          newArr[idx] = { ...newArr[idx], club: e.target.value };
-                          setEditFormData(prev => ({ ...prev, contract_history: newArr }));
-                        }}
-                        className="p-1 border rounded"
-                      />
-                    </td>
-                    <td className="p-2 border">
-                      <input
-                        type="text"
-                        value={contract.role}
-                        onChange={e => {
-                          const newArr = [...editFormData.contract_history];
-                          newArr[idx] = { ...newArr[idx], role: e.target.value };
-                          setEditFormData(prev => ({ ...prev, contract_history: newArr }));
-                        }}
-                        className="p-1 border rounded"
-                      />
-                    </td>
-                    <td className="p-2 border">
-                      <input
-                        type="date"
-                        value={contract.from}
-                        onChange={e => {
-                          const newArr = [...editFormData.contract_history];
-                          newArr[idx] = { ...newArr[idx], from: e.target.value };
-                          setEditFormData(prev => ({ ...prev, contract_history: newArr }));
-                        }}
-                        className="p-1 border rounded"
-                      />
-                    </td>
-                    <td className="p-2 border">
-                      <input
-                        type="date"
-                        value={contract.to}
-                        onChange={e => {
-                          const newArr = [...editFormData.contract_history];
-                          newArr[idx] = { ...newArr[idx], to: e.target.value };
-                          setEditFormData(prev => ({ ...prev, contract_history: newArr }));
-                        }}
-                        className="p-1 border rounded"
-                      />
-                    </td>
-                    <td className="p-2 border">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditFormData(prev => ({
-                            ...prev,
-                            contract_history: prev.contract_history.filter((_, i) => i !== idx)
-                          }));
-                        }}
-                        className="px-2 py-1 text-white bg-red-500 rounded"
-                      >
-                        حذف
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {(editFormData.contract_history || []).map((item, idx) => (
+              <div key={idx} className="flex flex-col gap-2 mb-2 md:flex-row md:items-center">
+                <input
+                  type="text"
+                  placeholder="اسم النادي"
+                  value={item.club || ''}
+                  onChange={e => {
+                    const updated = [...(editFormData.contract_history || [])];
+                    updated[idx] = { ...updated[idx], club: e.target.value };
+                    setEditFormData(prev => ({ ...prev, contract_history: updated }));
+                  }}
+                  className="flex-1 p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  placeholder="من"
+                  value={item.from || ''}
+                  onChange={e => {
+                    const updated = [...(editFormData.contract_history || [])];
+                    updated[idx] = { ...updated[idx], from: e.target.value };
+                    setEditFormData(prev => ({ ...prev, contract_history: updated }));
+                  }}
+                  className="p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  placeholder="إلى"
+                  value={item.to || ''}
+                  onChange={e => {
+                    const updated = [...(editFormData.contract_history || [])];
+                    updated[idx] = { ...updated[idx], to: e.target.value };
+                    setEditFormData(prev => ({ ...prev, contract_history: updated }));
+                  }}
+                  className="p-2 border rounded"
+                />
+                <input
+                  type="text"
+                  placeholder="الدور/المسمى"
+                  value={item.role || ''}
+                  onChange={e => {
+                    const updated = [...(editFormData.contract_history || [])];
+                    updated[idx] = { ...updated[idx], role: e.target.value };
+                    setEditFormData(prev => ({ ...prev, contract_history: updated }));
+                  }}
+                  className="flex-1 p-2 border rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = [...(editFormData.contract_history || [])];
+                    updated.splice(idx, 1);
+                    setEditFormData(prev => ({ ...prev, contract_history: updated }));
+                  }}
+                  className="p-1 text-red-500 rounded bg-red-50 hover:bg-red-100"
+                >
+                  <Trash size={16} />
+                </button>
+              </div>
+            ))}
             <button
               type="button"
-              onClick={() => {
-                setEditFormData(prev => ({
-                  ...prev,
-                  contract_history: [...prev.contract_history, { club: '', role: '', from: '', to: '' }]
-                }));
-              }}
-              className="px-4 py-2 text-sm text-white bg-blue-600 rounded"
+              onClick={() => setEditFormData(prev => ({
+                ...prev,
+                contract_history: [...(prev.contract_history || []), { club: '', from: '', to: '', role: '' }]
+              }))}
+              className="flex items-center mt-2 text-blue-600 hover:text-blue-700"
             >
-              إضافة تعاقد
+              <Plus size={16} className="mr-1" /> إضافة تعاقد
             </button>
           </div>
         ) : (
-          formData.contract_history && formData.contract_history.length > 0 ? (
-            <table className="min-w-full text-sm border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">النادي</th>
-                  <th className="p-2 border">الدور</th>
-                  <th className="p-2 border">من</th>
-                  <th className="p-2 border">إلى</th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.contract_history.map((contract, idx) => (
-                  <tr key={idx}>
-                    <td className="p-2 border">{contract.club}</td>
-                    <td className="p-2 border">{contract.role}</td>
-                    <td className="p-2 border">{contract.from}</td>
-                    <td className="p-2 border">{contract.to}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="text-gray-500">لا يوجد تاريخ تعاقدات</div>
-          )
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {(formData.contract_history || []).length === 0 ?
+              'لا يوجد تعاقدات سابقة' :
+              formData.contract_history.map((item, idx) => (
+                <div key={idx} className="py-1">
+                  {item.club} - {item.from} إلى {item.to} - {item.role}
+                </div>
+              ))
+            }
+          </div>
         )}
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">تاريخ الوكلاء</label>
+      {/* تاريخ وكلاء اللاعبين */}
+      <div>
+        <label className="block mb-2 text-sm font-medium text-gray-700">تاريخ وكلاء اللاعبين</label>
         {isEditing ? (
           <div>
-            <table className="min-w-full mb-2 text-sm border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">اسم الوكيل</th>
-                  <th className="p-2 border">من</th>
-                  <th className="p-2 border">إلى</th>
-                  <th className="p-2 border"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {editFormData.agent_history.map((agent, idx) => (
-                  <tr key={idx}>
-                    <td className="p-2 border">
-                      <input
-                        type="text"
-                        value={agent.agent}
-                        onChange={e => {
-                          const newArr = [...editFormData.agent_history];
-                          newArr[idx] = { ...newArr[idx], agent: e.target.value };
-                          setEditFormData(prev => ({ ...prev, agent_history: newArr }));
-                        }}
-                        className="p-1 border rounded"
-                      />
-                    </td>
-                    <td className="p-2 border">
-                      <input
-                        type="date"
-                        value={agent.from}
-                        onChange={e => {
-                          const newArr = [...editFormData.agent_history];
-                          newArr[idx] = { ...newArr[idx], from: e.target.value };
-                          setEditFormData(prev => ({ ...prev, agent_history: newArr }));
-                        }}
-                        className="p-1 border rounded"
-                      />
-                    </td>
-                    <td className="p-2 border">
-                      <input
-                        type="date"
-                        value={agent.to}
-                        onChange={e => {
-                          const newArr = [...editFormData.agent_history];
-                          newArr[idx] = { ...newArr[idx], to: e.target.value };
-                          setEditFormData(prev => ({ ...prev, agent_history: newArr }));
-                        }}
-                        className="p-1 border rounded"
-                      />
-                    </td>
-                    <td className="p-2 border">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditFormData(prev => ({
-                            ...prev,
-                            agent_history: prev.agent_history.filter((_, i) => i !== idx)
-                          }));
-                        }}
-                        className="px-2 py-1 text-white bg-red-500 rounded"
-                      >
-                        حذف
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {(editFormData.agent_history || []).map((item, idx) => (
+              <div key={idx} className="flex flex-col gap-2 mb-2 md:flex-row md:items-center">
+                <input
+                  type="text"
+                  placeholder="اسم الوكيل"
+                  value={item.agent || ''}
+                  onChange={e => {
+                    const updated = [...(editFormData.agent_history || [])];
+                    updated[idx] = { ...updated[idx], agent: e.target.value };
+                    setEditFormData(prev => ({ ...prev, agent_history: updated }));
+                  }}
+                  className="flex-1 p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  placeholder="من"
+                  value={item.from || ''}
+                  onChange={e => {
+                    const updated = [...(editFormData.agent_history || [])];
+                    updated[idx] = { ...updated[idx], from: e.target.value };
+                    setEditFormData(prev => ({ ...prev, agent_history: updated }));
+                  }}
+                  className="p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  placeholder="إلى"
+                  value={item.to || ''}
+                  onChange={e => {
+                    const updated = [...(editFormData.agent_history || [])];
+                    updated[idx] = { ...updated[idx], to: e.target.value };
+                    setEditFormData(prev => ({ ...prev, agent_history: updated }));
+                  }}
+                  className="p-2 border rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = [...(editFormData.agent_history || [])];
+                    updated.splice(idx, 1);
+                    setEditFormData(prev => ({ ...prev, agent_history: updated }));
+                  }}
+                  className="p-1 text-red-500 rounded bg-red-50 hover:bg-red-100"
+                >
+                  <Trash size={16} />
+                </button>
+              </div>
+            ))}
             <button
               type="button"
-              onClick={() => {
-                setEditFormData(prev => ({
-                  ...prev,
-                  agent_history: [...prev.agent_history, { agent: '', from: '', to: '' }]
-                }));
-              }}
-              className="px-4 py-2 text-sm text-white bg-blue-600 rounded"
+              onClick={() => setEditFormData(prev => ({
+                ...prev,
+                agent_history: [...(prev.agent_history || []), { agent: '', from: '', to: '' }]
+              }))}
+              className="flex items-center mt-2 text-blue-600 hover:text-blue-700"
             >
-              إضافة وكيل
+              <Plus size={16} className="mr-1" /> إضافة وكيل
             </button>
           </div>
         ) : (
-          formData.agent_history && formData.agent_history.length > 0 ? (
-            <table className="min-w-full text-sm border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">اسم الوكيل</th>
-                  <th className="p-2 border">من</th>
-                  <th className="p-2 border">إلى</th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.agent_history.map((agent, idx) => (
-                  <tr key={idx}>
-                    <td className="p-2 border">{agent.agent}</td>
-                    <td className="p-2 border">{agent.from}</td>
-                    <td className="p-2 border">{agent.to}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="text-gray-500">لا يوجد تاريخ وكلاء</div>
-          )
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {(formData.agent_history || []).length === 0 ?
+              'لا يوجد وكلاء سابقون' :
+              formData.agent_history.map((item, idx) => (
+                <div key={idx} className="py-1">
+                  {item.agent} - {item.from} إلى {item.to}
+                </div>
+              ))
+            }
+          </div>
         )}
       </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">بيانات التواصل الرسمية</label>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <label className="block mb-1">اسم المسؤول</label>
-            {isEditing ? (
+      {/* جهة الاتصال والتفاوض الرسمية */}
+      <div>
+        <label className="block mb-2 text-sm font-medium text-gray-700">جهة الاتصال والتفاوض الرسمية</label>
+        {isEditing ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">الاسم</label>
               <input
                 type="text"
-                name="official_contact.name"
-                value={editFormData.official_contact.name}
-                onChange={e => {
-                  setEditFormData(prev => ({
-                    ...prev,
-                    official_contact: {
-                      ...prev.official_contact,
-                      name: e.target.value
-                    }
-                  }));
-                }}
-                className="w-full p-2 border rounded"
+                value={editFormData.official_contact?.name || ''}
+                onChange={e => setEditFormData(prev => ({
+                  ...prev,
+                  official_contact: { ...prev.official_contact, name: e.target.value }
+                }))}
+                className="w-full p-2 mt-1 border rounded"
+                placeholder="اسم جهة الاتصال"
               />
-            ) : (
-              <div className="p-2 bg-gray-100 rounded">{formData.official_contact.name}</div>
-            )}
-          </div>
-          <div>
-            <label className="block mb-1">الصفة</label>
-            {isEditing ? (
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">المسمى الوظيفي</label>
               <input
                 type="text"
-                name="official_contact.title"
-                value={editFormData.official_contact.title}
-                onChange={e => {
-                  setEditFormData(prev => ({
-                    ...prev,
-                    official_contact: {
-                      ...prev.official_contact,
-                      title: e.target.value
-                    }
-                  }));
-                }}
-                className="w-full p-2 border rounded"
+                value={editFormData.official_contact?.title || ''}
+                onChange={e => setEditFormData(prev => ({
+                  ...prev,
+                  official_contact: { ...prev.official_contact, title: e.target.value }
+                }))}
+                className="w-full p-2 mt-1 border rounded"
+                placeholder="المسمى الوظيفي"
               />
-            ) : (
-              <div className="p-2 bg-gray-100 rounded">{formData.official_contact.title}</div>
-            )}
-          </div>
-          <div>
-            <label className="block mb-1">رقم الجوال</label>
-            {isEditing ? (
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">رقم الهاتف</label>
               <input
-                type="text"
-                name="official_contact.phone"
-                value={editFormData.official_contact.phone}
-                onChange={e => {
-                  setEditFormData(prev => ({
-                    ...prev,
-                    official_contact: {
-                      ...prev.official_contact,
-                      phone: e.target.value
-                    }
-                  }));
-                }}
-                className="w-full p-2 border rounded"
+                type="tel"
+                value={editFormData.official_contact?.phone || ''}
+                onChange={e => setEditFormData(prev => ({
+                  ...prev,
+                  official_contact: { ...prev.official_contact, phone: e.target.value }
+                }))}
+                className="w-full p-2 mt-1 border rounded"
+                placeholder="+966XXXXXXXXX"
               />
-            ) : (
-              <div className="p-2 bg-gray-100 rounded">{formData.official_contact.phone}</div>
-            )}
-          </div>
-          <div>
-            <label className="block mb-1">البريد الإلكتروني</label>
-            {isEditing ? (
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">البريد الإلكتروني</label>
               <input
                 type="email"
-                name="official_contact.email"
-                value={editFormData.official_contact.email}
-                onChange={e => {
-                  setEditFormData(prev => ({
-                    ...prev,
-                    official_contact: {
-                      ...prev.official_contact,
-                      email: e.target.value
-                    }
-                  }));
-                }}
-                className="w-full p-2 border rounded"
+                value={editFormData.official_contact?.email || ''}
+                onChange={e => setEditFormData(prev => ({
+                  ...prev,
+                  official_contact: { ...prev.official_contact, email: e.target.value }
+                }))}
+                className="w-full p-2 mt-1 border rounded"
+                placeholder="example@domain.com"
               />
-            ) : (
-              <div className="p-2 bg-gray-100 rounded">{formData.official_contact.email}</div>
-            )}
-          </div>
-        </div>
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">هل اللاعب متعاقد حاليًا؟</label>
-        {isEditing ? (
-          <select
-            name="currently_contracted"
-            value={editFormData.currently_contracted}
-            onChange={handleInputChange}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-          >
-            <option value="no">لا</option>
-            <option value="yes">نعم</option>
-          </select>
-        ) : (
-          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">{formData.currently_contracted === 'yes' ? 'نعم' : 'لا'}</div>
-        )}
-      </div>
-    </div>
-  );
-
-  // تعريف مصفوفة التبويبات بعد الدوال
-  const TABS = [
-    { name: 'البيانات الشخصية', render: renderPersonalInfo },
-    { name: 'التعليم', render: renderEducation },
-    { name: 'السجل الطبي', render: renderMedicalRecord },
-    { name: 'المعلومات الرياضية', render: renderSportsInfo },
-    { name: 'المهارات', render: renderSkills },
-    { name: 'الأهداف', render: renderObjectives },
-    { name: 'الوسائط', render: renderMedia },
-    { name: 'التعاقدات', render: renderContracts },
-  ];
-
-  // دوال رفع/حذف الصور
-  const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user?.uid) return;
-    setUploadingProfileImage(true);
-    setFormErrors(prev => ({ ...prev, profile_image: undefined }));
-    try {
-      const supabase = await getSupabaseWithAuth();
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.uid}.${fileExt}`; // فقط اسم الملف بدون مجلدات
-      // حذف الصورة القديمة إذا وجدت
-      if (editFormData.profile_image?.url) {
-        const oldPath = editFormData.profile_image.url.split('/storage/v1/object/public/')[1];
-        if (oldPath) await supabase.storage.from('avatars').remove([oldPath.replace('avatars/', '')]);
-      }
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
-      if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      setEditFormData(prev => ({ ...prev, profile_image: { url: publicUrl } }));
-    } catch (err: any) {
-      setFormErrors(prev => ({ ...prev, profile_image: 'فشل رفع الصورة. حاول مرة أخرى.' }));
-    } finally {
-      setUploadingProfileImage(false);
-    }
-  };
-
-  const handleDeleteProfileImage = async () => {
-    if (!user?.uid || !editFormData.profile_image?.url) return;
-    setUploadingProfileImage(true);
-    setFormErrors(prev => ({ ...prev, profile_image: undefined }));
-    try {
-      const supabase = await getSupabaseWithAuth();
-      const filePath = editFormData.profile_image.url.split('/storage/v1/object/public/')[1];
-      if (filePath) await supabase.storage.from('avatars').remove([filePath.replace('avatars/', '')]);
-      setEditFormData(prev => ({ ...prev, profile_image: null }));
-    } catch (err: any) {
-      setFormErrors(prev => ({ ...prev, profile_image: 'فشل حذف الصورة.' }));
-    } finally {
-      setUploadingProfileImage(false);
-    }
-  };
-
-  const handleAdditionalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user?.uid) return;
-    setIsUploading(true);
-    setFormErrors(prev => ({ ...prev, additionalImage: undefined }));
-    try {
-      const supabase = await getSupabaseWithAuth();
-      const fileExt = file.name.split('.').pop();
-      const filePath = `additional-images/${user.uid}/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from('additional-images').upload(filePath, file, { upsert: false });
-      if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from('additional-images').getPublicUrl(filePath);
-      setEditFormData(prev => ({ ...prev, additional_images: [...prev.additional_images, { url: publicUrl }] }));
-    } catch (err: any) {
-      setFormErrors(prev => ({ ...prev, additionalImage: 'فشل رفع الصورة الإضافية.' }));
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleDeleteAdditionalImage = async (idx: number) => {
-    if (!user?.uid || !editFormData.additional_images[idx]?.url) return;
-    setIsUploading(true);
-    setFormErrors(prev => ({ ...prev, additionalImage: undefined }));
-    try {
-      const supabase = await getSupabaseWithAuth();
-      const filePath = editFormData.additional_images[idx].url.split('/storage/v1/object/public/')[1];
-      if (filePath) await supabase.storage.from('additional-images').remove([filePath.replace('additional-images/', '')]);
-      setEditFormData(prev => ({ ...prev, additional_images: prev.additional_images.filter((_, i) => i !== idx) }));
-    } catch (err: any) {
-      setFormErrors(prev => ({ ...prev, additionalImage: 'فشل حذف الصورة الإضافية.' }));
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (playerData) {
-      setFormData(playerData);
-      setEditFormData(playerData);
-      setIsLoading(false);
-    }
-  }, [playerData]);
-
-  // جلب بيانات اللاعب عند توفر المستخدم
-  useEffect(() => {
-    if (user) {
-      fetchPlayerData();
-    }
-  }, [user]);
-
-  const fetchPlayerData = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const docRef = doc(db, 'players', user.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data() as PlayerFormData; // Cast to PlayerFormData
-        console.log('[fetchPlayerData] player data:', data);
-        setPlayerData(data);
-        setFormData(data); // Also update formData directly here
-        setEditFormData(data); // And editFormData
-      } else {
-        console.log('[fetchPlayerData] no player data found');
-        setPlayerData(null); // Explicitly set to null if no data
-        setFormData(defaultPlayerFields); // Reset form if no player data
-        setEditFormData(defaultPlayerFields);
-      }
-    } catch (err: any) {
-      console.error('[fetchPlayerData] Error fetching data:', err);
-      setError('فشل في جلب بيانات اللاعب.');
-      setFormErrors(prev => ({ ...prev, fetch: 'فشل في جلب بيانات اللاعب.' }));
-      setPlayerData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  console.log('PlayerProfile: state initialized', { isLoading, playerData, formData });
-
-  if (isLoading || isUploading) {
-    console.log('PlayerProfile: Rendering loading state', {
-      isLoading,
-      isUploading,
-      authState: isLoading ? 'Auth loading' : 'Auth loaded',
-      dataState: isLoading ? 'Data loading' : 'Data loaded'
-    });
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen bg-gray-50">
-          <div className="flex flex-col items-center">
-            <div className="w-16 h-16 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
-            <p className="mt-4 text-gray-600">جاري تحميل البيانات...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!user) {
-    console.log('PlayerProfile: No user found, redirecting to login');
-    router.push('/auth/login');
-    return null;
-  }
-
-  if (error || (formErrors && 'fetch' in formErrors)) {
-    // إذا كان الخطأ هو فقط "عدم وجود بيانات لاعب"، أظهر نموذج الإكمال
-    if (!playerData && !isLoading && user) {
-      return (
-        
-          <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-            <h2 className="mb-4 text-2xl font-semibold text-blue-600">مرحبًا بك! يرجى إكمال بيانات ملفك الشخصي كلاعب.</h2>
-            <form className="w-full max-w-4xl p-6 mx-auto bg-white rounded-lg shadow-lg">
-              {currentStep === STEPS.PERSONAL && renderPersonalInfo()}
-              {currentStep === STEPS.EDUCATION && renderEducation()}
-              {currentStep === STEPS.MEDICAL && renderMedicalRecord()}
-              {currentStep === STEPS.SPORTS && renderSportsInfo()}
-              {currentStep === STEPS.SKILLS && renderSkills()}
-              {currentStep === STEPS.OBJECTIVES && renderObjectives()}
-              {currentStep === STEPS.MEDIA && renderMedia()}
-              {currentStep === STEPS.CONTRACTS && renderContracts()}
-            </form>
-          </div>
-      );
-    } else {
-      // إذا كان خطأ آخر، أظهر رسالة الخطأ العادية
-      console.log('PlayerProfile: Rendering error state', error, formErrors.fetch);
-      return (
-        <DashboardLayout>
-          <div className="flex items-center justify-center min-h-screen bg-gray-50">
-            <div className="p-8 text-center bg-white rounded-lg shadow-md">
-              <h2 className="mb-4 text-2xl font-semibold text-red-600">حدث خطأ</h2>
-              <p className="mb-6 text-gray-600">{typeof error === 'string' ? error : formErrors.fetch}</p>
-              <Button onClick={() => router.push('/auth/login')} className="text-white bg-blue-600 hover:bg-blue-700">
-                العودة إلى صفحة تسجيل الدخول
-              </Button>
             </div>
           </div>
-        </DashboardLayout>
-      );
-    }
-  }
-
-  console.log('PlayerProfile: Rendering main form');
-  // =========== Supabase Storage Functions ===========
-
-  /**
-   * رفع صورة البروفايل إلى bucket للصور الشخصية
-   * @param {File} file - ملف الصورة
-   * @param {string} userId - معرف المستخدم
-   * @returns {Promise<string>} - رابط الصورة
-   */
-
-
-  // =========== Form Handling Functions ===========
-
-  // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setEditFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  // دالة التحقق حسب التبويب الحالي
-  const validateCurrentStep = (step: number, data: PlayerFormData) => {
-    if (step === STEPS.PERSONAL) return validatePersonalInfo(data);
-    if (step === STEPS.EDUCATION) return validateEducation(data);
-    if (step === STEPS.MEDICAL) return validateMedical(data);
-    if (step === STEPS.SPORTS) return validateSports(data);
-    if (step === STEPS.SKILLS) return validateSkills(data);
-    if (step === STEPS.OBJECTIVES) return validateObjectives(data);
-    if (step === STEPS.MEDIA) return validateMedia(data);
-    return {};
-  };
-
-  // زر التالي
-  const handleNext = () => {
-    const errors = validateCurrentStep(currentStep, editFormData);
-    setFormErrors(errors);
-    if (Object.keys(errors).length > 0) return;
-    setCurrentStep(currentStep + 1);
-  };
-
-  // Handle Save Button
-  const handleSave = async () => {
-    try {
-      // Validate all required fields
-      const errors: FormErrors = {};
-      let hasErrors = false;
-
-      const requiredFields: (keyof PlayerFormData)[] = [
-        'full_name',
-        'birth_date',
-        'nationality',
-        'country',
-        'city',
-        'height',
-        'weight',
-        'primary_position',
-        'preferred_foot',
-        'spanish_level'
-      ];
-
-      requiredFields.forEach(field => {
-        const error = validateField(field, playerData?.[field]);
-        if (error) {
-          errors[field] = error;
-          hasErrors = true;
-        }
-      });
-
-      if (hasErrors) {
-        setFormErrors(errors);
-        toast.error('يرجى تصحيح الأخطاء قبل الحفظ');
-        return;
-      }
-
-      // Clear any existing errors
-      setFormErrors({});
-
-      // Show loading state
-      setIsUploading(true);
-
-      // Update the document
-      await updateDoc(doc(db, 'players', user.uid), {
-        ...editFormData,
-        updated_at: serverTimestamp()
-      });
-
-      // Show success message
-      toast.success('تم حفظ البيانات بنجاح');
-      
-      // Refresh the data
-      await fetchPlayerData();
-
-    } catch (error) {
-      console.error('Error saving data:', error);
-      toast.error('حدث خطأ أثناء حفظ البيانات');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  // Handle Cancel button
-  const handleCancel = () => {
-    setEditFormData({ ...formData });
-    setIsEditing(false);
-    setEditError('');
-  };
-
-  // =========== Media Handling Functions ===========
-
-  // Add/remove images and videos
-  const handleAddImage = (url: string) => {
-    setEditFormData(prev => ({
-      ...prev,
-      additional_images: [...(prev.additional_images || []), { url }]
-    }));
-  };
-
-  const handleRemoveImage = (idx: number) => {
-    setEditFormData(prev => ({
-      ...prev,
-      additional_images: prev.additional_images.filter((_, i) => i !== idx),
-    }));
-  };
-
-  const handleAddVideo = (video: { url: string; desc: string }) => {
-    setEditFormData(prev => ({
-      ...prev,
-      videos: [...(prev.videos || []), video],
-    }));
-  };
-
-  const handleRemoveVideo = (idx: number) => {
-    setEditFormData(prev => ({
-      ...prev,
-      videos: prev.videos.filter((_, i) => i !== idx),
-    }));
-  };
-
-
-
-  // =========== Field Rendering Helpers ===========
-
-  // Render input or value based on edit mode
-  const renderField = (name: keyof PlayerFormData, type: string = 'text') =>
-    isEditing ? (
-      <input
-        type={type}
-        name={name}
-        value={typeof editFormData[name] === 'string' ? editFormData[name] as string : ''}
-        onChange={handleInputChange}
-        className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-      />
-    ) : (
-      <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
-        {typeof formData[name] === 'string' ? formData[name] as string :
-         typeof formData[name] === 'object' ? JSON.stringify(formData[name]) : 'غير محدد'}
+        ) : (
+          <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
+            {formData.official_contact ? (
+              <div className="space-y-2">
+                <div><span className="font-medium">الاسم:</span> {formData.official_contact.name || 'غير محدد'}</div>
+                <div><span className="font-medium">المسمى الوظيفي:</span> {formData.official_contact.title || 'غير محدد'}</div>
+                <div><span className="font-medium">رقم الهاتف:</span> {formData.official_contact.phone || 'غير محدد'}</div>
+                <div><span className="font-medium">البريد الإلكتروني:</span> {formData.official_contact.email || 'غير محدد'}</div>
+              </div>
+            ) : (
+              'غير محدد'
+            )}
+          </div>
+        )}
       </div>
-    );
-
-  // Render textarea based on edit mode
-  const renderTextarea = (name: keyof PlayerFormData) =>
-    isEditing ? (
-      <textarea
-        name={name}
-        value={typeof editFormData[name] === 'string' ? editFormData[name] as string : ''}
-        onChange={handleInputChange}
-        className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
-      />
-    ) : (
-      <div className="p-2 mt-1 text-gray-900 bg-gray-100 rounded-md">
-        {typeof formData[name] === 'string' ? formData[name] as string :
-         typeof formData[name] === 'object' ? JSON.stringify(formData[name]) :
-         'غير محدد'}
-      </div>
-    );
-
-  // Helper to check if a video URL is embeddable
-  const getVideoEmbed = (url: string) => {
-    if (!url) return null;
-
-    // YouTube
-    const ytMatch = url.match(/(?:youtu.be\/|youtube.com\/(?:embed\/|v\/|watch\?v=))([\w-]{11})/);
-    if (ytMatch) {
-      return (
-        <div className="relative w-full pt-[56.25%]">
-          <iframe
-            className="absolute inset-0 w-full h-full rounded-lg"
-            src={`https://www.youtube.com/embed/${ytMatch[1]}`}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      );
-    }
-
-    // Vimeo
-    const vimeoMatch = url.match(/vimeo.com\/(\d+)/);
-    if (vimeoMatch) {
-      return (
-        <div className="relative w-full pt-[56.25%]">
-          <iframe
-            className="absolute inset-0 w-full h-full rounded-lg"
-            src={`https://player.vimeo.com/video/${vimeoMatch[1]}`}
-            frameBorder="0"
-            allow="autoplay; fullscreen; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  // =========== Validation Functions ===========
-  const validatePersonalInfo = (data: PlayerFormData) => {
-    const errors: Partial<FormErrors> = {};
-    // if (!data.profile_image) errors.profile_image = 'الصورة الشخصية مطلوبة'; // تم جعل الصورة غير إلزامية
-    if (!data.full_name) errors.full_name = 'الاسم الكامل مطلوب';
-    if (!data.birth_date) {
-      errors.birth_date = 'تاريخ الميلاد مطلوب';
-    } else {
-      const birthDate = new Date(data.birth_date);
-      const minDate = new Date();
-      minDate.setFullYear(minDate.getFullYear() - 6);
-      if (birthDate > minDate) {
-        errors.birth_date = 'يجب أن يكون عمر اللاعب 6 سنوات أو أكثر';
-      }
-    }
-    if (!data.nationality) errors.nationality = 'الجنسية مطلوبة';
-    if (!data.city) errors.city = 'المدينة مطلوبة';
-    if (!data.country) errors.country = 'الدولة مطلوبة';
-    if (!data.phone) errors.phone = 'رقم الهاتف مطلوب';
-    if (!data.whatsapp) errors.whatsapp = 'رقم الواتساب مطلوب';
-    if (!data.email) errors.email = 'البريد الإلكتروني مطلوب';
-    if (!data.brief) errors.brief = 'نبذة مختصرة مطلوبة';
-    return errors;
-  };
-
-  const validateEducation = (data: PlayerFormData) => {
-    const errors: Partial<FormErrors> = {};
-    if (!data.education_level) errors.education_level = 'المؤهل الدراسي مطلوب';
-    if (!data.graduation_year) errors.graduation_year = 'سنة التخرج مطلوبة';
-    if (!data.degree) errors.degree = 'الدرجة مطلوبة';
-    if (!data.english_level) errors.english_level = 'مستوى الإنجليزية مطلوب';
-    return errors;
-  };
-
-  const validateMedical = (data: PlayerFormData) => {
-    const errors: Partial<FormErrors> = {};
-    // الطول والوزن اختياريان لكن يمكن التحقق من الأرقام
-    if (data.height && isNaN(Number(data.height))) errors.height = 'الطول يجب أن يكون رقمًا';
-    if (data.weight && isNaN(Number(data.weight))) errors.weight = 'الوزن يجب أن يكون رقمًا';
-    // إذا كان هناك أمراض مزمنة يجب إدخال التفاصيل
-    if (data.chronic_conditions && !data.chronic_details) errors.chronic_details = 'يرجى إدخال تفاصيل الأمراض المزمنة';
-    // تحقق من الإصابات والعمليات (يمكنك تخصيصه أكثر)
-    return errors;
-  };
-
-  const validateSports = (data: PlayerFormData) => {
-    const errors: Partial<FormErrors> = {};
-    if (!data.primary_position) errors.primary_position = 'المركز الأساسي مطلوب';
-    if (!data.preferred_foot) errors.preferred_foot = 'القدم المفضلة مطلوبة';
-    // تحقق من تاريخ الأندية (يمكن تخصيصه)
-    return errors;
-  };
-
-  const validateSkills = (data: PlayerFormData) => {
-    const errors: Partial<FormErrors> = {};
-    // المهارات اختيارية لكن يمكن التحقق من وجود تقييمات أساسية إذا رغبت
-    return errors;
-  };
-
-  const validateObjectives = (data: PlayerFormData) => {
-    const errors: Partial<FormErrors> = {};
-    const hasAny = OBJECTIVES_CHECKBOXES.some(obj => data.objectives?.[obj.key as ObjectiveKey]) ||
-      (typeof data.objectives?.other === 'string' && data.objectives.other.trim() !== '');
-    if (!hasAny) errors.objectives = 'يرجى اختيار هدف واحد على الأقل أو كتابة هدف آخر';
-    return errors;
-  };
-
-  const validateMedia = (data: PlayerFormData) => {
-    const errors: Partial<FormErrors> = {};
-    if ((data.additional_images || []).length > MAX_IMAGES) errors.additionalImage = `يمكن رفع حتى ${MAX_IMAGES} صور فقط`;
-    if ((data.videos || []).length > MAX_VIDEOS) errors.video = `يمكن رفع حتى ${MAX_VIDEOS} فيديو فقط`;
-    // تحقق من وجود وصف لكل فيديو
-    if ((data.videos || []).some(v => !v || !v.url || !v.desc || v.desc.trim() === '')) errors.video = 'يجب كتابة وصف لكل فيديو';
-    return errors;
-  };
-
-  // =========== Media Handling Functions ===========
-
-  // دالة لجلب صورة مصغرة للفيديو
-  const getVideoThumbnail = (url: string) => {
-    // يوتيوب
-    const ytMatch = url.match(/(?:youtu.be\/|youtube.com\/(?:embed\/|v\/|watch\?v=))([\w-]{11})/);
-    if (ytMatch) {
-      return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
-    }
-    // Vimeo (عرض رمز فيديو افتراضي)
-    const vimeoMatch = url.match(/vimeo.com\/(\d+)/);
-    if (vimeoMatch) {
-      return '/video-icon.png'; // رمز فيديو افتراضي (يمكنك استبداله)
-    }
-    // MP4 أو غير ذلك
-    if (url.endsWith('.mp4')) {
-      return '/video-icon.png';
-    }
-    return '/video-icon.png';
-  };
-
-  // الـ return الرئيسي
-  return (
-    <div className="container p-4 mx-auto">
-      {isLoading && <LoadingSpinner />}
-      {successMessage && <SuccessMessage message={successMessage} />}
-      {formErrors.fetch && <ErrorMessage message={formErrors.fetch} />}
-      {formErrors.submit && <ErrorMessage message={formErrors.submit} />}
-
-      <div className="mb-6">
-        <h1 className="mb-4 text-2xl font-bold">الملف الشخصي</h1>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {TABS.map((tab, idx) => (
-            <button
-              key={tab.name}
-              onClick={() => setCurrentStep(idx)}
-              className={`px-4 py-2 rounded ${
-                currentStep === idx 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-200 text-gray-700'
-              }`}
-            >
-              {tab.name}
-            </button>
+      {/* من أين عرفت عنّا */}
+      <div>
+        <label className="block mb-2 text-sm font-medium text-gray-700">من أين عرفت عنّا؟</label>
+        <div className="flex flex-wrap gap-4">
+          {['صديق', 'وسائل التواصل', 'بحث Google', 'إعلان', 'أخرى'].map(option => (
+            <label key={option} className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="ref_source"
+                checked={editFormData.ref_source === option}
+                onChange={() => setEditFormData(prev => ({ ...prev, ref_source: option }))}
+                disabled={!isEditing}
+              />
+              <span>{option}</span>
+            </label>
           ))}
         </div>
       </div>
-
-      <div className="p-6 bg-white rounded-lg shadow">
-        {TABS[currentStep].render()}
-      </div>
-
-      <div className="flex justify-end gap-4 mt-6">
-        {isEditing ? (
-          <>
-            <Button
-              onClick={handleCancel}
-              variant="outline"
-              className="px-4 py-2"
-            >
-              إلغاء
-            </Button>
-            <Button
-              onClick={handleSave}
-              className="px-4 py-2 text-white bg-blue-600"
-            >
-              حفظ
-            </Button>
-          </>
-        ) : (
-          <Button
-            onClick={() => setIsEditing(true)}
-            className="px-4 py-2 text-white bg-blue-600"
-          >
-            تعديل
-          </Button>
-        )}
-      </div>
     </div>
   );
+
+ // Main Component Return
+ console.log('PlayerProfile: Rendering main form');
+ return (
+   <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white" dir="rtl">
+     {/* Loading Overlay */}
+     {submitting && <LoadingSpinner />}
+
+     {/* Success Message */}
+     {successMessage && <SuccessMessage message={successMessage} />}
+
+     <main className="container px-4 py-8 mx-auto">
+       {formErrors.submit && <ErrorMessage message={formErrors.submit} />}
+
+       <form className="p-6 bg-white rounded-lg shadow-lg">
+         {/* Progress Steps */}
+         <div className="mb-8">
+            <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
+              {Object.entries(STEP_TITLES).map(([step, title], idx) => (
+                <button
+                  key={step}
+                  type="button"
+                  onClick={() => setCurrentStep(Number(step))}
+                  className={
+                    classNames(
+                      "px-4 py-2 rounded-full font-semibold transition-all duration-200 border",
+                      currentStep === Number(step)
+                        ? "bg-blue-600 text-white border-blue-600 shadow-lg scale-105"
+                        : "bg-white text-blue-600 border-blue-200 hover:bg-blue-50 hover:scale-105"
+                    )
+                  }
+                  style={{ minWidth: 120 }}
+                >
+                  {title}
+                </button>
+              ))}
+            </div>
+         </div>
+
+         {/* Form Sections */}
+         {currentStep === STEPS.PERSONAL && renderPersonalInfo()}
+         {currentStep === STEPS.EDUCATION && renderEducation()}
+         {currentStep === STEPS.MEDICAL && renderMedicalRecord()}
+         {currentStep === STEPS.SPORTS && renderSportsInfo()}
+         {currentStep === STEPS.SKILLS && renderSkills()}
+         {currentStep === STEPS.OBJECTIVES && renderObjectives()}
+         {currentStep === STEPS.MEDIA && renderMedia()}
+          {currentStep === STEPS.CONTRACTS && renderContracts()}
+
+         {/* Navigation Buttons */}
+          <div className="flex flex-col-reverse items-center justify-between gap-4 mt-8 md:flex-row">
+            {currentStep > STEPS.PERSONAL && (
+              <Button
+                type="button"
+                onClick={() => setCurrentStep(currentStep - 1)}
+                className="px-6 py-2 text-gray-700 transition-all duration-200 bg-gray-100 border border-gray-300 rounded-full shadow-sm hover:bg-gray-200"
+              >
+                السابق
+              </Button>
+            )}
+            <div className="flex gap-2">
+              {!isEditing ? (
+                <>
+                  {currentStep < STEPS.CONTRACTS && (
+                    <Button
+                      type="button"
+                      onClick={handleNext}
+                      className="px-6 py-2 text-white transition-all duration-200 bg-blue-600 rounded-full shadow-md hover:bg-blue-700"
+                    >
+                      التالي
+                    </Button>
+                  )}
+                  {currentStep === STEPS.CONTRACTS && (
+                    <Button
+                      type="button"
+                      onClick={handleSave}
+                      className="px-6 py-2 text-white transition-all duration-200 bg-green-600 rounded-full shadow-md hover:bg-green-700"
+                      disabled={editLoading}
+                    >
+                      {editLoading ? 'جاري الحفظ...' : 'حفظ'}
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="px-6 py-2 text-white transition-all duration-200 bg-yellow-500 rounded-full shadow-md hover:bg-yellow-600"
+                  >
+                    تعديل
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {currentStep < STEPS.CONTRACTS && (
+                    <Button
+                      type="button"
+                      onClick={handleNext}
+                      className="px-6 py-2 text-white transition-all duration-200 bg-blue-600 rounded-full shadow-md hover:bg-blue-700"
+                    >
+                      التالي
+                    </Button>
+                  )}
+                  {currentStep === STEPS.CONTRACTS && (
+                    <Button
+                      type="button"
+                      onClick={handleSave}
+                      className="px-6 py-2 text-white transition-all duration-200 bg-green-600 rounded-full shadow-md hover:bg-green-700"
+                      disabled={editLoading}
+                    >
+                      {editLoading ? 'جاري الحفظ...' : 'حفظ'}
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={handleCancel}
+                    className="px-6 py-2 text-white transition-all duration-200 bg-gray-400 rounded-full shadow-md hover:bg-gray-500"
+                  >
+                    إلغاء
+                  </Button>
+                </>
+              )}
+            </div>
+         </div>
+       </form>
+     </main>
+   </div>
+ );
 }
 
-const validateField = (field: keyof PlayerFormData, value: any): string | null => {
-  switch (field) {
-    case 'full_name':
-      return !value ? 'الاسم الكامل مطلوب' : null;
-    case 'birth_date':
-      return !value ? 'تاريخ الميلاد مطلوب' : null;
-    case 'nationality':
-      return !value ? 'الجنسية مطلوبة' : null;
-    case 'country':
-      return !value ? 'البلد مطلوب' : null;
-    case 'city':
-      return !value ? 'المدينة مطلوبة' : null;
-    case 'height':
-      return !value ? 'الطول مطلوب' : null;
-    case 'weight':
-      return !value ? 'الوزن مطلوب' : null;
-    case 'primary_position':
-      return !value ? 'المركز الأساسي مطلوب' : null;
-    case 'preferred_foot':
-      return !value ? 'القدم المفضلة مطلوبة' : null;
-    case 'spanish_level':
-      return !value ? 'مستوى اللغة الإسبانية مطلوب' : null;
-    default:
-      return null;
-  }
-};
+// Phone icon component
+interface PhoneIconProps extends React.SVGProps<SVGSVGElement> {
+  // Extends built-in SVG props
+}
+
+const Phone = (props: React.SVGProps<SVGSVGElement>) => (
+ <svg
+   xmlns="http://www.w3.org/2000/svg"
+   width="24"
+   height="24"
+   viewBox="0 0 24 24"
+   fill="none"
+   stroke="currentColor"
+   strokeWidth="2"
+   strokeLinecap="round"
+   strokeLinejoin="round"
+   {...props}
+ >
+   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+ </svg>
+);
+
+
+// FileText icon component
+const FileText = (props: React.SVGProps<SVGSVGElement>) => (
+ <svg
+   xmlns="http://www.w3.org/2000/svg"
+   width="24"
+   height="24"
+   viewBox="0 0 24 24"
+   fill="none"
+   stroke="currentColor"
+   strokeWidth="2"
+   strokeLinecap="round"
+   strokeLinejoin="round"
+   {...props}
+ >
+   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+   <polyline points="14 2 14 8 20 8"></polyline>
+   <line x1="16" y1="13" x2="8" y2="13"></line>
+   <line x1="16" y1="17" x2="8" y2="17"></line>
+   <polyline points="10 9 9 9 8 9"></polyline>
+ </svg>
+);
+
+// Error Message Component (missing from original)
+const ErrorMessage: React.FC<{ message: string }> = ({ message }) => (
+ <div className="p-4 mb-4 bg-red-100 border border-red-400 rounded-md">
+   <div className="flex items-center">
+     <X className="w-5 h-5 mr-2 text-red-500" />
+     <p className="text-red-700">{message}</p>
+   </div>
+ </div>
+);

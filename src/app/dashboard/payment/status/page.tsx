@@ -16,6 +16,7 @@ interface SubscriptionStatus {
   payment_method: string;
   amount: number;
   currency: string;
+  currencySymbol: string;
   receipt_url?: string;
   receipt_uploaded_at?: string;
   autoRenew: boolean;
@@ -159,7 +160,7 @@ function SubscriptionStatusContent() {
             <div class="section-title">تفاصيل الاشتراك <span style="font-size:1.1em;">💳</span></div>
             <table class="details-table">
               <tr><th>الباقة</th><td>${subscription?.plan_name || ''}</td></tr>
-              <tr><th>المبلغ</th><td>${subscription?.amount || ''} ${subscription?.currency || ''}</td></tr>
+              <tr><th>المبلغ</th><td>${subscription?.amount || ''} ${subscription?.currencySymbol || subscription?.currency || ''}</td></tr>
               <tr><th>طريقة الدفع</th><td>${subscription?.payment_method === 'bank_transfer' ? 'تحويل بنكي' : 'بطاقة ائتمان/أخرى'}</td></tr>
               <tr><th>رقم العملية</th><td>${subscription?.transaction_id || '-'}</td></tr>
               <tr><th>تاريخ الدفع</th><td>${subscription?.payment_date ? new Date(subscription.payment_date).toLocaleDateString('en-US') : ''}</td></tr>
@@ -298,7 +299,7 @@ function SubscriptionStatusContent() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">المبلغ</p>
-                  <p className="font-medium">{subscription.amount} {subscription.currency}</p>
+                  <p className="font-medium">{subscription.amount} {subscription.currencySymbol || subscription.currency}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">تاريخ البدء</p>

@@ -148,11 +148,17 @@ export function AuthProvider({ children }: FirebaseAuthProviderProps) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      await setDoc(doc(db, 'users', user.uid), {
-        ...userData,
-        email,
-        createdAt: new Date().toISOString(),
-      });
+      try {
+        await setDoc(doc(db, 'users', user.uid), {
+          ...userData,
+          email,
+          createdAt: new Date().toISOString(),
+        });
+        console.log('User document created in Firestore:', user.uid);
+      } catch (firestoreError) {
+        console.error('Error creating user document in Firestore:', firestoreError);
+        throw new Error('فشل إنشاء بيانات المستخدم في قاعدة البيانات. يرجى المحاولة لاحقاً.');
+      }
 
       setUser(user);
     } catch (error: any) {
@@ -175,20 +181,41 @@ export function AuthProvider({ children }: FirebaseAuthProviderProps) {
   const loginUser = async (phone: string, password: string) => {
     try {
       setError(null);
+      
+      // تنظيف رقم الهاتف من أي أحرف غير رقمية
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      
+      // التحقق من صحة رقم الهاتف
+      if (!/^[0-9]{10}$/.test(cleanPhone)) {
+        throw new Error('يرجى إدخال رقم هاتف صحيح مكون من 10 أرقام');
+      }
+
       // استخدم نفس الدومين الذي سجلت به المستخدمين
-      const email = `${phone}@hagzzgo.com`;
+      const email = `${cleanPhone}@hagzzgo.com`;
+      
+      console.log('Attempting login with:', { email, phone: cleanPhone });
+      
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
+      console.log('Login successful, fetching user data for:', user.uid);
 
       // جلب بيانات المستخدم باستخدام UID
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (!userDoc.exists()) {
+        console.error('User document not found for:', user.uid);
         throw new Error('لم يتم العثور على بيانات المستخدم');
       }
 
+      console.log('User data retrieved successfully');
       setUser(user);
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Login error details:', {
+        code: error.code,
+        message: error.message,
+        fullError: error
+      });
+      
       let errorMessage = 'حدث خطأ أثناء تسجيل الدخول';
       
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
@@ -197,6 +224,8 @@ export function AuthProvider({ children }: FirebaseAuthProviderProps) {
         errorMessage = 'رقم الهاتف غير صالح';
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = 'تم تجاوز عدد محاولات تسجيل الدخول. يرجى المحاولة لاحقاً';
+      } else if (error.code === 'auth/invalid-credential') {
+        errorMessage = 'بيانات الدخول غير صحيحة. يرجى التأكد من رقم الهاتف وكلمة المرور';
       }
       
       setError(errorMessage);
