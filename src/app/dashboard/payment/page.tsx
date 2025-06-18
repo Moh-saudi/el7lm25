@@ -178,8 +178,8 @@ export default function PaymentPage() {
           }
           setUserCountry(country || '');
           // جلب العملة من Firestore أو user أو افتراضية حسب الدولة
-          let currency = (userData as any)?.currency || user?.currency || '';
-          let currencySymbol = (userData as any)?.currencySymbol || user?.currencySymbol || '';
+          let currency = (userData as any)?.currency || (user as any)?.currency || '';
+          let currencySymbol = (userData as any)?.currencySymbol || (user as any)?.currencySymbol || '';
           if (!currency) {
             switch (country) {
               case 'QA': currency = 'QAR'; currencySymbol = 'ر.ق'; break;
