@@ -167,18 +167,19 @@ export default function PaymentPage() {
             userData = userDoc.data();
           }
           // جلب الدولة من Firestore أو من user أو قيمة افتراضية
-          let country = normalizeCountry(userData.country) || normalizeCountry((user as any)?.country) || normalizeCountry((user as any)?.metadata?.country) || '';
-          if (!country && userData.address) {
+          let country = normalizeCountry((userData as any)?.country)
+            || normalizeCountry((user as any)?.country)
+            || normalizeCountry((user as any)?.metadata?.country)
+            || '';
+          if (!country && (userData as any)?.address) {
             // محاولة استخراج الدولة من العنوان إذا كان موجودًا
-            const match = userData.address.match(/(قطر|السعودية|الإمارات|الكويت|البحرين|عمان|مصر|Qatar|Saudi Arabia|UAE|United Arab Emirates|Kuwait|Bahrain|Oman|Egypt)/);
-            if (match) {
-              country = normalizeCountry(match[1]);
-            }
+            const match = (userData as any)?.address.match(/(قطر|السعودية|الإمارات|الكويت|البحرين|عمان|مصر|Qatar|Saudi Arabia|UAE|United Arab Emirates|Kuwait|Bahrain|Oman|Egypt)/);
+            if (match) country = normalizeCountry(match[0]);
           }
           setUserCountry(country || '');
           // جلب العملة من Firestore أو user أو افتراضية حسب الدولة
-          let currency = userData.currency || user?.currency || '';
-          let currencySymbol = userData.currencySymbol || user?.currencySymbol || '';
+          let currency = (userData as any)?.currency || user?.currency || '';
+          let currencySymbol = (userData as any)?.currencySymbol || user?.currencySymbol || '';
           if (!currency) {
             switch (country) {
               case 'QA': currency = 'QAR'; currencySymbol = 'ر.ق'; break;
