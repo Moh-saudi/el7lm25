@@ -410,14 +410,18 @@ const getSupabaseWithAuth = async () => {
     // Get Firebase ID token
     const firebaseToken = await user.getIdToken();
     
-    // Get the singleton Supabase client
-    const supabaseClient = getSupabaseClient();
+    // Create a new Supabase client with custom headers instead of modifying protected property
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     
-    // Set the auth header for this request
-    supabaseClient.rest.headers = {
-      ...supabaseClient.rest.headers,
-      Authorization: `Bearer ${firebaseToken}`
-    };
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${firebaseToken}`
+        }
+      }
+    });
 
     return supabaseClient;
   } catch (error) {
