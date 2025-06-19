@@ -131,7 +131,7 @@ export async function testPaymentAPI() {
     }
   } catch (error) {
     console.error('❌ خطأ في اختبار API الدفع:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
