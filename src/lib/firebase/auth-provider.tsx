@@ -47,6 +47,11 @@ export function AuthProvider({ children }: FirebaseAuthProviderProps) {
   // تشخيص Firebase عند بدء التطبيق
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // تحميل فلتر الكونسول لإخفاء أخطاء Geidea CORS في التطوير
+      import('@/utils/console-filter').catch(() => {
+        // تجاهل أي خطأ في تحميل الفلتر
+      });
+      
       debugFirebaseConfig();
       debugSystem();
       checkCommonIssues();

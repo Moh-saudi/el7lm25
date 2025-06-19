@@ -4,11 +4,6 @@ import { Suspense } from 'react';
 import Script from 'next/script';
 import { AuthProvider } from '@/lib/firebase/auth-provider';
 
-// تحميل فلتر الكونسول في بيئة التطوير
-if (typeof window !== 'undefined') {
-  import('@/utils/console-filter');
-}
-
 export const metadata: Metadata = {
   title: 'HagzZGo - منصة اكتشاف المواهب الرياضية',
   description: 'منصة متكاملة تربط بين اللاعبين والأندية والمدربين',
