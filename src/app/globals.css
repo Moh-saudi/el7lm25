@@ -404,3 +404,127 @@ p, span, div {
   box-shadow: 0 2px 16px #0002;
   user-select: none;
 }
+
+/* تجاهل أخطاء SVG Path */
+svg path {
+  /* تجاهل أخطاء path في SVG */
+}
+
+/* تحسينات إضافية */
+.animate-bounceIn {
+  animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apple Pay Button Styles */
+.apple-pay-button {
+  -webkit-appearance: -apple-pay-button;
+  -apple-pay-button-type: plain;
+  -apple-pay-button-style: black;
+  height: 48px;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+  border: none;
+  outline: none;
+}
+
+.apple-pay-button:hover {
+  transform: scale(1.02);
+}
+
+.apple-pay-button:active {
+  transform: scale(0.98);
+}
+
+/* إخفاء Apple Pay إذا لم يكن متاحاً */
+html:not(.apple-pay-supported) .apple-pay-only {
+  display: none !important;
+}
+
+/* عرض Apple Pay فقط إذا كان متاحاً */
+html.apple-pay-supported .apple-pay-fallback {
+  display: none !important;
+}
+
+/* تنسيق إضافي لزر Apple Pay المخصص */
+.custom-apple-pay-button {
+  background: linear-gradient(135deg, #000 0%, #333 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  height: 48px;
+  width: 100%;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.custom-apple-pay-button:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.custom-apple-pay-button:active {
+  transform: scale(0.98);
+}
+
+.custom-apple-pay-button:disabled {
+  background: #666;
+  cursor: not-allowed;
+  transform: none;
+}

@@ -614,7 +614,9 @@ export default function PlayerDashboard() {
       {/* إعلان جانبي */}
       <div className="flex flex-row items-center p-4 bg-blue-100 border-2 border-blue-200 rounded-2xl md:w-1/2">
         <div className="flex-shrink-0">
-          <img src="/qr-demo.png" alt="QR" className="w-20 h-20 border-2 border-white rounded-lg shadow-md" />
+          <div className="flex items-center justify-center w-20 h-20 text-2xl text-gray-400 bg-gray-100 border-2 border-white rounded-lg shadow-md">
+            📱
+          </div>
         </div>
         <div className="flex-1 ml-4">
           <div className="flex items-center gap-2 mb-1">

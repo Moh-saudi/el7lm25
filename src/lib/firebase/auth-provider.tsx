@@ -4,6 +4,8 @@ import { User, createUserWithEmailAndPassword, onAuthStateChanged, signInWithEma
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from './config';
+import { debugFirebaseConfig } from './debug';
+import { debugSystem, checkCommonIssues } from '../debug-system';
 
 interface UserData {
   accountType: 'club' | 'player' | 'agent';
@@ -41,6 +43,15 @@ export function AuthProvider({ children }: FirebaseAuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userDataUnsubscribe, setUserDataUnsubscribe] = useState<(() => void) | null>(null);
+
+  // تشخيص Firebase عند بدء التطبيق
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      debugFirebaseConfig();
+      debugSystem();
+      checkCommonIssues();
+    }
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -117,6 +128,10 @@ export function AuthProvider({ children }: FirebaseAuthProviderProps) {
         setUserData(null);
         setLoading(false);
       }
+    }, (error) => {
+      console.error('Auth state change error:', error);
+      setError(error.message);
+      setLoading(false);
     });
 
     return () => {
