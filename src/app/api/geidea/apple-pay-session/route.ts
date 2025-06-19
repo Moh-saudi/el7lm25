@@ -18,6 +18,17 @@ function generateSignature(
     .digest('base64');
 }
 
+// دالة لتحديد كود الدولة من العملة
+function getCountryFromCurrency(curr: string): string {
+  switch (curr) {
+    case 'AED': return 'AE'; // الإمارات
+    case 'SAR': return 'SA'; // السعودية
+    case 'QAR': return 'QA'; // قطر
+    case 'EGP': return 'EG'; // مصر
+    default: return 'AE';
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // قراءة البيانات من الطلب
@@ -103,17 +114,6 @@ export async function POST(request: NextRequest) {
         countryCode: getCountryFromCurrency(currency)
       }
     };
-
-    // دالة لتحديد كود الدولة من العملة
-    function getCountryFromCurrency(curr: string): string {
-      switch (curr) {
-        case 'AED': return 'AE'; // الإمارات
-        case 'SAR': return 'SA'; // السعودية
-        case 'QAR': return 'QA'; // قطر
-        case 'EGP': return 'EG'; // مصر
-        default: return 'AE';
-      }
-    }
 
     console.log('🍎 Creating Apple Pay payment with Geidea:', {
       ...paymentData,
