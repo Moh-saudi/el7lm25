@@ -228,7 +228,11 @@ export default function PaymentPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    if (!validateForm()) return;
+    // التحقق من البيانات الأساسية
+    if (!selectedPackage || !paymentMethod) {
+      setError('يرجى اختيار الباقة وطريقة الدفع');
+      return;
+    }
 
     setSubmitting(true);
     try {
