@@ -9,7 +9,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Check, Plus, Trash, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { uploadPlayerProfileImage, uploadPlayerAdditionalImage } from '@/lib/firebase/upload-media';
 import { supabaseUrl, supabaseAnonKey } from '@/lib/supabase/config';
 import { User } from 'firebase/auth';
@@ -621,38 +621,19 @@ export default function PlayerProfile() {
     }
   };
 
-  // جلب بيانات اللاعب عند توفر المستخدم - مرة واحدة فقط
-  useEffect(() => {
-    if (user && !playerData) {
-      fetchPlayerData();
-    }
-  }, [user]);
-
-  // تحديث form data عند تغيير player data
-  useEffect(() => {
-    if (playerData) {
-      setFormData(playerData);
-      setEditFormData(playerData);
-      setIsLoading(false);
-    }
-  }, [playerData]);
-
-  const fetchPlayerData = async () => {
-    if (!user) return;
+  const fetchPlayerData = useCallback(async () => {
+    if (!user || isLoading) return;
     setIsLoading(true);
     try {
       const docRef = doc(db, 'players', user.uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // معالجة البيانات كما هو
         const processedData = {
           ...defaultPlayerFields,
           ...data
         };
         setPlayerData(processedData);
-        setFormData(processedData);
-        setIsLoading(false);
         setError(null);
       } else {
         // إنشاء مستند افتراضي بالبيانات المتوفرة من user
@@ -666,26 +647,34 @@ export default function PlayerProfile() {
         };
         await setDoc(docRef, defaultData, { merge: true });
         setPlayerData(defaultData);
-        setFormData(defaultData);
-        setIsLoading(false);
         setError(null);
       }
     } catch (err) {
       setError("حدث خطأ أثناء جلب البيانات. يرجى المحاولة لاحقًا أو التواصل مع الدعم.");
-      setIsLoading(false);
       console.error('[fetchPlayerData] error:', err);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [user, isLoading]);
 
-  console.log('PlayerProfile: state initialized', { isLoading, playerData, formData });
+  // جلب بيانات اللاعب عند توفر المستخدم - مرة واحدة فقط
+  useEffect(() => {
+    if (user && !playerData && !isLoading) {
+      fetchPlayerData();
+    }
+  }, [user, playerData, isLoading, fetchPlayerData]);
+
+  // تحديث form data عند تغيير player data - مرة واحدة فقط
+  useEffect(() => {
+    if (playerData && (!formData.full_name || formData !== playerData)) {
+      setFormData(playerData);
+      setEditFormData(playerData);
+    }
+  }, [playerData, formData.full_name]);
+
+  // إزالة console.log المسبب للتلوث
 
   if (isLoading || isUploading) {
-    console.log('PlayerProfile: Rendering loading state', {
-      isLoading,
-      isUploading,
-      authState: isLoading ? 'Auth loading' : 'Auth loaded',
-      dataState: isLoading ? 'Data loading' : 'Data loaded'
-    });
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="flex flex-col items-center">
@@ -697,7 +686,6 @@ export default function PlayerProfile() {
   }
 
   if (error || (formErrors && 'fetch' in formErrors)) {
-    console.log('PlayerProfile: Rendering error state', error, formErrors.fetch);
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="p-8 text-center bg-white rounded-lg shadow-md">
@@ -712,12 +700,9 @@ export default function PlayerProfile() {
   }
 
   if (!user) {
-    console.log('PlayerProfile: No user found, redirecting to login');
     router.push('/auth/login');
     return null;
   }
-
-  console.log('PlayerProfile: Rendering main form');
   // =========== Supabase Storage Functions ===========
 
   /**
