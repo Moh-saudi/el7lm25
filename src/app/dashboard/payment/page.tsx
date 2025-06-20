@@ -339,18 +339,8 @@ export default function PaymentPage() {
       const data = await response.json();
 
       if (data.success) {
-        // تحقق من وضع الاختبار
-        if (data.isTestMode) {
-          console.log('🧪 Test mode - simulating payment success');
-          setSuccessMessage('تم الدفع بنجاح (وضع اختبار)! سيتم تفعيل اشتراكك قريباً.');
-          setSuccess(true);
-          setTimeout(() => {
-            router.push('/dashboard/payment/success');
-          }, 2000);
-        } else {
-          // بدء عملية الدفع باستخدام GeideaCheckout للوضع الحقيقي فقط
-          startPayment(data.sessionId);
-        }
+        // بدء عملية الدفع باستخدام GeideaCheckout - يعمل في كلا الوضعين
+        startPayment(data.sessionId);
       } else {
         setError(data.details || 'فشل في إنشاء جلسة الدفع');
       }

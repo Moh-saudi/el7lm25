@@ -49,24 +49,16 @@ export async function POST(request: NextRequest) {
     const apiPassword = process.env.GEIDEA_API_PASSWORD;
     const geideaApiUrl = process.env.GEIDEA_BASE_URL || 'https://api.merchant.geidea.net';
 
-    // التحقق من وجود المفاتيح
-    if (!merchantPublicKey || !apiPassword || 
-        merchantPublicKey === 'your_merchant_public_key_here' || 
-        apiPassword === 'your_api_password_here') {
-      console.warn('⚠️ Geidea credentials missing or using placeholders, using test mode');
+    // التحقق من وجود المفاتيح الحقيقية
+    const isUsingRealCredentials = merchantPublicKey && apiPassword && 
+        merchantPublicKey !== 'your_merchant_public_key_here' && 
+        apiPassword !== 'your_api_password_here';
+        
+    if (!isUsingRealCredentials) {
+      console.warn('⚠️ Geidea using test/placeholder credentials');
       
-      // إرجاع بيانات اختبار
-      const mockSessionId = `test_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      console.log('🧪 [Geidea API] Test mode - returning mock session:', mockSessionId);
-      
-      return NextResponse.json({
-        success: true,
-        sessionId: mockSessionId,
-        merchantReferenceId: orderId,
-        message: 'Test payment session created successfully',
-        isTestMode: true
-      });
+      // استخدام المفاتيح الموجودة (حتى لو كانت placeholders) لإنشاء الجلسة
+      // Geidea ستتعامل مع هذا حسب إعداداتها
     }
 
     // إنشاء timestamp حسب الوثائق الرسمية
@@ -74,11 +66,11 @@ export async function POST(request: NextRequest) {
     
     // إنشاء توقيع حسب الوثائق الرسمية
     const signature = generateSignature(
-      merchantPublicKey,
+      merchantPublicKey || 'test_merchant',
       parseFloat(amount),
       currency,
       orderId,
-      apiPassword,
+      apiPassword || 'test_password',
       timestamp
     );
 
@@ -93,7 +85,6 @@ export async function POST(request: NextRequest) {
     };
 
     // إضافة callbackUrl (مطلوب ويجب أن يكون HTTPS)
-    // في وضع التطوير نستخدم webhook.site للاختبار
     const appBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     if (appBaseUrl.includes('localhost')) {
       // استخدم webhook.site للتطوير - هذا مقبول من Geidea
@@ -104,7 +95,8 @@ export async function POST(request: NextRequest) {
 
     console.log('🚀 Creating Geidea session with data:', {
       ...sessionData,
-      signature: signature.substring(0, 8) + '...'
+      signature: signature.substring(0, 8) + '...',
+      isTestMode: !isUsingRealCredentials
     });
 
     // إرسال طلب إنشاء الجلسة إلى Geidea
@@ -113,7 +105,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': `Basic ${Buffer.from(`${merchantPublicKey}:${apiPassword}`).toString('base64')}`
+        'Authorization': `Basic ${Buffer.from(`${merchantPublicKey || 'test_merchant'}:${apiPassword || 'test_password'}`).toString('base64')}`
       },
       body: JSON.stringify(sessionData)
     });
@@ -123,7 +115,8 @@ export async function POST(request: NextRequest) {
     console.log('📨 Geidea response:', {
       status: response.status,
       responseCode: responseData.responseCode,
-      sessionId: responseData.session?.id
+      sessionId: responseData.session?.id,
+      isTestMode: !isUsingRealCredentials
     });
 
     if (!response.ok || responseData.responseCode !== '000') {
@@ -144,7 +137,8 @@ export async function POST(request: NextRequest) {
       sessionId: responseData.session?.id,
       redirectUrl: responseData.session?.redirectUrl,
       merchantReferenceId: orderId,
-      message: 'Payment session created successfully'
+      message: 'Payment session created successfully',
+      isTestMode: !isUsingRealCredentials
     });
 
   } catch (error) {
