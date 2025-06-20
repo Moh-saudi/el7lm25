@@ -15,6 +15,8 @@ import { supabaseUrl, supabaseAnonKey } from '@/lib/supabase/config';
 import { User } from 'firebase/auth';
 import { getSupabaseClient } from '@/lib/supabase/config';
 
+
+
 interface ExtendedUser extends User {
   full_name?: string;
   phone?: string;
@@ -208,14 +210,14 @@ interface PlayerFormData {
 
 // Constants
 const STEPS = {
-  PERSONAL: 1,
-  EDUCATION: 2,
-  MEDICAL: 3,
-  SPORTS: 4,
-  SKILLS: 5,
-  OBJECTIVES: 6,
-  MEDIA: 7,
-  CONTRACTS: 8 // التعاقدات والاتصالات
+  PERSONAL: 0,
+  EDUCATION: 1,
+  MEDICAL: 2,
+  SPORTS: 3,
+  SKILLS: 4,
+  OBJECTIVES: 5,
+  MEDIA: 6,
+  CONTRACTS: 7
 };
 
 const STEP_TITLES = {
@@ -309,7 +311,8 @@ const defaultPlayerFields: PlayerFormData = {
   },
   current_club: '',
   previous_clubs: [],
-  documents: []
+  documents: [],
+  address: ''
 };
 
 // Helper function to combine classes
@@ -353,9 +356,7 @@ const BLOOD_TYPES = [
   'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'
 ];
 
-const POSITIONS = [
-  'حارس مرمى', 'مدافع أيمن', 'مدافع أيسر', 'قلب دفاع', 'وسط دفاعي', 'وسط', 'جناح أيمن', 'جناح أيسر', 'مهاجم صريح', 'مهاجم ثاني'
-];
+
 const FOOT_PREFERENCES = [
   'اليمنى', 'اليسرى', 'كلتاهما'
 ];
@@ -383,17 +384,10 @@ const SOCIAL_SKILLS = [
   { key: 'punctuality', label: 'الالتزام بالمواعيد' },
 ];
 
-const OBJECTIVES_CHECKBOXES = [
-  { key: 'professional', label: 'الاحتراف الكامل' },
-  { key: 'trials', label: 'معايشات احترافية' },
-  { key: 'local_leagues', label: 'المشاركة في دوريات محلية' },
-  { key: 'arab_leagues', label: 'المشاركة في دوريات عربية' },
-  { key: 'european_leagues', label: 'المشاركة في دوريات أوروبية' },
-  { key: 'training', label: 'تدريبات احترافية' },
-];
+
 
 const MAX_IMAGES = 10;
-const MAX_VIDEOS = 10;
+const MAX_VIDEOS = 5;
 
 interface UploadResponse {
   url: string;
@@ -410,12 +404,12 @@ const getSupabaseWithAuth = async () => {
     // Get Firebase ID token
     const firebaseToken = await user.getIdToken();
     
-    // Create a new Supabase client with custom headers instead of modifying protected property
+    // Create a new Supabase client with custom headers - use values from our config file
     const { createClient } = await import('@supabase/supabase-js');
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const finalSupabaseUrl = supabaseUrl || 'https://ekyerljzfokqimbabzxm.supabase.co';
+    const finalSupabaseAnonKey = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVreWVybGp6Zm9rcWltYmFienhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2NTcyODMsImV4cCI6MjA2MjIzMzI4M30.Xd6Cg8QUISHyCG-qbgo9HtWUZz6tvqAqG6KKXzuetBY';
     
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+    const supabaseClient = createClient(finalSupabaseUrl, finalSupabaseAnonKey, {
       global: {
         headers: {
           Authorization: `Bearer ${firebaseToken}`
@@ -606,6 +600,14 @@ export default function PlayerProfile() {
     }
   };
 
+  // جلب بيانات اللاعب عند توفر المستخدم - مرة واحدة فقط
+  useEffect(() => {
+    if (user && !playerData) {
+      fetchPlayerData();
+    }
+  }, [user]);
+
+  // تحديث form data عند تغيير player data
   useEffect(() => {
     if (playerData) {
       setFormData(playerData);
@@ -613,13 +615,6 @@ export default function PlayerProfile() {
       setIsLoading(false);
     }
   }, [playerData]);
-
-  // جلب بيانات اللاعب عند توفر المستخدم
-  useEffect(() => {
-    if (user) {
-      fetchPlayerData();
-    }
-  }, [user]);
 
   const fetchPlayerData = async () => {
     if (!user) return;
