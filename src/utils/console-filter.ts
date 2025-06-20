@@ -63,7 +63,7 @@ if (typeof window !== 'undefined') {
   ];
 
   // فحص إذا كانت الرسالة يجب إخفاؤها
-  const shouldHideMessage = (message) => {
+  const shouldHideMessage = (message: string) => {
     const lowerMessage = message.toLowerCase();
     return hiddenErrors.some(error => lowerMessage.includes(error));
   };
@@ -71,7 +71,7 @@ if (typeof window !== 'undefined') {
   // الرسائل التي تظهر مرة واحدة فقط
   const shownOnce = new Set();
   
-  const showOnceOnly = (key, replacement) => {
+  const showOnceOnly = (key: string, replacement: string) => {
     if (!shownOnce.has(key)) {
       shownOnce.add(key);
       originalConsoleLog(replacement);
@@ -79,7 +79,7 @@ if (typeof window !== 'undefined') {
   };
 
   // استبدال console.error
-  console.error = (...args) => {
+  console.error = (...args: any[]) => {
     const message = args.join(' ');
     if (!shouldHideMessage(message)) {
       originalConsoleError(...args);
@@ -87,7 +87,7 @@ if (typeof window !== 'undefined') {
   };
 
   // استبدال console.warn  
-  console.warn = (...args) => {
+  console.warn = (...args: any[]) => {
     const message = args.join(' ');
     if (!shouldHideMessage(message)) {
       originalConsoleWarn(...args);
@@ -95,7 +95,7 @@ if (typeof window !== 'undefined') {
   };
 
   // استبدال console.log مع تنظيف الرسائل المتكررة
-  console.log = (...args) => {
+  console.log = (...args: any[]) => {
     const message = args.join(' ');
     
     // إخفاء الرسائل المتكررة
