@@ -55,10 +55,22 @@ export async function POST(request: NextRequest) {
         apiPassword !== 'your_api_password_here';
         
     if (!isUsingRealCredentials) {
-      console.warn('⚠️ Geidea using test/placeholder credentials');
+      console.warn('⚠️ Geidea credentials missing - creating mock session for development');
       
-      // استخدام المفاتيح الموجودة (حتى لو كانت placeholders) لإنشاء الجلسة
-      // Geidea ستتعامل مع هذا حسب إعداداتها
+      // إنشاء mock session للتطوير بدلاً من الاتصال بـ Geidea مع credentials خاطئة
+      const mockSessionId = `dev_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log('🧪 [Geidea API] Development mode - creating mock session:', mockSessionId);
+      
+      return NextResponse.json({
+        success: true,
+        sessionId: mockSessionId,
+        redirectUrl: `#mock-payment-${mockSessionId}`,
+        merchantReferenceId: orderId,
+        message: 'Development mock session created successfully',
+        isTestMode: true,
+        isDevelopmentMode: true
+      });
     }
 
     // إنشاء timestamp حسب الوثائق الرسمية
@@ -66,11 +78,11 @@ export async function POST(request: NextRequest) {
     
     // إنشاء توقيع حسب الوثائق الرسمية
     const signature = generateSignature(
-      merchantPublicKey || 'test_merchant',
+      merchantPublicKey,
       parseFloat(amount),
       currency,
       orderId,
-      apiPassword || 'test_password',
+      apiPassword,
       timestamp
     );
 
@@ -93,19 +105,21 @@ export async function POST(request: NextRequest) {
       sessionData.callbackUrl = `${appBaseUrl}/api/geidea/callback`;
     }
 
-    console.log('🚀 Creating Geidea session with data:', {
-      ...sessionData,
-      signature: signature.substring(0, 8) + '...',
-      isTestMode: !isUsingRealCredentials
+    console.log('🚀 Creating Geidea session with REAL credentials:', {
+      amount: sessionData.amount,
+      currency: sessionData.currency,
+      merchantReferenceId: sessionData.merchantReferenceId,
+      callbackUrl: sessionData.callbackUrl,
+      signature: signature.substring(0, 8) + '...'
     });
 
-    // إرسال طلب إنشاء الجلسة إلى Geidea
+    // إرسال طلب إنشاء الجلسة إلى Geidea مع المفاتيح الحقيقية فقط
     const response = await fetch(`${geideaApiUrl}/payment-intent/api/v2/direct/session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': `Basic ${Buffer.from(`${merchantPublicKey || 'test_merchant'}:${apiPassword || 'test_password'}`).toString('base64')}`
+        'Authorization': `Basic ${Buffer.from(`${merchantPublicKey}:${apiPassword}`).toString('base64')}`
       },
       body: JSON.stringify(sessionData)
     });
@@ -115,8 +129,7 @@ export async function POST(request: NextRequest) {
     console.log('📨 Geidea response:', {
       status: response.status,
       responseCode: responseData.responseCode,
-      sessionId: responseData.session?.id,
-      isTestMode: !isUsingRealCredentials
+      sessionId: responseData.session?.id
     });
 
     if (!response.ok || responseData.responseCode !== '000') {
@@ -138,7 +151,7 @@ export async function POST(request: NextRequest) {
       redirectUrl: responseData.session?.redirectUrl,
       merchantReferenceId: orderId,
       message: 'Payment session created successfully',
-      isTestMode: !isUsingRealCredentials
+      isTestMode: false
     });
 
   } catch (error) {
