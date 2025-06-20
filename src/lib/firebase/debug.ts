@@ -18,7 +18,7 @@ export function debugFirebaseConfig() {
       
       console.log(`🔥 Firebase: Auth ${authReady ? '✅' : '❌'} | DB ${dbReady ? '✅' : '❌'} | Ready`);
     } catch (error) {
-      console.error('❌ Firebase initialization failed:', error.message);
+      console.error('❌ Firebase initialization failed:', error instanceof Error ? error.message : 'Unknown error');
     }
   }
 }
