@@ -46,7 +46,7 @@ export async function testFirebaseConnection() {
         const testDoc = await db.collection('test').doc('test').get();
         console.log('✅ Firestore read test passed');
       } catch (error) {
-        console.log('⚠️ Firestore read test failed (this might be normal):', error.message);
+        console.log('⚠️ Firestore read test failed (this might be normal):', error instanceof Error ? error.message : 'Unknown error');
       }
     } else {
       console.log('❌ Firestore service failed');

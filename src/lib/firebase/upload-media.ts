@@ -38,7 +38,7 @@ export async function uploadPlayerProfileImage(file: File, user: User): Promise<
   try {
     await uploadFile(STORAGE_BUCKETS.PLAYER_AVATAR, filePath, file, { upsert: true });
   } catch (error) {
-    console.error('رفع الصورة فشل:', error.message, error.details, error);
+    console.error('رفع الصورة فشل:', error instanceof Error ? error.message : 'Unknown error', error);
     throw error;
   }
   const { publicUrl } = getPublicUrl(STORAGE_BUCKETS.PLAYER_AVATAR, filePath);
@@ -61,7 +61,7 @@ export async function uploadPlayerAdditionalImage(file: File, user: User): Promi
   try {
     await uploadFile(STORAGE_BUCKETS.PLAYER_ADDITIONAL_IMAGES, filePath, file, { upsert: false });
   } catch (error) {
-    console.error('رفع الصورة الإضافية فشل:', error.message, error.details, error);
+    console.error('رفع الصورة الإضافية فشل:', error instanceof Error ? error.message : 'Unknown error', error);
     throw error;
   }
   const { publicUrl } = getPublicUrl(STORAGE_BUCKETS.PLAYER_ADDITIONAL_IMAGES, filePath);
