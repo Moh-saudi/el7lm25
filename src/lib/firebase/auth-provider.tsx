@@ -47,9 +47,11 @@ export function AuthProvider({ children }: FirebaseAuthProviderProps) {
   // تشخيص Firebase عند بدء التطبيق
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // تحميل فلتر الكونسول لإخفاء أخطاء Geidea CORS في التطوير
-      import('@/utils/console-filter').catch(() => {
-        // تجاهل أي خطأ في تحميل الفلتر
+      // تحميل فلتر الكونسول لإخفاء أخطاء Geidea CORS
+      import('@/utils/console-filter').then(() => {
+        console.log('Console filter imported successfully');
+      }).catch((error) => {
+        console.warn('Failed to load console filter:', error);
       });
       
       debugFirebaseConfig();
@@ -106,6 +108,7 @@ export function AuthProvider({ children }: FirebaseAuthProviderProps) {
               if (doc.exists()) {
                 setUserData(doc.data() as UserData);
               } else {
+                console.warn('User document does not exist, user may need to complete registration');
                 setUserData(null);
               }
               setLoading(false);
@@ -309,9 +312,19 @@ export function AuthProvider({ children }: FirebaseAuthProviderProps) {
     loginWithGoogle,
   };
 
+  // إظهار المحتوى دائماً مع إظهار حالة التحميل إذا لزم الأمر
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">جاري تحميل بيانات المستخدم...</p>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }

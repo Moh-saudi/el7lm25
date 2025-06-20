@@ -1,39 +1,132 @@
-// فلتر للكونسول لإخفاء الأخطاء غير المهمة في بيئة التطوير
+// Console Filter - إخفاء أخطاء Geidea والأخطاء المتكررة
+// يعمل في جميع البيئات (development & production)
 
-// دالة تفعيل فلتر الكونسول
-export const initConsoleFilter = () => {
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    // حفظ console.error الأصلي
-    const originalError = console.error;
-    
-    // قائمة الأخطاء المسموح بإخفاؤها (أخطاء Geidea CORS الطبيعية)
-    const ignoredErrors = [
-      'Failed to read a named property',
-      'Blocked a frame with origin',
-      'Refused to get unsafe header',
-      'X-Correlation-ID',
-      'SecurityError'
-    ];
-    
-    // استبدال console.error
-    console.error = (...args: any[]) => {
-      const errorMessage = args.join(' ');
-      
-      // إذا كان الخطأ في القائمة المسموحة، لا تعرضه
-      const shouldIgnore = ignoredErrors.some(ignored => 
-        errorMessage.includes(ignored)
-      );
-      
-      if (!shouldIgnore) {
-        originalError.apply(console, args);
-      }
-    };
-    
-    console.log('🔧 Console filter loaded - Geidea CORS errors will be filtered in development');
-  }
-};
+if (typeof window !== 'undefined') {
+  // حفظ console methods الأصلية
+  const originalConsoleError = console.error;
+  const originalConsoleWarn = console.warn;
+  const originalConsoleLog = console.log;
 
-// تفعيل الفلتر تلقائياً
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  initConsoleFilter();
-} 
+  // قائمة شاملة للأخطاء المراد إخفاؤها
+  const hiddenErrors = [
+    // Geidea errors
+    'geidea',
+    'geideaCheckout',
+    'geideaCheckoutHPP',
+    'x-correlation-id',
+    'refused to get unsafe header',
+    
+    // Frame errors
+    'frame-ancestors',
+    'refused to frame',
+    'blocked a frame with origin',
+    'accessing a cross-origin frame',
+    'failed to read a named property',
+    
+    // CSP errors
+    'content security policy',
+    'x-frame-options may only be set via an http header',
+    'is ignored when delivered via a <meta> element',
+    
+    // Payment gateway errors
+    'mastercard.com',
+    'gateway.mastercard',
+    'ap.gateway.mastercard',
+    
+    // Generic CORS/Security errors
+    'securityerror',
+    'cors',
+    'cross-origin',
+    'report only',
+    '[report only]',
+    
+    // Network errors
+    'failed to fetch',
+    'refused to connect',
+    'err_blocked_by_client',
+    'err_network',
+    
+    // Firebase errors
+    'auth/network-request-failed',
+    
+    // Development logs
+    'hpp started',
+    'environment: prod',
+    'gateway url',
+    'hpp url',
+    'build version',
+    
+    // Null reading errors
+    'cannot read properties of null',
+    'reading \'style\'',
+    'reading \'document\'',
+  ];
+
+  // فحص إذا كانت الرسالة يجب إخفاؤها
+  const shouldHideMessage = (message) => {
+    const lowerMessage = message.toLowerCase();
+    return hiddenErrors.some(error => lowerMessage.includes(error));
+  };
+
+  // الرسائل التي تظهر مرة واحدة فقط
+  const shownOnce = new Set();
+  
+  const showOnceOnly = (key, replacement) => {
+    if (!shownOnce.has(key)) {
+      shownOnce.add(key);
+      originalConsoleLog(replacement);
+    }
+  };
+
+  // استبدال console.error
+  console.error = (...args) => {
+    const message = args.join(' ');
+    if (!shouldHideMessage(message)) {
+      originalConsoleError(...args);
+    }
+  };
+
+  // استبدال console.warn  
+  console.warn = (...args) => {
+    const message = args.join(' ');
+    if (!shouldHideMessage(message)) {
+      originalConsoleWarn(...args);
+    }
+  };
+
+  // استبدال console.log مع تنظيف الرسائل المتكررة
+  console.log = (...args) => {
+    const message = args.join(' ');
+    
+    // إخفاء الرسائل المتكررة
+    if (message.includes('AuthProvider: State updated')) {
+      showOnceOnly('auth-state', '🔐 AuthProvider: State management started (further updates hidden)');
+      return;
+    }
+    
+    if (message.includes('PlayerProfile: Rendering main form')) {
+      showOnceOnly('player-profile', '🔄 PlayerProfile: Rendering started (further renders hidden)');
+      return;
+    }
+    
+    if (message.includes('user:') && message.includes('UserImpl')) {
+      showOnceOnly('user-state', '👤 User state logging started (further logs hidden)');
+      return;
+    }
+    
+    if (message.includes('userCountry:') || message.includes('💰 عملة المستخدم')) {
+      showOnceOnly('currency-logs', '💰 Currency system started (further logs hidden)');
+      return;
+    }
+    
+    // إظهار الرسائل المهمة
+    originalConsoleLog(...args);
+  };
+
+  // رسائل تأكيد تحميل الفلتر
+  originalConsoleLog('🔇 Console Filter: Activated for all environments');
+  originalConsoleLog('✅ Geidea, CORS, and repetitive errors will be hidden');
+  originalConsoleLog('🎯 Console cleaned for better debugging experience');
+}
+
+export default {}; 

@@ -91,7 +91,7 @@ export async function checkGeideaConfig() {
       isValid: false,
       missingFields: ['API_ERROR'],
       config: { error: 'Failed to check configuration' },
-      isTestMode: true
+      isTestMode: false
     };
   }
 }

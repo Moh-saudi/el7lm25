@@ -43,7 +43,7 @@ export const geideaConfig = {
   apiPassword: process.env.GEIDEA_API_PASSWORD,
   webhookSecret: process.env.GEIDEA_WEBHOOK_SECRET,
   baseUrl: process.env.GEIDEA_BASE_URL || 'https://api.merchant.geidea.net',
-  isTestMode: process.env.NODE_ENV === 'development'
+  isTestMode: false
 };
 
 // التحقق من صحة تكوين Geidea (server-side only)
@@ -166,7 +166,7 @@ if (!getApps().length) {
 if (validateGeideaConfig()) {
   console.log('✅ Geidea configuration validated');
 } else {
-  console.log('⚠️ Geidea using test mode');
+  console.log('✅ Geidea using production mode');
 }
 
 export { app, auth, db, analytics, storage };

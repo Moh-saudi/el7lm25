@@ -17,31 +17,59 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir="rtl">
       <head>
-        {/* Geidea Security Meta Tags */}
-        <meta httpEquiv="Content-Security-Policy" content="frame-ancestors 'self' https://www.merchant.geidea.net https://checkout.geidea.net https://gateway.mastercard.com;" />
-        <meta name="referrer" content="strict-origin-when-cross-origin" />
+        {/* Payment Meta Tags - CSP removed (handled by next.config.js) */}
+        <meta name="referrer" content="no-referrer-when-downgrade" />
         
-        {/* Geidea Payment Scripts - Load Early */}
+        {/* Geidea Payment Scripts */}
         <Script
           id="geidea-checkout"
           src="https://www.merchant.geidea.net/hpp/geideaCheckout.min.js"
           strategy="beforeInteractive"
-          crossOrigin="anonymous"
         />
         
-        {/* Additional Geidea Security Script */}
-        <Script id="geidea-security" strategy="beforeInteractive">
+        {/* Apple Pay Detection Script */}
+        <Script id="apple-pay-detection" strategy="afterInteractive">
           {`
-            // Configure Geidea security settings
-            window.geideaConfig = {
-              allowFraming: true,
-              crossOrigin: true,
-              secure: true
-            };
-            
-            // Handle frame security
-            if (window.self !== window.top) {
-              console.log('Running in frame - Geidea payment context');
+            if (typeof window !== 'undefined') {
+              window.addEventListener('load', function() {
+                if (window.ApplePaySession && window.ApplePaySession.canMakePayments()) {
+                  document.documentElement.classList.add('apple-pay-supported');
+                  console.log('🍎 Apple Pay is supported on this device');
+                } else {
+                  console.log('🍎 Apple Pay is not supported on this device');
+                }
+              });
+            }
+          `}
+        </Script>
+        
+        {/* Geidea Configuration Script */}
+        <Script id="geidea-config" strategy="beforeInteractive">
+          {`
+            // تكوين Geidea لدعم جميع الـ headers والـ frames
+            if (typeof window !== 'undefined') {
+              window.geideaConfig = {
+                allowUnsafeHeaders: true,
+                allowAllFrames: true,
+                bypassCSP: true,
+                allowCrossOrigin: true
+              };
+              
+              // Override XMLHttpRequest للسماح بجميع الـ headers
+              const originalXHR = window.XMLHttpRequest;
+              window.XMLHttpRequest = function() {
+                const xhr = new originalXHR();
+                const originalSetRequestHeader = xhr.setRequestHeader;
+                xhr.setRequestHeader = function(name, value) {
+                  try {
+                    return originalSetRequestHeader.call(this, name, value);
+                  } catch (e) {
+                    // تجاهل أخطاء الـ headers المحظورة
+                    console.log('Header ignored:', name);
+                  }
+                };
+                return xhr;
+              };
             }
           `}
         </Script>

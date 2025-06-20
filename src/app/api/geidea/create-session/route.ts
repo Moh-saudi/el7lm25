@@ -45,21 +45,21 @@ export async function POST(request: NextRequest) {
     }
 
     // قراءة متغيرات البيئة مع fallback للمفاتيح الحقيقية
-    const merchantPublicKey = process.env.GEIDEA_MERCHANT_PUBLIC_KEY || 'e510dca3-d113-47bf-b4b0-9b92bac661f6';
-    const apiPassword = process.env.GEIDEA_API_PASSWORD || '9b794cd5-9b42-4048-8e97-2c162f35710f';
+      const merchantPublicKey = process.env.GEIDEA_MERCHANT_PUBLIC_KEY || '3448c010-87b1-41e7-9771-cac444268cfb';
+  const apiPassword = process.env.GEIDEA_API_PASSWORD || 'edfd5eee-fd1b-4932-9ee1-d6d9ba7599f0';
     const geideaApiUrl = process.env.GEIDEA_BASE_URL || 'https://api.merchant.geidea.net';
 
     // Debug: طباعة المفاتيح للتحقق
     console.log('🔍 [Geidea Debug] Environment check:', {
       merchantPublicKey: merchantPublicKey ? `${merchantPublicKey.substring(0, 8)}...` : 'NOT SET',
       apiPassword: apiPassword ? `${apiPassword.substring(0, 8)}...` : 'NOT SET',
-      hasRealKey: merchantPublicKey === 'e510dca3-d113-47bf-b4b0-9b92bac661f6',
-      hasRealPassword: apiPassword === '9b794cd5-9b42-4048-8e97-2c162f35710f'
+      hasRealKey: merchantPublicKey === '3448c010-87b1-41e7-9771-cac444268cfb',
+      hasRealPassword: apiPassword === 'edfd5eee-fd1b-4932-9ee1-d6d9ba7599f0'
     });
 
     // التحقق من وجود المفاتيح الحقيقية
-    const isUsingRealCredentials = merchantPublicKey === 'e510dca3-d113-47bf-b4b0-9b92bac661f6' && 
-        apiPassword === '9b794cd5-9b42-4048-8e97-2c162f35710f';
+    const isUsingRealCredentials = merchantPublicKey === '3448c010-87b1-41e7-9771-cac444268cfb' && 
+        apiPassword === 'edfd5eee-fd1b-4932-9ee1-d6d9ba7599f0';
         
     console.log('🔑 [Geidea Debug] Credentials check:', {
       isUsingRealCredentials,
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
         redirectUrl: `#mock-payment-${mockSessionId}`,
         merchantReferenceId: orderId,
         message: 'Development mock session created successfully',
-        isTestMode: true,
+        isTestMode: false,
         isDevelopmentMode: true
       });
     }
@@ -102,6 +102,11 @@ export async function POST(request: NextRequest) {
     const sessionData: any = {
       amount: parseFloat(amount),
       currency: currency,
+    isTestMode: false,
+    testMode: false,
+    sandbox: false,
+    environment: 'production',
+    mode: 'live',
       merchantReferenceId: orderId,
       timestamp: timestamp,
       signature: signature,
@@ -109,7 +114,7 @@ export async function POST(request: NextRequest) {
     };
 
     // إضافة callbackUrl (مطلوب ويجب أن يكون HTTPS)
-    const appBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://dream-o8xvlgsby-mohamedsaudis-projects.vercel.app';
+    const appBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://dream-cyaco2n7l-mohamedsaudis-projects.vercel.app';
     
     // تأكد من استخدام الـ production URL
     let callbackUrl = `${appBaseUrl}/api/geidea/callback`;
@@ -135,6 +140,9 @@ export async function POST(request: NextRequest) {
       callbackUrl: sessionData.callbackUrl,
       signature: signature.substring(0, 8) + '...'
     });
+    
+    console.log('📋 Full sessionData payload:', JSON.stringify(sessionData, null, 2));
+    console.log('🔗 Geidea API URL:', `${geideaApiUrl}/payment/api/v1/hpp/session`);
 
     // إرسال طلب إنشاء الجلسة إلى Geidea مع المفاتيح الحقيقية فقط
     const response = await fetch(`${geideaApiUrl}/payment-intent/api/v2/direct/session`, {

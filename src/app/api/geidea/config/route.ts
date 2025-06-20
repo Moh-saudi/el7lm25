@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
       apiPassword: process.env.GEIDEA_API_PASSWORD,
       webhookSecret: process.env.GEIDEA_WEBHOOK_SECRET,
       baseUrl: process.env.GEIDEA_BASE_URL || 'https://api.merchant.geidea.net',
-      isTestMode: process.env.NODE_ENV === 'development'
+      isTestMode: false
     };
 
     // التحقق من صحة التكوين
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       },
       isValid,
       missingFields,
-      isTestMode: !isValid || config.isTestMode,
+      isTestMode: false,
       message: isValid ? 'Geidea configuration is valid' : 'Geidea configuration has missing fields'
     });
 
