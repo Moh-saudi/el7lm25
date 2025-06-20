@@ -44,15 +44,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // قراءة متغيرات البيئة
-    const merchantPublicKey = process.env.GEIDEA_MERCHANT_PUBLIC_KEY;
-    const apiPassword = process.env.GEIDEA_API_PASSWORD;
+    // قراءة متغيرات البيئة مع fallback للمفاتيح الحقيقية
+    const merchantPublicKey = process.env.GEIDEA_MERCHANT_PUBLIC_KEY || 'e510dca3-d113-47bf-b4b0-9b92bac661f6';
+    const apiPassword = process.env.GEIDEA_API_PASSWORD || '9b794cd5-9b42-4048-8e97-2c162f35710f';
     const geideaApiUrl = process.env.GEIDEA_BASE_URL || 'https://api.merchant.geidea.net';
 
+    // Debug: طباعة المفاتيح للتحقق
+    console.log('🔍 [Geidea Debug] Environment check:', {
+      merchantPublicKey: merchantPublicKey ? `${merchantPublicKey.substring(0, 8)}...` : 'NOT SET',
+      apiPassword: apiPassword ? `${apiPassword.substring(0, 8)}...` : 'NOT SET',
+      hasRealKey: merchantPublicKey === 'e510dca3-d113-47bf-b4b0-9b92bac661f6',
+      hasRealPassword: apiPassword === '9b794cd5-9b42-4048-8e97-2c162f35710f'
+    });
+
     // التحقق من وجود المفاتيح الحقيقية
-    const isUsingRealCredentials = merchantPublicKey && apiPassword && 
-        merchantPublicKey !== 'your_merchant_public_key_here' && 
-        apiPassword !== 'your_api_password_here';
+    const isUsingRealCredentials = merchantPublicKey === 'e510dca3-d113-47bf-b4b0-9b92bac661f6' && 
+        apiPassword === '9b794cd5-9b42-4048-8e97-2c162f35710f';
+        
+    console.log('🔑 [Geidea Debug] Credentials check:', {
+      isUsingRealCredentials,
+      willUseMockSession: !isUsingRealCredentials
+    });
         
     if (!isUsingRealCredentials) {
       console.warn('⚠️ Geidea credentials missing - creating mock session for development');

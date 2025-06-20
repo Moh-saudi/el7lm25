@@ -337,21 +337,31 @@ export default function PaymentPage() {
       });
 
       const data = await response.json();
+      
+      console.log('📨 [Frontend] Geidea API Response:', {
+        success: data.success,
+        isDevelopmentMode: data.isDevelopmentMode,
+        isTestMode: data.isTestMode,
+        sessionId: data.sessionId ? `${data.sessionId.substring(0, 10)}...` : 'NONE',
+        message: data.message
+      });
 
       if (data.success) {
         // تحقق من نوع الجلسة
         if (data.isDevelopmentMode) {
-          console.log('🧪 Development mode - simulating payment success');
+          console.log('🧪 [Frontend] Development mode detected - simulating payment success');
           setSuccessMessage('تم الدفع بنجاح (وضع التطوير)! سيتم تفعيل اشتراكك قريباً.');
           setSuccess(true);
           setTimeout(() => {
             router.push('/dashboard/payment/success');
           }, 2000);
         } else {
+          console.log('💳 [Frontend] Production mode detected - starting real Geidea payment');
           // بدء عملية الدفع باستخدام GeideaCheckout للوضع الحقيقي
           startPayment(data.sessionId);
         }
       } else {
+        console.error('❌ [Frontend] API Error:', data);
         setError(data.details || 'فشل في إنشاء جلسة الدفع');
       }
     } catch (error) {
@@ -364,10 +374,26 @@ export default function PaymentPage() {
 
   // دالة لبدء عملية الدفع باستخدام sessionId
   const startPayment = (sessionId: string) => {
+    console.log('🚀 [Frontend] Starting payment with sessionId:', sessionId);
+    console.log('🔍 [Frontend] GeideaCheckout availability:', {
+      windowExists: typeof window !== 'undefined',
+      geideaCheckoutExists: typeof window !== 'undefined' && !!(window as any).GeideaCheckout,
+      geideaCheckoutType: typeof window !== 'undefined' ? typeof (window as any).GeideaCheckout : 'undefined'
+    });
+    
     if (typeof window !== 'undefined' && (window as any).GeideaCheckout) {
-      const payment = new (window as any).GeideaCheckout(onPaymentSuccess, onPaymentError, onPaymentCancel);
-      payment.startPayment(sessionId);
+      console.log('✅ [Frontend] GeideaCheckout found, creating payment instance...');
+      try {
+        const payment = new (window as any).GeideaCheckout(onPaymentSuccess, onPaymentError, onPaymentCancel);
+        console.log('✅ [Frontend] Payment instance created, starting payment...');
+        payment.startPayment(sessionId);
+        console.log('✅ [Frontend] Payment started successfully!');
+      } catch (error) {
+        console.error('❌ [Frontend] Error creating/starting payment:', error);
+        setError('حدث خطأ في إنشاء جلسة الدفع. يرجى المحاولة مرة أخرى.');
+      }
     } else {
+      console.error('❌ [Frontend] GeideaCheckout not available');
       setError('مكتبة الدفع غير متاحة. يرجى إعادة تحميل الصفحة والمحاولة مرة أخرى.');
     }
   };
