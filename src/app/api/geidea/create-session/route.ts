@@ -109,13 +109,24 @@ export async function POST(request: NextRequest) {
     };
 
     // إضافة callbackUrl (مطلوب ويجب أن يكون HTTPS)
-    const appBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const appBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://dream-o8xvlgsby-mohamedsaudis-projects.vercel.app';
+    
+    // تأكد من استخدام الـ production URL
+    let callbackUrl = `${appBaseUrl}/api/geidea/callback`;
+    
+    // للتطوير المحلي، استخدم webhook.site
     if (appBaseUrl.includes('localhost')) {
-      // استخدم webhook.site للتطوير - هذا مقبول من Geidea
-      sessionData.callbackUrl = 'https://webhook.site/c32729f0-39f0-4cf8-a8c2-e932a146b685';
-    } else {
-      sessionData.callbackUrl = `${appBaseUrl}/api/geidea/callback`;
+      callbackUrl = 'https://webhook.site/c32729f0-39f0-4cf8-a8c2-e932a146b685';
     }
+    
+    sessionData.callbackUrl = callbackUrl;
+    
+    // إضافة domain whitelist لـ Geidea security
+    sessionData.allowedDomains = [
+      'dream-o8xvlgsby-mohamedsaudis-projects.vercel.app',
+      'dream-cyaco2n7l-mohamedsaudis-projects.vercel.app',
+      'localhost:3000'
+    ];
 
     console.log('🚀 Creating Geidea session with REAL credentials:', {
       amount: sessionData.amount,
