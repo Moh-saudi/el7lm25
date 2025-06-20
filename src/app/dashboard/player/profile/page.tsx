@@ -15,7 +15,28 @@ import { supabaseUrl, supabaseAnonKey } from '@/lib/supabase/config';
 import { User } from 'firebase/auth';
 import { getSupabaseClient } from '@/lib/supabase/config';
 
+// Available positions and other constants
+const POSITIONS = [
+  'حارس مرمى',
+  'مدافع أيمن', 
+  'مدافع أيسر',
+  'قلب دفاع',
+  'وسط دفاعي',
+  'وسط',
+  'جناح أيمن',
+  'جناح أيسر',
+  'مهاجم صريح',
+  'مهاجم ثاني'
+];
 
+const OBJECTIVES_CHECKBOXES = [
+  { key: 'professional', label: 'الاحتراف الكامل' },
+  { key: 'trials', label: 'معايشات احترافية' },
+  { key: 'local_leagues', label: 'المشاركة في دوريات محلية' },
+  { key: 'arab_leagues', label: 'المشاركة في دوريات عربية' },
+  { key: 'european_leagues', label: 'المشاركة في دوريات أوروبية' },
+  { key: 'training', label: 'تدريبات احترافية' }
+];
 
 interface ExtendedUser extends User {
   full_name?: string;
