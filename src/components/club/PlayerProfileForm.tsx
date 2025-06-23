@@ -18,7 +18,7 @@ interface PlayerProfileFormProps {
 
 const defaultData: PlayerFormData = {
   full_name: '',
-  birth_date: null,
+  birth_date: undefined,
   nationality: '',
   city: '',
   country: '',
@@ -59,7 +59,7 @@ const defaultData: PlayerFormData = {
     training: false,
     other: '',
   },
-  profile_image: null,
+  profile_image: undefined,
   additional_images: [],
   videos: [],
   training_courses: [],
@@ -86,7 +86,7 @@ const defaultData: PlayerFormData = {
   previous_clubs: [],
   documents: [],
   updated_at: new Date(),
-  subscription_end: null,
+  subscription_end: undefined,
   profile_image_url: '',
   subscription_status: '',
   subscription_type: '',
@@ -204,7 +204,7 @@ export default function PlayerProfileForm({ clubId = '', onSuccess, initialData 
                 id="birth_date"
                 type="date"
                 value={data.birth_date ? new Date(data.birth_date).toISOString().split('T')[0] : ''}
-                onChange={e => setData(d => ({ ...d, birth_date: e.target.value ? new Date(e.target.value) : null }))}
+                onChange={e => setData(d => ({ ...d, birth_date: e.target.value ? new Date(e.target.value) : undefined }))}
               />
             </div>
 
