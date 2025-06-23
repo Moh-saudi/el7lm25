@@ -105,7 +105,10 @@ export async function POST(request: NextRequest) {
     const allDocs = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    }));
+    })) as Array<{
+      id: string;
+      [key: string]: any;
+    }>;
 
     console.log(`📊 تم العثور على ${allDocs.length} مستند`);
 
