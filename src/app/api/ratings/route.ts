@@ -170,7 +170,7 @@ export async function POST(request: Request) {
     
     const existingRating = await getDocs(existingRatingQuery);
     
-    const ratingData = {
+    const baseRatingData = {
       userId,
       playerId,
       playerName: playerName || 'لاعب مجهول',
@@ -190,7 +190,7 @@ export async function POST(request: Request) {
     if (!existingRating.empty) {
       // تحديث التقييم الموجود
       const ratingDoc = existingRating.docs[0];
-      await updateDoc(ratingDoc.ref, ratingData);
+      await updateDoc(ratingDoc.ref, baseRatingData);
       
       return NextResponse.json({ 
         success: true, 
@@ -200,8 +200,11 @@ export async function POST(request: Request) {
       });
     } else {
       // إضافة تقييم جديد
-      ratingData.createdAt = serverTimestamp();
-      const ratingRef = await addDoc(collection(db, 'ratings'), ratingData);
+      const newRatingData = {
+        ...baseRatingData,
+        createdAt: serverTimestamp()
+      };
+      const ratingRef = await addDoc(collection(db, 'ratings'), newRatingData);
       
       return NextResponse.json({ 
         success: true, 
