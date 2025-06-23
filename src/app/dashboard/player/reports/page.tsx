@@ -1908,7 +1908,9 @@ const PlayerReport = () => {
                               onError={(e) => {
                                 console.log(`❌ فشل تحميل لوجو ${playerOrganization.type}، استخدام الأيقونة الافتراضية`);
                                 e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling.style.display = 'flex';
+                                if (e.currentTarget.nextElementSibling) {
+                                  (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                                }
                               }}
                             />
                           ) : null}
@@ -2020,7 +2022,9 @@ const PlayerReport = () => {
                               onError={(e) => {
                                 console.log(`❌ فشل تحميل لوجو ${playerOrganization.type} في القسم الرئيسي`);
                                 e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling.style.display = 'flex';
+                                if (e.currentTarget.nextElementSibling) {
+                                  (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                                }
                               }}
                             />
                           ) : null}
