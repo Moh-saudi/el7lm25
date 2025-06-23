@@ -1314,11 +1314,11 @@ export default function AddClubPlayerPage() {
                 </div>
 
                 {/* Video List */}
-                {formData.videos.length > 0 && (
+                {(formData.videos || []).length > 0 && (
                   <div>
-                    <h4 className="font-medium text-gray-800 mb-3">الفيديوهات المضافة ({formData.videos.length})</h4>
+                    <h4 className="font-medium text-gray-800 mb-3">الفيديوهات المضافة ({(formData.videos || []).length})</h4>
                     <div className="space-y-3">
-                      {formData.videos.map((video, index) => (
+                      {(formData.videos || []).map((video, index) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
                           <div className="flex items-center gap-3">
                             <Video className="w-5 h-5 text-blue-600" />
@@ -1399,11 +1399,11 @@ export default function AddClubPlayerPage() {
                 </div>
 
                 {/* Images Grid */}
-                {formData.additional_images.length > 0 && (
+                {(formData.additional_images || []).length > 0 && (
                   <div>
-                    <h4 className="font-medium text-gray-800 mb-3">الصور المضافة ({formData.additional_images.length})</h4>
+                    <h4 className="font-medium text-gray-800 mb-3">الصور المضافة ({(formData.additional_images || []).length})</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {formData.additional_images.map((image, index) => (
+                      {(formData.additional_images || []).map((image, index) => (
                         <div key={index} className="relative group">
                           <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden">
                             <img
@@ -1435,11 +1435,11 @@ export default function AddClubPlayerPage() {
                 <div className="flex gap-6 text-sm text-gray-600">
                   <span className="flex items-center gap-1">
                     <Video className="w-4 h-4 text-blue-600" />
-                    {formData.videos.length} فيديو
+                    {(formData.videos || []).length} فيديو
                   </span>
                   <span className="flex items-center gap-1">
                     <Camera className="w-4 h-4 text-purple-600" />
-                    {formData.additional_images.length} صورة
+                    {(formData.additional_images || []).length} صورة
                   </span>
                 </div>
               </div>
