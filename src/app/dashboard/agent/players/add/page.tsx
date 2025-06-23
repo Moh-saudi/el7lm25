@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Upload, X, Plus, Trash2, Save, User, GraduationCap, Heart, Trophy, Camera, FileText, Target, Video, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus, Trash2, Save, User, GraduationCap, Heart, Trophy, Camera, FileText, Target, Video, ExternalLink, CreditCard, Briefcase } from 'lucide-react';
 import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/lib/firebase/auth-provider';
@@ -17,10 +17,9 @@ const STEPS = {
   EDUCATION: 1,
   MEDICAL: 2,
   SPORTS: 3,
-  SKILLS: 4,
-  OBJECTIVES: 5,
+  SUBSCRIPTION: 4,
+  CAREER: 5,
   MEDIA: 6,
-  CONTRACTS: 7,
 };
 
 const STEP_TITLES = {
@@ -28,10 +27,9 @@ const STEP_TITLES = {
   [STEPS.EDUCATION]: 'المعلومات التعليمية',
   [STEPS.MEDICAL]: 'السجل الطبي',
   [STEPS.SPORTS]: 'المعلومات الرياضية',
-  [STEPS.SKILLS]: 'المهارات والقدرات',
-  [STEPS.OBJECTIVES]: 'الأهداف والطموحات',
+  [STEPS.SUBSCRIPTION]: 'معلومات الاشتراك',
+  [STEPS.CAREER]: 'المسيرة المهنية',
   [STEPS.MEDIA]: 'الصور والفيديوهات',
-  [STEPS.CONTRACTS]: 'العقود والاتصالات',
 };
 
 const STEP_ICONS = {
@@ -39,10 +37,9 @@ const STEP_ICONS = {
   [STEPS.EDUCATION]: GraduationCap,
   [STEPS.MEDICAL]: Heart,
   [STEPS.SPORTS]: Trophy,
-  [STEPS.SKILLS]: Target,
-  [STEPS.OBJECTIVES]: Target,
+  [STEPS.SUBSCRIPTION]: CreditCard,
+  [STEPS.CAREER]: Briefcase,
   [STEPS.MEDIA]: Camera,
-  [STEPS.CONTRACTS]: FileText,
 };
 
 const POSITIONS = [
