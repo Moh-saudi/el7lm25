@@ -1197,7 +1197,7 @@ export default function AddPlayerPage() {
                     <div key={skill} className="flex items-center justify-between p-3 border rounded-lg">
                       <span className="font-medium">{skill}</span>
                       <select
-                        value={formData.social_skills[skill] || ''}
+                        value={formData.social_skills?.[skill] || ''}
                         onChange={(e) => setFormData(prev => ({
                           ...prev,
                           social_skills: {
