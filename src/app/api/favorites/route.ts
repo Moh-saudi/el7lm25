@@ -57,7 +57,11 @@ export async function GET(request: Request) {
       const favorites = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as Array<{
+        id: string;
+        playerId: string;
+        [key: string]: any;
+      }>;
 
       // جلب بيانات اللاعبين المفضلين
       const playerIds = favorites.map(fav => fav.playerId);
