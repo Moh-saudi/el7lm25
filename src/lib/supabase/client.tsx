@@ -84,6 +84,6 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     if (createClientCallCount > 1) {
       console.warn(`🚨 Multiple Supabase clients detected! This is call #${createClientCallCount}. Use getSupabaseClient() instead.`);
     }
-    return originalCreateClient(...args);
+    return originalCreateClient(...(args as [string, string, any?]));
   };
 }
