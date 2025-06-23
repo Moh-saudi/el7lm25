@@ -15,8 +15,17 @@ const GeideaConfigAlertModal: React.FC<GeideaConfigAlertModalProps> = ({ visible
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 border border-yellow-300 animate-fadeIn">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      style={{ position: 'fixed' }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div 
+        className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 border border-yellow-300 animate-fadeIn"
+        style={{ maxHeight: '90vh', overflowY: 'auto' }}
+      >
         {/* زر الإغلاق */}
         <button
           onClick={onClose}
@@ -25,6 +34,7 @@ const GeideaConfigAlertModal: React.FC<GeideaConfigAlertModalProps> = ({ visible
         >
           <X className="w-6 h-6" />
         </button>
+        
         {/* الرسالة الثابتة */}
         <div className="bg-yellow-100 border border-yellow-300 rounded-xl shadow-lg py-4 px-4 mb-4 text-center">
           <div className="text-yellow-700 text-base md:text-lg font-bold mb-2 flex items-center justify-center gap-2">
@@ -43,6 +53,7 @@ const GeideaConfigAlertModal: React.FC<GeideaConfigAlertModalProps> = ({ visible
             </div>
           )}
         </div>
+        
         {/* زر العودة للملف الشخصي */}
         <button
           onClick={() => router.push("/dashboard/player/profile")}

@@ -2,14 +2,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth-provider';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { Home, User, Users, FileText, Megaphone, BarChart3, DollarSign, Handshake, Star, Bell, MessageSquare, CreditCard, KeyRound, Menu, LogOut, VideoIcon } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import { Home, User, Users, FileText, Megaphone, BarChart3, DollarSign, Handshake, Star, Bell, MessageSquare, CreditCard, KeyRound, Menu, LogOut, VideoIcon, Search } from 'lucide-react';
 
 const clubMenuItems = [
   { title: 'الرئيسية', icon: <Home />, path: '/dashboard/club' },
   { title: 'الملف الشخصي', icon: <User />, path: '/dashboard/club/profile' },
-  { title: 'البحث عن اللاعبين', icon: <Users />, path: '/dashboard/club/players' },
+  { title: 'إدارة اللاعبين', icon: <Users />, path: '/dashboard/club/players' },
+  { title: 'البحث عن اللاعبين', icon: <Search />, path: '/dashboard/club/search-players' },
   { title: 'فيديوهات اللاعبين', icon: <VideoIcon />, path: '/dashboard/club/player-videos' },
   { title: 'إدارة العقود', icon: <FileText />, path: '/dashboard/club/contracts' },
   { title: 'تسويق اللاعبين', icon: <Megaphone />, path: '/dashboard/club/marketing' },
@@ -19,7 +21,9 @@ const clubMenuItems = [
   { title: 'تقييم اللاعبين', icon: <Star />, path: '/dashboard/club/player-evaluation' },
   { title: 'الإشعارات', icon: <Bell />, path: '/dashboard/club/notifications' },
   { title: 'الرسائل', icon: <MessageSquare />, path: '/dashboard/club/messages' },
-  { title: 'الفواتير والاشتراكات', icon: <CreditCard />, path: '/dashboard/club/billing' },
+  
+  { title: 'دفع جماعي للاعبين', icon: <Users />, path: '/dashboard/club/bulk-payment' },
+  { title: 'الفواتير', icon: <FileText />, path: '/dashboard/club/billing' },
   { title: 'تغيير كلمة السر', icon: <KeyRound />, path: '/dashboard/club/change-password' },
 ];
 
@@ -36,25 +40,59 @@ export default function ClubSidebar({ collapsed, setCollapsed }) {
     setLang(htmlLang || 'ar');
   }, []);
 
-  // جلب شعار النادي من Firestore
+  // دالة لتحويل مسار Supabase إلى رابط كامل
+  const getSupabaseImageUrl = (path) => {
+    if (!path) return '/club-avatar.png';
+    if (path.startsWith('http')) return path;
+    const { data: { publicUrl } } = supabase.storage.from('clubavatar').getPublicUrl(path);
+    return publicUrl || path;
+  };
+
+  // جلب شعار النادي من Firestore مع الاستماع للتحديثات
   useEffect(() => {
-    const fetchLogo = async () => {
-      if (!user?.uid) return;
+    if (!user?.uid) {
+      setLogo('/club-avatar.png');
+      return;
+    }
+
+    console.log('🎨 ClubSidebar: بدء جلب لوجو النادي للمستخدم:', user.uid);
+
+    const clubRef = doc(db, 'clubs', user.uid);
+    
+    // استخدام onSnapshot للاستماع للتحديثات الفورية
+    const unsubscribe = onSnapshot(clubRef, (clubDoc) => {
       try {
-        const clubRef = doc(db, 'clubs', user.uid);
-        const clubDoc = await getDoc(clubRef);
         if (clubDoc.exists()) {
           const data = clubDoc.data();
-          if (data.logo && data.logo.startsWith('http')) {
-            setLogo(data.logo);
+          console.log('🎨 ClubSidebar: بيانات النادي:', { logo: data.logo });
+          
+          if (data.logo) {
+            const logoUrl = getSupabaseImageUrl(data.logo);
+            console.log('🎨 ClubSidebar: تحديث اللوجو إلى:', logoUrl);
+            setLogo(logoUrl);
+          } else {
+            console.log('🎨 ClubSidebar: لا يوجد لوجو، استخدام الافتراضي');
+            setLogo('/club-avatar.png');
           }
+        } else {
+          console.log('🎨 ClubSidebar: وثيقة النادي غير موجودة');
+          setLogo('/club-avatar.png');
         }
       } catch (error) {
-        // fallback to default
+        console.error('❌ ClubSidebar: خطأ في معالجة بيانات النادي:', error);
+        setLogo('/club-avatar.png');
       }
+    }, (error) => {
+      console.error('❌ ClubSidebar: خطأ في الاستماع لتحديثات النادي:', error);
+      setLogo('/club-avatar.png');
+    });
+
+    // تنظيف المستمع عند إلغاء التثبيت
+    return () => {
+      console.log('🎨 ClubSidebar: إيقاف الاستماع لتحديثات اللوجو');
+      unsubscribe();
     };
-    fetchLogo();
-  }, [user]);
+  }, [user?.uid]);
 
   // اتجاه القائمة حسب اللغة
   const sidebarDir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -83,7 +121,15 @@ export default function ClubSidebar({ collapsed, setCollapsed }) {
       {/* شعار وعنوان */}
       {!collapsed && (
         <div className="p-6 flex flex-col items-center border-b border-gray-100 dark:border-gray-800">
-          <img src={logo} alt="شعار النادي" className="w-32 h-32 rounded-full border-4 border-green-400 shadow" />
+          <img 
+            src={logo} 
+            alt="شعار النادي" 
+            className="w-32 h-32 rounded-full border-4 border-green-400 shadow object-cover" 
+            onError={(e) => {
+              console.log('❌ ClubSidebar: فشل تحميل اللوجو، استخدام الافتراضي');
+              e.target.src = "/club-avatar.png";
+            }}
+          />
         </div>
       )}
       {/* عناصر القائمة */}

@@ -51,6 +51,8 @@ export default function RegisterPage() {
     { value: 'player', label: 'لاعب', icon: Star },
     { value: 'club', label: 'نادي', icon: Home },
     { value: 'agent', label: 'وكيل لاعبين', icon: UserCheck },
+    { value: 'academy', label: 'أكاديمية', icon: Users },
+    { value: 'trainer', label: 'مدرب', icon: User },
     { value: 'marketer', label: 'مسوق لاعبين', icon: Users }
   ];
 
@@ -203,11 +205,11 @@ export default function RegisterPage() {
           )}
 
           {/* Account Type Selection */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             {accountTypes.map(({ value, label, icon: Icon }) => (
               <label
                 key={value}
-                className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer border-2 transition-all ${
+                className={`flex flex-col items-center gap-2 p-4 rounded-lg cursor-pointer border-2 transition-all text-center ${
                   formData.accountType === value
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-blue-200'
@@ -221,8 +223,8 @@ export default function RegisterPage() {
                   onChange={handleInputChange}
                   className="hidden"
                 />
-                <Icon className={`h-5 w-5 ${formData.accountType === value ? 'text-blue-500' : 'text-gray-400'}`} />
-                <span className={formData.accountType === value ? 'text-blue-700' : 'text-gray-600'}>{label}</span>
+                <Icon className={`h-6 w-6 ${formData.accountType === value ? 'text-blue-500' : 'text-gray-400'}`} />
+                <span className={`text-sm font-medium ${formData.accountType === value ? 'text-blue-700' : 'text-gray-600'}`}>{label}</span>
               </label>
             ))}
           </div>

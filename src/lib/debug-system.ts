@@ -1,4 +1,4 @@
-// ملف تشخيص شامل للنظام - نسخة محسّنة
+// ملف تشخيص شامل للنظام - نسخة محسّنة وهادئة
 export function debugSystem() {
   // عرض رسالة مختصرة فقط في وضع التطوير
   if (process.env.NODE_ENV === 'development') {
@@ -6,11 +6,12 @@ export function debugSystem() {
     const firebaseReady = !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
     const devMode = process.env.NODE_ENV === 'development';
     
-    console.log(`🔧 System Status: Firebase ${firebaseReady ? '✅' : '❌'} | Dev Mode ${devMode ? '✅' : '❌'} | Ready to go!`);
+    // رسالة موجزة ومفيدة
+    console.log(`🔧 System: Firebase ${firebaseReady ? '✅' : '⚠️'} | Dev Mode ✅ | Ready!`);
   }
 }
 
-// دالة لفحص الأخطاء الشائعة - نسخة محسّنة
+// دالة لفحص الأخطاء الشائعة - نسخة محسّنة وهادئة
 export function checkCommonIssues() {
   // فحص صامت - يظهر الأخطاء فقط إذا وُجدت
   const issues = [];
@@ -38,130 +39,12 @@ export function checkCommonIssues() {
   }
 }
 
-// دالة لفحص الأداء
-export function checkPerformance() {
-  console.log('⚡ فحص الأداء...');
-  
-  if (typeof performance !== 'undefined') {
-    const perfData = {
-      navigationStart: performance.timing?.navigationStart,
-      loadEventEnd: performance.timing?.loadEventEnd,
-      domContentLoaded: performance.timing?.domContentLoadedEventEnd
-    };
-    
-    console.log('📊 بيانات الأداء:', perfData);
-    return perfData;
-  }
-  
-  console.log('⚠️ بيانات الأداء غير متاحة');
-  return null;
-}
-
-// دالة فحص تكوين Geidea
-export async function checkGeideaConfig() {
-  console.log('🔍 فحص تكوين Geidea...');
-
-  try {
-    // استخدام API للتحقق من التكوين
-    const response = await fetch('/api/geidea/config');
-    const data = await response.json();
-
-    if (data.success) {
-      console.log('📋 تكوين Geidea:', data.config);
-      
-      if (data.isValid) {
-        console.log('✅ تكوين Geidea صحيح');
-      } else {
-        console.warn('⚠️ متغيرات Geidea مفقودة:', data.missingFields);
-        console.log('💡 الحل: أضف المتغيرات المفقودة إلى ملف .env أو .env.local');
-      }
-    } else {
-      console.error('❌ فشل في فحص تكوين Geidea:', data.error);
-    }
-
-    return {
-      isValid: data.isValid,
-      missingFields: data.missingFields || [],
-      config: data.config,
-      isTestMode: data.isTestMode
-    };
-  } catch (error) {
-    console.error('❌ خطأ في فحص تكوين Geidea:', error);
-    return {
-      isValid: false,
-      missingFields: ['API_ERROR'],
-      config: { error: 'Failed to check configuration' },
-      isTestMode: false
-    };
-  }
-}
-
-// دالة اختبار API الدفع
-export async function testPaymentAPI() {
-  console.log('🧪 اختبار API الدفع...');
-  
-  try {
-    const testData = {
-      amount: '10.00',
-      currency: 'SAR',
-      merchantReferenceId: `TEST_${Date.now()}`,
-      callbackUrl: `${window.location.origin}/api/geidea/webhook`,
-      returnUrl: `${window.location.origin}/dashboard/payment/success`,
-      customerEmail: 'test@example.com'
-    };
-
-    console.log('📤 إرسال بيانات الاختبار:', testData);
-
-    const response = await fetch('/api/geidea/test', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(testData)
-    });
-
-    const result = await response.json();
-    
-    console.log('📥 استجابة API:', result);
-    
-    if (response.ok) {
-      console.log('✅ اختبار API الدفع ناجح');
-      return { success: true, data: result };
-    } else {
-      console.error('❌ اختبار API الدفع فشل:', result);
-      return { success: false, error: result };
-    }
-  } catch (error) {
-    console.error('❌ خطأ في اختبار API الدفع:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-}
-
-// دالة فحص شامل للنظام
-export async function fullSystemCheck() {
-  console.log('🔍 === فحص شامل للنظام ===');
-  
-  // فحص Firebase
-  checkFirebaseConfig();
-  
-  // فحص Geidea
-  await checkGeideaConfig();
-  
-  // فحص المتصفح
-  checkBrowserEnvironment();
-  
-  // فحص الأداء
-  checkPerformance();
-  
-  // فحص المشاكل الشائعة
-  checkCommonIssues();
-  
-  console.log('🔍 === انتهى الفحص الشامل ===');
-}
-
-// دوال مساعدة للفحص
+// دالة مبسطة لفحص Firebase
 function checkFirebaseConfig() {
+  if (process.env.NODE_ENV !== 'development') return { isValid: true, missingFields: [] };
+  
   const requiredFields = [
     'NEXT_PUBLIC_FIREBASE_API_KEY',
-    'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
     'NEXT_PUBLIC_FIREBASE_PROJECT_ID'
   ];
   
@@ -173,28 +56,145 @@ function checkFirebaseConfig() {
   };
 }
 
-function checkAuthProvider() {
-  // فحص بسيط لوجود Firebase Auth
-  const hasFirebaseAuth = typeof window !== 'undefined' && 
-                         (window as any).firebase?.auth;
+// دالة مبسطة لفحص Geidea
+async function checkGeideaConfig() {
+  if (typeof window !== 'undefined') return;
   
-  return {
-    isValid: hasFirebaseAuth,
-    message: hasFirebaseAuth ? 'Firebase Auth متاح' : 'Firebase Auth غير متاح'
-  };
+  const hasConfig = !!(process.env.GEIDEA_MERCHANT_PUBLIC_KEY && 
+                       process.env.GEIDEA_API_PASSWORD);
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`💳 Geidea: ${hasConfig ? '✅ Configured' : '⚠️ Test mode'}`);
+  }
 }
 
+// دالة فحص سريع للمتصفح
 function checkBrowserEnvironment() {
-  console.log('🌐 فحص بيئة المتصفح...');
+  if (typeof window === 'undefined') return;
   
-  const browserInfo = {
-    userAgent: navigator.userAgent,
-    language: navigator.language,
-    online: navigator.onLine,
-    cookieEnabled: navigator.cookieEnabled
+  const checks = {
+    localStorage: !!window.localStorage,
+    sessionStorage: !!window.sessionStorage,
+    fetch: !!window.fetch,
+    crypto: !!window.crypto
   };
   
-  console.log('📱 معلومات المتصفح:', browserInfo);
+  const failed = Object.entries(checks).filter(([key, value]) => !value);
   
-  return browserInfo;
+  if (failed.length > 0 && process.env.NODE_ENV === 'development') {
+    console.warn('🌐 Browser support issues:', failed.map(([key]) => key));
+  }
+}
+
+// دالة فحص مبسطة للأداء
+function checkPerformance() {
+  if (typeof window === 'undefined' || process.env.NODE_ENV !== 'development') return;
+  
+  // فحص بسيط للأداء
+  if (performance.now() > 5000) {
+    console.warn('⏱️ Slow page load detected');
+  }
+}
+
+// دالة فحص شامل مبسطة
+export async function fullSystemCheck() {
+  if (process.env.NODE_ENV !== 'development') return;
+  
+  console.log('🔍 === Quick System Check ===');
+  
+  // فحص Firebase
+  const firebaseCheck = checkFirebaseConfig();
+  if (!firebaseCheck.isValid) {
+    console.warn('🔥 Firebase issues:', firebaseCheck.missingFields);
+  }
+  
+  // فحص Geidea
+  await checkGeideaConfig();
+  
+  // فحص المتصفح
+  checkBrowserEnvironment();
+  
+  // فحص الأداء
+  checkPerformance();
+  
+  console.log('🔍 === Check Complete ===');
+}
+
+// تصدير دالة مبسطة للتحقق السريع
+export function quickHealthCheck() {
+  if (process.env.NODE_ENV !== 'development') return;
+  
+  const firebase = !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const browser = typeof window !== 'undefined';
+  
+  console.log(`🏥 Health: Firebase ${firebase ? '✅' : '❌'} | Browser ${browser ? '✅' : '❌'}`);
+}
+
+// فحص اتصال Firebase/Firestore
+export async function checkFirestoreConnection() {
+  if (typeof window === 'undefined') return false;
+  
+  try {
+    const { db } = await import('./firebase/config');
+    const { auth } = await import('./firebase/config');
+    
+    // فحص بسيط للتأكد من أن Firestore متاح
+    if (db && auth) {
+      console.log('🔥 Firestore connection: ✅ Connected');
+      return true;
+    } else {
+      console.warn('🔥 Firestore connection: ⚠️ Not initialized');
+      return false;
+    }
+  } catch (error) {
+    console.error('🔥 Firestore connection: ❌ Failed', error);
+    return false;
+  }
+}
+
+// فحص محدد لبيانات المستخدم
+export async function checkUserDataAccess(userId: string) {
+  if (!userId || typeof window === 'undefined') return false;
+  
+  try {
+    const { db } = await import('./firebase/config');
+    const { doc, getDoc } = await import('firebase/firestore');
+    
+    const userDoc = doc(db, 'users', userId);
+    const snapshot = await getDoc(userDoc);
+    
+    if (snapshot.exists()) {
+      console.log('👤 User data: ✅ Found', { hasData: true, id: userId });
+      return true;
+    } else {
+      console.warn('👤 User data: ⚠️ Not found', { hasData: false, id: userId });
+      return false;
+    }
+  } catch (error) {
+    console.error('👤 User data access: ❌ Error', error);
+    return false;
+  }
+}
+
+// دالة شاملة لتشخيص مشاكل المصادقة
+export async function diagnoseAuthIssues(user: any, userData: any, loading: boolean) {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🔍 === Auth Diagnosis ===');
+    console.log('User:', user ? { uid: user.uid, email: user.email } : 'None');
+    console.log('UserData:', userData ? { accountType: userData.accountType, name: userData.name } : 'None');
+    console.log('Loading:', loading);
+    
+    if (user && !userData && !loading) {
+      console.warn('⚠️ Issue detected: User authenticated but no user data found');
+      console.log('🔧 Possible solutions:');
+      console.log('1. Check Firestore rules');
+      console.log('2. Verify user document exists in /users/{uid}');
+      console.log('3. Check network connection');
+      
+      // فحص الوصول لبيانات المستخدم
+      await checkUserDataAccess(user.uid);
+    }
+    
+    console.log('🔍 === Diagnosis Complete ===');
+  }
 } 

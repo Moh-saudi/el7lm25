@@ -5,6 +5,35 @@ import React, { useState } from 'react';
 
 dayjs.locale('ar');
 
+// دالة حساب العمر
+const calculateAge = (birthDate: any) => {
+  if (!birthDate) return null;
+  try {
+    let d: Date;
+    if (typeof birthDate === 'object' && birthDate.toDate && typeof birthDate.toDate === 'function') {
+      d = birthDate.toDate();
+    } else if (birthDate instanceof Date) {
+      d = birthDate;
+    } else {
+      d = new Date(birthDate);
+    }
+    
+    if (isNaN(d.getTime())) return null;
+    
+    const today = new Date();
+    let age = today.getFullYear() - d.getFullYear();
+    const monthDiff = today.getMonth() - d.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < d.getDate())) {
+      age--;
+    }
+    
+    return age;
+  } catch (error) {
+    return null;
+  }
+};
+
 interface PlayerReportViewProps {
   player: PlayerFormData;
 }
@@ -57,6 +86,15 @@ const PlayerReportView: React.FC<PlayerReportViewProps> = ({ player }) => {
         <div className="mb-1 font-semibold text-green-700">تاريخ الميلاد</div>
         <div className="text-lg font-bold text-green-900">
           {player?.birth_date ? dayjs(player.birth_date).format('DD/MM/YYYY') : '--'}
+        </div>
+      </div>
+      <div className="p-4 rounded-lg bg-orange-50">
+        <div className="mb-1 font-semibold text-orange-700">العمر</div>
+        <div className="text-lg font-bold text-orange-900">
+          {(() => {
+            const age = calculateAge(player?.birth_date);
+            return age ? `${age} سنة` : '--';
+          })()}
         </div>
       </div>
       <div className="p-4 rounded-lg bg-purple-50">

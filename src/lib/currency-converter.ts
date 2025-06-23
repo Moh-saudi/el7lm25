@@ -425,11 +425,13 @@ export function getCurrencyByCountry(countryCode: string): CurrencyRate {
   };
   
   // أولاً، جرب كود الدولة
-  let currencyCode = currencyMapByCode[countryCode?.toUpperCase()];
+  const upperCountryCode = countryCode?.toUpperCase();
+  let currencyCode = currencyMapByCode[upperCountryCode];
   
   // إذا لم يوجد، جرب اسم الدولة بالعربية
   if (!currencyCode) {
-    currencyCode = currencyMapByName[countryCode?.trim()];
+    const trimmedCountry = countryCode?.trim();
+    currencyCode = currencyMapByName[trimmedCountry];
   }
   
   // إذا لم يوجد، استخدم الافتراضي

@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { Bell, User, Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '@/lib/firebase/auth-provider';
 import { db } from '@/lib/firebase/config';
+import { supabase } from '@/lib/supabase/client';
 
 export default function ClubHeader() {
   const [lang, setLang] = useState('ar');
@@ -28,32 +29,74 @@ export default function ClubHeader() {
     }
   }, [darkMode]);
 
-  // جلب شعار النادي من Firestore
+  // دالة لتحويل مسار Supabase إلى رابط كامل
+  const getSupabaseImageUrl = (path) => {
+    if (!path) return '/club-avatar.png';
+    if (path.startsWith('http')) return path;
+    const { data: { publicUrl } } = supabase.storage.from('clubavatar').getPublicUrl(path);
+    return publicUrl || path;
+  };
+
+  // جلب شعار النادي من Firestore مع الاستماع للتحديثات
   useEffect(() => {
-    const fetchLogo = async () => {
-      if (!user?.uid) return;
+    if (!user?.uid) {
+      setLogo('/club-avatar.png');
+      return;
+    }
+
+    console.log('🎨 ClubHeader: بدء جلب لوجو النادي للمستخدم:', user.uid);
+
+    const clubRef = doc(db, 'clubs', user.uid);
+    
+    // استخدام onSnapshot للاستماع للتحديثات الفورية
+    const unsubscribe = onSnapshot(clubRef, (clubDoc) => {
       try {
-        const clubRef = doc(db, 'clubs', user.uid);
-        const clubDoc = await getDoc(clubRef);
         if (clubDoc.exists()) {
           const data = clubDoc.data();
-          if (data.logo && data.logo.startsWith('http')) {
-            setLogo(data.logo);
+          console.log('🎨 ClubHeader: بيانات النادي:', { logo: data.logo });
+          
+          if (data.logo) {
+            const logoUrl = getSupabaseImageUrl(data.logo);
+            console.log('🎨 ClubHeader: تحديث اللوجو إلى:', logoUrl);
+            setLogo(logoUrl);
+          } else {
+            console.log('🎨 ClubHeader: لا يوجد لوجو، استخدام الافتراضي');
+            setLogo('/club-avatar.png');
           }
+        } else {
+          console.log('🎨 ClubHeader: وثيقة النادي غير موجودة');
+          setLogo('/club-avatar.png');
         }
       } catch (error) {
-        // fallback to default
+        console.error('❌ ClubHeader: خطأ في معالجة بيانات النادي:', error);
+        setLogo('/club-avatar.png');
       }
+    }, (error) => {
+      console.error('❌ ClubHeader: خطأ في الاستماع لتحديثات النادي:', error);
+      setLogo('/club-avatar.png');
+    });
+
+    // تنظيف المستمع عند إلغاء التثبيت
+    return () => {
+      console.log('🎨 ClubHeader: إيقاف الاستماع لتحديثات اللوجو');
+      unsubscribe();
     };
-    fetchLogo();
-  }, [user]);
+  }, [user?.uid]);
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow flex items-center h-16 px-6 justify-between" style={{ direction: dir }}>
       <div className="flex items-center gap-3">
-        <img src={logo} alt="شعار النادي" className="w-10 h-10 rounded-full border-2 border-green-400 shadow" />
+        <img 
+          src={logo} 
+          alt="شعار النادي" 
+          className="w-10 h-10 rounded-full border-2 border-green-400 shadow object-cover" 
+          onError={(e) => {
+            console.log('❌ ClubHeader: فشل تحميل اللوجو، استخدام الافتراضي');
+            e.target.src = "/club-avatar.png";
+          }}
+        />
         <span className="text-xl font-bold tracking-tight text-green-700 dark:text-green-300">منصة النادي</span>
       </div>
       <div className="flex items-center gap-4">

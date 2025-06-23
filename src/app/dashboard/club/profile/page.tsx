@@ -3,7 +3,7 @@ import { useAuth } from '@/lib/firebase/auth-provider';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Edit, Users, FileText, Trophy, User, MapPin, Phone, Mail, Globe, Facebook, Twitter, Instagram, Calendar, ArrowLeft, School, Award, Building2, UserCircle2, Plus, Sun, Moon, LogOut } from 'lucide-react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase/client';
 import { db } from '@/lib/firebase/config';
@@ -172,11 +172,33 @@ export default function ClubProfilePage() {
     try {
       const clubRef = doc(db, 'clubs', user.uid);
       const clubDoc = await getDoc(clubRef);
-      let data = clubDoc.exists() ? clubDoc.data() : {};
+      
+      let data = {};
+      
+      if (clubDoc.exists()) {
+        data = clubDoc.data();
+      } else {
+        // إنشاء مستند أساسي إذا لم يكن موجوداً
+        const basicData = {
+          ...initialClubData,
+          name: userData?.name || 'نادي جديد',
+          email: userData?.email || '',
+          phone: userData?.phone || '',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          accountType: 'club',
+          isVerified: false,
+          isPremium: false
+        };
+        
+        await setDoc(clubRef, basicData);
+        data = basicData;
+      }
+      
       const mergedData = {
         ...initialClubData,
         ...data,
-        name: (data.name && data.name.trim()) ? data.name : (userData?.name || ''),
+        name: (data.name && data.name.trim()) ? data.name : (userData?.name || 'نادي جديد'),
         phone: (data.phone && data.phone.trim()) ? data.phone : (userData?.phone || ''),
         email: (data.email && data.email.trim()) ? data.email : (userData?.email || ''),
         coverImage: getSupabaseImageUrl(data.coverImage || initialClubData.coverImage),
@@ -266,12 +288,13 @@ export default function ClubProfilePage() {
         toast.error('حجم الصورة يجب أن لا يتجاوز 5 ميجابايت');
         return;
       }
+      
+      setUploading(true);
       const timestamp = Date.now();
       const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${timestamp}.${fileExt}`;
       const filePath = `${user.uid}/${type}/${fileName}`;
       
-      // رفع الصورة إلى Supabase
       const { data, error } = await supabase.storage
         .from('clubavatar')
         .upload(filePath, file, {
@@ -284,54 +307,31 @@ export default function ClubProfilePage() {
         return;
       }
 
-      // الحصول على الرابط العام للصورة
       const { data: { publicUrl } } = supabase.storage
         .from('clubavatar')
         .getPublicUrl(filePath);
 
       let updatedData = { ...clubData };
-      let updateObj: any = {};
+      
       if (type === 'gallery') {
         updatedData.gallery = [...(clubData.gallery || []), publicUrl];
-        updateObj.gallery = updatedData.gallery;
-        setClubData(updatedData);
-        await updateDoc(doc(db, 'clubs', user.uid), updateObj);
       } else if (type === 'chairman') {
-        // تحديث كائن board بالكامل
-        const newChairman = { ...updatedData.board.chairman, image: publicUrl };
-        updatedData.board = { ...updatedData.board, chairman: newChairman };
-        setClubData(updatedData);
-        await updateDoc(doc(db, 'clubs', user.uid), {
-          board: {
-            chairman: newChairman,
-            youthDirector: updatedData.board.youthDirector
-          }
-        });
+        updatedData.board.chairman.image = publicUrl;
       } else if (type === 'youthDirector') {
-        const newYouth = { ...updatedData.board.youthDirector, image: publicUrl };
-        updatedData.board = { ...updatedData.board, youthDirector: newYouth };
-        setClubData(updatedData);
-        await updateDoc(doc(db, 'clubs', user.uid), {
-          board: {
-            chairman: updatedData.board.chairman,
-            youthDirector: newYouth
-          }
-        });
+        updatedData.board.youthDirector.image = publicUrl;
       } else if (type === 'cover') {
         updatedData.coverImage = publicUrl;
-        updateObj.coverImage = publicUrl;
-        setClubData(updatedData);
-        await updateDoc(doc(db, 'clubs', user.uid), updateObj);
       } else if (type === 'logo') {
         updatedData.logo = publicUrl;
-        updateObj.logo = publicUrl;
-        setClubData(updatedData);
-        await updateDoc(doc(db, 'clubs', user.uid), updateObj);
       }
-      toast.success('تم رفع الصورة بنجاح');
+      
+      setClubData(updatedData);
+      toast.success('تم رفع الصورة بنجاح - اضغط "حفظ التغييرات" لحفظها نهائياً');
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error('حدث خطأ أثناء رفع الصورة');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -342,42 +342,87 @@ export default function ClubProfilePage() {
     }
     setUploading(true);
     try {
-      // تنظيف البيانات قبل الحفظ
-      const dataToSave = {
-        ...clubData,
-        coverImage: clubData.coverImage || initialClubData.coverImage,
+      // تحضير البيانات للتنظيف
+      const rawData = {
+        name: clubData.name || '',
         logo: clubData.logo || initialClubData.logo,
+        coverImage: clubData.coverImage || initialClubData.coverImage,
+        gallery: Array.isArray(clubData.gallery) ? clubData.gallery.filter(Boolean) : [],
+        phone: clubData.phone || '',
+        email: clubData.email || '',
+        city: clubData.city || '',
+        country: clubData.country || '',
+        founded: clubData.founded || '',
+        type: clubData.type || '',
+        description: clubData.description || '',
+        manager: clubData.manager || '',
+        address: clubData.address || '',
+        website: clubData.website || '',
+        facebook: clubData.facebook || '',
+        twitter: clubData.twitter || '',
+        instagram: clubData.instagram || '',
         stats: {
-          players: Number(clubData.stats.players) || 0,
-          contracts: Number(clubData.stats.contracts) || 0,
-          trophies: Number(clubData.stats.trophies) || 0,
-          staff: Number(clubData.stats.staff) || 0
+          players: Number(clubData.stats?.players) || 0,
+          contracts: Number(clubData.stats?.contracts) || 0,
+          trophies: Number(clubData.stats?.trophies) || 0,
+          staff: Number(clubData.stats?.staff) || 0
         },
         academies: {
-          total: Number(clubData.academies.total) || 0,
-          locations: clubData.academies.locations || []
+          total: Number(clubData.academies?.total) || 0,
+          locations: Array.isArray(clubData.academies?.locations) ? clubData.academies.locations.filter(Boolean) : []
         },
         schools: {
-          men: Number(clubData.schools.men) || 0,
-          women: Number(clubData.schools.women) || 0,
-          locations: clubData.schools.locations || []
+          men: Number(clubData.schools?.men) || 0,
+          women: Number(clubData.schools?.women) || 0,
+          locations: Array.isArray(clubData.schools?.locations) ? clubData.schools.locations.filter(Boolean) : []
         },
+        trophies: Array.isArray(clubData.trophies) ? clubData.trophies.filter(Boolean) : [],
         board: {
           chairman: {
-            ...clubData.board.chairman,
-            image: clubData.board.chairman.image || initialClubData.board.chairman.image
+            name: clubData.board?.chairman?.name || '',
+            phone: clubData.board?.chairman?.phone || '',
+            email: clubData.board?.chairman?.email || '',
+            image: clubData.board?.chairman?.image || initialClubData.board.chairman.image
           },
           youthDirector: {
-            ...clubData.board.youthDirector,
-            image: clubData.board.youthDirector.image || initialClubData.board.youthDirector.image
+            name: clubData.board?.youthDirector?.name || '',
+            phone: clubData.board?.youthDirector?.phone || '',
+            email: clubData.board?.youthDirector?.email || '',
+            image: clubData.board?.youthDirector?.image || initialClubData.board.youthDirector.image
           }
-        }
+        },
+        updatedAt: new Date(),
+        accountType: 'club',
+        isVerified: false,
+        isPremium: false
       };
 
-      console.log('Saving data:', dataToSave);
+      // استخدام دالة تنظيف البيانات العالمية من firestore-fix.js
+      const dataToSave = (window as any).cleanFirestoreData ? 
+        (window as any).cleanFirestoreData(rawData) : 
+        rawData;
 
-      // حفظ البيانات في Firestore
-      await updateDoc(doc(db, 'clubs', user.uid), dataToSave);
+      console.log('Raw data:', rawData);
+      console.log('Cleaned data to save:', dataToSave);
+
+      const clubRef = doc(db, 'clubs', user.uid);
+      
+      // التحقق من وجود المستند أولاً
+      const clubDoc = await getDoc(clubRef);
+      
+      if (clubDoc.exists()) {
+        // المستند موجود - نحدثه
+        await updateDoc(clubRef, dataToSave);
+      } else {
+        // المستند غير موجود - ننشئه
+        await setDoc(clubRef, {
+          ...dataToSave,
+          createdAt: new Date(),
+          accountType: 'club',
+          isVerified: false,
+          isPremium: false
+        });
+      }
       
       toast.success('🎉 تم حفظ بيانات النادي بنجاح! أنت رائع، استمر في تطوير ناديك! 🏆');
       await fetchClubData(); // إعادة جلب البيانات بعد الحفظ
@@ -440,7 +485,7 @@ export default function ClubProfilePage() {
                   className="hidden"
                   onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'cover')}
                 />
-                تغيير صورة الغلاف
+                {uploading ? 'جاري الرفع...' : 'تغيير صورة الغلاف'}
               </label>
             </div>
           )}
@@ -477,7 +522,8 @@ export default function ClubProfilePage() {
           </div>
           <button
             className="flex items-center gap-2 px-5 py-2 text-white transition rounded-lg shadow bg-gradient-to-l from-blue-400 to-blue-600 hover:scale-105 dark:from-blue-500 dark:to-blue-700"
-            onClick={() => setEditMode(!editMode)}
+            onClick={() => editMode ? handleSaveChanges() : setEditMode(true)}
+            disabled={uploading}
           >
             <Edit size={18} /> {editMode ? 'حفظ التغييرات' : 'تعديل البيانات'}
           </button>

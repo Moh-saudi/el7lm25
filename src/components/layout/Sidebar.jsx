@@ -23,7 +23,8 @@ import {
   Star,
   Bell,
   MessageSquare,
-  KeyRound
+  KeyRound,
+  Play
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -53,7 +54,12 @@ const menuItems = [
     path: '/dashboard/player/videos'
   },
   {
-    title: 'بحث اللاعبين',
+    title: 'فيديوهات اللاعبين',
+    icon: <Play className="w-5 h-5" />,
+    path: '/dashboard/player/player-videos'
+  },
+  {
+    title: 'البحث عن الفرص والأندية',
     icon: <Search className="w-5 h-5" />,
     path: '/dashboard/player/search'
   },
@@ -63,14 +69,14 @@ const menuItems = [
     path: '/dashboard/player/stats'
   },
   {
-    title: 'الفوترة والاشتراكات',
+            title: 'إدارة الاشتراكات',
     icon: <CreditCard className="w-5 h-5" />,
-    path: '/dashboard/payment'
+    path: '/dashboard/player/bulk-payment'
   },
   {
     title: 'حالة الاشتراك',
     icon: <Clock className="w-5 h-5" />,
-    path: '/dashboard/payment/status'
+    path: '/dashboard/subscription'
   }
 ];
 
@@ -125,8 +131,12 @@ const clubMenuItems = [
     icon: <MessageSquare className="w-5 h-5" />, path: '/dashboard/club/messages'
   },
   {
-    title: 'الفواتير والاشتراكات',
-    icon: <CreditCard className="w-5 h-5" />, path: '/dashboard/club/billing'
+    title: 'دفع جماعي للاعبين',
+    icon: <Users className="w-5 h-5" />, path: '/dashboard/club/bulk-payment'
+  },
+  {
+    title: 'الفواتير',
+    icon: <FileText className="w-5 h-5" />, path: '/dashboard/club/billing'
   },
   {
     title: 'تغيير كلمة السر',

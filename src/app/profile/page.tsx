@@ -3,6 +3,36 @@
 import { PlayerFormData } from '@/types/player';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { User } from 'firebase/auth';
+
+// دالة حساب العمر
+const calculateAge = (birthDate: any) => {
+  if (!birthDate) return null;
+  try {
+    let d: Date;
+    if (typeof birthDate === 'object' && birthDate.toDate && typeof birthDate.toDate === 'function') {
+      d = birthDate.toDate();
+    } else if (birthDate instanceof Date) {
+      d = birthDate;
+    } else {
+      d = new Date(birthDate);
+    }
+    
+    if (isNaN(d.getTime())) return null;
+    
+    const today = new Date();
+    let age = today.getFullYear() - d.getFullYear();
+    const monthDiff = today.getMonth() - d.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < d.getDate())) {
+      age--;
+    }
+    
+    return age;
+  } catch (error) {
+    return null;
+  }
+};
 
 export default function PlayerProfile() {
   const [player, setPlayer] = useState<PlayerFormData | null>(null);
@@ -118,6 +148,15 @@ export default function PlayerProfile() {
                     <p className="text-sm text-gray-500">تاريخ الميلاد</p>
                     <p className="font-medium">
                       {player.birth_date ? new Date(player.birth_date).toLocaleDateString('ar-SA') : 'غير متوفر'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">العمر</p>
+                    <p className="font-medium">
+                      {(() => {
+                        const age = calculateAge(player.birth_date);
+                        return age ? `${age} سنة` : 'غير متوفر';
+                      })()}
                     </p>
                   </div>
                   <div>

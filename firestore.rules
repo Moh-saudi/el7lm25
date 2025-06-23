@@ -1,32 +1,155 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // قاعدة عامة: رفض كل شيء افتراضياً
-    match /{document=**} {
-      allow read, write: if false;
+
+    // ملفات اللاعبين: قواعد محسنة تحل مشكلة الحلقة المفرغة
+    match /players/{playerId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        request.auth.uid == playerId ||
+        request.auth.uid == resource.data.trainer_id ||
+        request.auth.uid == resource.data.trainerId ||
+        request.auth.uid == resource.data.club_id ||
+        request.auth.uid == resource.data.clubId ||
+        request.auth.uid == resource.data.agent_id ||
+        request.auth.uid == resource.data.agentId ||
+        request.auth.uid == resource.data.academy_id ||
+        request.auth.uid == resource.data.academyId ||
+        // قاعدة إصلاح محسنة: السماح للمنظمات بإضافة أنفسها
+        request.auth.uid == request.resource.data.club_id ||
+        request.auth.uid == request.resource.data.clubId ||
+        request.auth.uid == request.resource.data.trainer_id ||
+        request.auth.uid == request.resource.data.trainerId ||
+        request.auth.uid == request.resource.data.agent_id ||
+        request.auth.uid == request.resource.data.agentId ||
+        request.auth.uid == request.resource.data.academy_id ||
+        request.auth.uid == request.resource.data.academyId ||
+        // قاعدة مؤقتة لإصلاح الصور: السماح للأندية المرتبطة بتحديث الصور
+        (resource.data.club_id == request.auth.uid && 
+         request.resource.data.keys().hasAny(['profile_image', 'profile_image_url', 'avatar_url', 'image_url']) &&
+         request.resource.data.keys().size() <= 4)
+      );
+      allow create: if request.auth != null && (
+        request.auth.uid == request.resource.data.trainer_id ||
+        request.auth.uid == request.resource.data.trainerId ||
+        request.auth.uid == request.resource.data.club_id ||
+        request.auth.uid == request.resource.data.clubId ||
+        request.auth.uid == request.resource.data.agent_id ||
+        request.auth.uid == request.resource.data.agentId ||
+        request.auth.uid == request.resource.data.academy_id ||
+        request.auth.uid == request.resource.data.academyId
+      );
     }
     
-    // قاعدة للمستخدمين: السماح بالقراءة والكتابة فقط لبيانات المستخدم نفسه
+    // ملفات الأندية: الجميع يقرأ، النادي نفسه فقط يكتب
+    match /clubProfiles/{clubId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == clubId;
+    }
+    match /clubs/{clubId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == clubId;
+    }
+
+    // بيانات اللاعبين داخل الأندية
+    match /clubs/{clubId}/players/{playerId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == clubId;
+    }
+
+    // حذف هذه القاعدة المكررة - ستكون في الأسفل
+
+    // الإشعارات: الجميع يقرأ ويكتب (أي مستخدم مسجل)
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // اشتراكات وفواتير كل مستخدم (لاعب، نادي، وكيل، ...): فقط صاحب الحساب يقرأ ويكتب
+    match /users/{userId}/subscriptions/{subscriptionId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /subscriptions/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /users/{userId}/invoices/{invoiceId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // بيانات المستخدمين (لاعب أو نادي أو وكيل...): كل مستخدم يقرأ ويعدل بياناته فقط
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // قاعدة للأندية: السماح بالقراءة للجميع والكتابة فقط لمالك النادي
-    match /clubs/{clubId} {
+
+    // التقارير: الجميع يقرأ، الكتابة للمسجلين فقط
+    match /reports/{reportId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == clubId;
+      allow write: if request.auth != null;
     }
-    
-    // قاعدة للاعبين: السماح بالقراءة للجميع والكتابة فقط للاعب نفسه
-    match /players/{playerId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == playerId;
+
+    // عمليات الدفع: أي مستخدم مسجل يمكنه الكتابة والقراءة
+    match /payments/{paymentId} {
+      allow read, write: if request.auth != null;
     }
+
+    // ==== القواعد الجديدة المضافة ====
     
-    // قاعدة للوكلاء: السماح بالقراءة للجميع والكتابة فقط للوكيل نفسه
+    // قاعدة للوكلاء: الجميع يقرأ، الوكيل نفسه فقط يكتب
     match /agents/{agentId} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == agentId;
+    }
+    
+    // قاعدة للأكاديميات: الجميع يقرأ، الأكاديمية نفسها فقط تكتب
+    match /academies/{academyId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == academyId;
+    }
+    
+    // قاعدة للمدربين: الجميع يقرأ، المدرب نفسه فقط يكتب
+    match /trainers/{trainerId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == trainerId;
+    }
+    
+    // قاعدة للكيانات (للبحث): الجميع يقرأ، المالك فقط يكتب
+    match /entities/{entityId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == entityId;
+    }
+    
+    // ==== قواعد الوظائف التفاعلية الجديدة ====
+    
+    // المفضلة: كل مستخدم مسجل يمكنه القراءة والكتابة
+    match /favorites/{favoriteId} {
+      allow read, write, create, update, delete: if request.auth != null;
+    }
+    
+    // التقييمات: كل مستخدم مسجل يمكنه القراءة والكتابة
+    match /ratings/{ratingId} {
+      allow read, write, create, update, delete: if request.auth != null;
+    }
+    
+    // الرسائل: كل مستخدم مسجل يمكنه القراءة والكتابة
+    match /messages/{messageId} {
+      allow read, write, create, update, delete: if request.auth != null;
+    }
+    
+    // المحادثات: كل مستخدم مسجل يمكنه القراءة والكتابة
+    match /conversations/{conversationId} {
+      allow read, write, create, update, delete: if request.auth != null;
+    }
+    
+    // الأهداف والمهام: المستخدم يدير أهدافه ومهامه
+    match /objectives/{objectiveId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow write: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+    
+    match /tasks/{taskId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow write: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
   }
 } 

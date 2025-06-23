@@ -268,7 +268,7 @@ export default function Page() {
                           fill
                           className="object-cover"
                           sizes="(max-width: 767px) 100vw, 100vw"
-                          priority={index === 0}
+                          priority={index <= 2}
                         />
                       </div>
                     </div>

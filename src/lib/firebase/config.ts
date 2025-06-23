@@ -16,17 +16,20 @@ const requiredEnvVars = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// التحقق من وجود المتغيرات المطلوبة
+// التحقق من وجود المتغيرات المطلوبة (بشكل صامت)
 const missingVars = Object.entries(requiredEnvVars)
   .filter(([key, value]) => !value || value.includes('your_'))
   .map(([key]) => key);
 
-if (missingVars.length > 0) {
-  console.warn('Missing or invalid Firebase environment variables:', missingVars);
-  console.warn('Using fallback configuration...');
+const hasValidConfig = missingVars.length === 0;
+
+// إظهار تحذير فقط في وضع التطوير وإذا كانت المتغيرات ناقصة
+if (!hasValidConfig && process.env.NODE_ENV === 'development') {
+  console.warn('⚠️ Some Firebase environment variables are missing. Using fallback configuration.');
+  console.warn('Missing variables:', missingVars);
 }
 
-// تكوين Firebase
+// تكوين Firebase مع قيم احتياطية
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDCQQxUbeQQrlty5HnF65-7TK0TB2zB7R4",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "hagzzgo-87884.firebaseapp.com",
@@ -69,23 +72,12 @@ const validateGeideaConfig = () => {
            value === 'your_webhook_secret_here';
   });
 
-  if (missingFields.length > 0) {
+  if (missingFields.length > 0 && process.env.NODE_ENV === 'development') {
     console.warn('⚠️ Geidea configuration missing fields:', missingFields);
-    console.warn('Payment system will use test mode');
-    return false;
   }
 
-  return true;
+  return missingFields.length === 0;
 };
-
-// سجل توضيحي لقيم متغيرات البيئة الخاصة بـ Geidea (server-side only)
-if (typeof window === 'undefined') {
-  console.log('Geidea env:', {
-    merchantPublicKey: process.env.GEIDEA_MERCHANT_PUBLIC_KEY,
-    apiPassword: process.env.GEIDEA_API_PASSWORD,
-    webhookSecret: process.env.GEIDEA_WEBHOOK_SECRET,
-  });
-}
 
 // التحقق من صحة تكوين Firebase
 const validateFirebaseConfig = () => {
@@ -102,7 +94,6 @@ const validateFirebaseConfig = () => {
 
   if (missingFields.length > 0) {
     console.error('❌ Firebase configuration missing required fields:', missingFields);
-    console.error('Current config:', firebaseConfig);
     return false;
   }
 
@@ -129,14 +120,20 @@ if (!getApps().length) {
       if (typeof window !== 'undefined') {
         try {
           analytics = getAnalytics(app);
-          console.log('Firebase Analytics initialized successfully');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔥 Firebase Analytics initialized successfully');
+          }
         } catch (error) {
-          console.warn('Analytics initialization failed:', error);
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Analytics initialization failed:', error);
+          }
           analytics = null;
         }
       }
       
-      console.log('Firebase initialized successfully');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔥 Firebase initialized successfully');
+      }
     } else {
       console.error('❌ Firebase initialization failed due to missing configuration');
       throw new Error('Firebase configuration incomplete');
@@ -156,7 +153,7 @@ if (!getApps().length) {
     try {
       analytics = getAnalytics(app);
     } catch (error) {
-      console.warn('Analytics initialization failed:', error);
+      // Silent fail for analytics
       analytics = null;
     }
   }
@@ -164,9 +161,13 @@ if (!getApps().length) {
 
 // التحقق من تكوين Geidea
 if (validateGeideaConfig()) {
-  console.log('✅ Geidea configuration validated');
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ Geidea configuration validated');
+  }
 } else {
-  console.log('✅ Geidea using production mode');
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ Geidea using production mode');
+  }
 }
 
 export { app, auth, db, analytics, storage };

@@ -47,6 +47,10 @@ export const useAccountTypeAuth = ({ allowedTypes, redirectTo = '/' }: UseAccoun
         return '/dashboard/club';
       case 'agent':
         return '/dashboard/agent';
+      case 'academy':
+        return '/dashboard/academy';
+      case 'trainer':
+        return '/dashboard/trainer';
       case 'marketer':
         return '/dashboard';
       default:

@@ -7,6 +7,59 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { Calendar, CreditCard, CheckCircle, Clock, AlertCircle, Star, Crown } from 'lucide-react';
+import { getCurrencyByCountry } from '@/lib/currency-converter';
+import { getCountryFromCity } from '@/lib/cities-data';
+
+// دالة لتطبيع أسماء الدول
+const normalizeCountry = (country: string | undefined): string => {
+  if (!country) return '';
+  
+  const countryMap: Record<string, string> = {
+    'السعودية': 'السعودية',
+    'المملكة العربية السعودية': 'السعودية',
+    'saudi arabia': 'السعودية',
+    'مصر': 'مصر',
+    'egypt': 'مصر',
+    'الإمارات': 'الإمارات',
+    'الإمارات العربية المتحدة': 'الإمارات',
+    'uae': 'الإمارات',
+    'قطر': 'قطر',
+    'qatar': 'قطر',
+    'الكويت': 'الكويت',
+    'kuwait': 'الكويت',
+    'البحرين': 'البحرين',
+    'bahrain': 'البحرين',
+    'عمان': 'عمان',
+    'oman': 'عمان',
+    'الأردن': 'الأردن',
+    'jordan': 'الأردن',
+    'لبنان': 'لبنان',
+    'lebanon': 'لبنان',
+    'المغرب': 'المغرب',
+    'morocco': 'المغرب',
+    'تونس': 'تونس',
+    'tunisia': 'تونس',
+    'الجزائر': 'الجزائر',
+    'algeria': 'الجزائر',
+    'ليبيا': 'ليبيا',
+    'libya': 'ليبيا',
+    'السودان': 'السودان',
+    'sudan': 'السودان',
+    'العراق': 'العراق',
+    'iraq': 'العراق',
+    'سوريا': 'سوريا',
+    'syria': 'سوريا',
+    'فلسطين': 'فلسطين',
+    'palestine': 'فلسطين',
+    'اليمن': 'اليمن',
+    'yemen': 'اليمن'
+  };
+  
+  const lowercaseCountry = country.toLowerCase().trim();
+  const normalized = countryMap[lowercaseCountry];
+  
+  return normalized || country;
+};
 
 interface SubscriptionData {
   plan_name: string;
@@ -96,6 +149,7 @@ export default function SubscriptionPage() {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
   const [userCurrency, setUserCurrency] = useState({ code: 'SAR', symbol: 'ر.س' });
+  const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -136,15 +190,59 @@ export default function SubscriptionPage() {
           });
         }
 
-        // جلب بيانات العملة من المستخدم
+        // جلب بيانات المستخدم من مصادر متعددة (users و players)
         const userDoc = await getDoc(doc(db, 'users', user.uid));
+        let userFromUsers = {};
         if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData.currency && userData.currencySymbol) {
+          userFromUsers = userDoc.data();
+        }
+
+        // جلب من players إذا لم توجد القيم في users
+        let playerData = {};
+        const playerDoc = await getDoc(doc(db, 'players', user.uid));
+        if (playerDoc.exists()) {
+          playerData = playerDoc.data();
+        }
+
+        // استخدم أول قيمة غير فارغة بين المجموعتين
+        let country = (userFromUsers as any)?.country || (playerData as any)?.country || '';
+        const city = (userFromUsers as any)?.city || (playerData as any)?.city || '';
+        
+        // تصحيح تلقائي للدولة بناءً على المدينة (لحل مشكلة البيانات الخاطئة)
+        let correctedCountry = country;
+        if (city) {
+          const countryFromCity = getCountryFromCity(city);
+          if (countryFromCity && countryFromCity !== country) {
+            correctedCountry = countryFromCity;
+            console.log(`🔧 تصحيح تلقائي في صفحة الاشتراك: المدينة "${city}" تنتمي للدولة "${countryFromCity}"`);
+          }
+        }
+        
+        const combinedUserData = { ...userFromUsers, country: correctedCountry, city };
+        setUserData(combinedUserData);
+
+        // تحديد العملة بناءً على الدولة من الملف الشخصي
+        const normalizedCountry = normalizeCountry(correctedCountry);
+        
+        if (normalizedCountry) {
+          const localCurrency = getCurrencyByCountry(normalizedCountry);
+          console.log(`💰 عملة صفحة الاشتراك: ${localCurrency.code} (${localCurrency.symbol}) بناءً على الدولة: ${correctedCountry}`);
+          
+          setUserCurrency({
+            code: localCurrency.code,
+            symbol: localCurrency.symbol
+          });
+        } else {
+          // إذا لم توجد بيانات الدولة، حاول من بيانات العملة المحفوظة مسبقاً
+          const savedUserData = userFromUsers as any;
+          if (savedUserData.currency && savedUserData.currencySymbol) {
             setUserCurrency({
-              code: userData.currency,
-              symbol: userData.currencySymbol
+              code: savedUserData.currency,
+              symbol: savedUserData.currencySymbol
             });
+            console.log(`💰 استخدام العملة المحفوظة: ${savedUserData.currency} (${savedUserData.currencySymbol})`);
+          } else {
+            console.log(`💰 استخدام العملة الافتراضية: SAR (ر.س)`);
           }
         }
 
@@ -221,6 +319,11 @@ export default function SubscriptionPage() {
           <div className="mb-8 text-center">
             <h1 className="mb-2 text-3xl font-bold text-gray-900">الاشتراكات</h1>
             <p className="text-gray-600">إدارة اشتراكك ومراقبة حالة الدفع</p>
+            {userData?.country && (
+              <p className="text-sm text-blue-600 mt-2">
+                🌍 الدولة: {userData.country} | 💰 العملة: {userCurrency.code} ({userCurrency.symbol})
+              </p>
+            )}
           </div>
 
           {/* حالة الاشتراك الحالي */}
