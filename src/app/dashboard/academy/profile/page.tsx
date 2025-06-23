@@ -603,7 +603,7 @@ export default function AcademyProfilePage() {
                 {typeof academyData.achievements === 'string' 
                   ? academyData.achievements 
                   : Array.isArray(academyData.achievements) 
-                    ? academyData.achievements.map(a => typeof a === 'string' ? a : a.title || a).join(', ')
+                    ? (academyData.achievements as any[]).map((a: any) => typeof a === 'string' ? a : a.title || a).join(', ')
                     : String(academyData.achievements)
                 }
               </p>
