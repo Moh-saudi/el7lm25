@@ -202,39 +202,39 @@ export default function AcademyProfilePage() {
       const mergedData = {
         ...initialAcademyData,
         ...data,
-        academy_name: (data.academy_name && data.academy_name.trim()) 
-          ? data.academy_name 
-          : (data.name && data.name.trim()) 
-            ? data.name 
+        academy_name: ((data as any).academy_name && (data as any).academy_name.trim()) 
+          ? (data as any).academy_name 
+          : ((data as any).name && (data as any).name.trim()) 
+            ? (data as any).name 
             : (userData?.name || 'أكاديمية جديدة'),
-        description: data.description || data.bio || '',
-        phone: (data.phone && data.phone.trim()) ? data.phone : (userData?.phone || ''),
-        email: (data.email && data.email.trim()) ? data.email : (userData?.email || ''),
-        coverImage: getSupabaseImageUrl(data.coverImage || initialAcademyData.coverImage),
-        logo: getSupabaseImageUrl(data.logo || initialAcademyData.logo),
+        description: (data as any).description || (data as any).bio || '',
+        phone: ((data as any).phone && (data as any).phone.trim()) ? (data as any).phone : (userData?.phone || ''),
+        email: ((data as any).email && (data as any).email.trim()) ? (data as any).email : (userData?.email || ''),
+        coverImage: getSupabaseImageUrl((data as any).coverImage || initialAcademyData.coverImage),
+        logo: getSupabaseImageUrl((data as any).logo || initialAcademyData.logo),
         // دمج وسائل التواصل الاجتماعي إذا كانت موجودة في البنية القديمة
         social_media: {
-          facebook: data.social_media?.facebook || data.facebook || '',
-          instagram: data.social_media?.instagram || data.instagram || '',
-          twitter: data.social_media?.twitter || data.twitter || ''
+          facebook: (data as any).social_media?.facebook || (data as any).facebook || '',
+          instagram: (data as any).social_media?.instagram || (data as any).instagram || '',
+          twitter: (data as any).social_media?.twitter || (data as any).twitter || ''
         },
         // دمج البيانات القديمة مع الجديدة
-        founding_year: data.founding_year || data.established || '',
-        license_number: data.license_number || data.license || '',
-        achievements: data.achievements || (Array.isArray(data.achievements) ? data.achievements.map(a => a.title || a).join(', ') : ''),
-        training_programs: data.training_programs || data.description || '',
+        founding_year: (data as any).founding_year || (data as any).established || '',
+        license_number: (data as any).license_number || (data as any).license || '',
+        achievements: (data as any).achievements || (Array.isArray((data as any).achievements) ? (data as any).achievements.map((a: any) => a.title || a).join(', ') : ''),
+        training_programs: (data as any).training_programs || (data as any).description || '',
         // تحويل البيانات القديمة للبنية الجديدة
         director: {
-          name: data.director?.name || data.staff?.academicDirector?.name || '',
-          photo: getSupabaseImageUrl(data.director?.photo || data.staff?.academicDirector?.image || '/images/club-avatar.png'),
-          bio: data.director?.bio || data.staff?.academicDirector?.qualification || '',
-          contact: data.director?.contact || ''
+          name: (data as any).director?.name || (data as any).staff?.academicDirector?.name || '',
+          photo: getSupabaseImageUrl((data as any).director?.photo || (data as any).staff?.academicDirector?.image || '/images/club-avatar.png'),
+          bio: (data as any).director?.bio || (data as any).staff?.academicDirector?.qualification || '',
+          contact: (data as any).director?.contact || ''
         },
         technical_director: {
-          name: data.technical_director?.name || data.staff?.headCoach?.name || '',
-          photo: getSupabaseImageUrl(data.technical_director?.photo || data.staff?.headCoach?.image || '/images/club-avatar.png'),
-          license: data.technical_director?.license || '',
-          experience: data.technical_director?.experience || data.staff?.headCoach?.experience || ''
+          name: (data as any).technical_director?.name || (data as any).staff?.headCoach?.name || '',
+          photo: getSupabaseImageUrl((data as any).technical_director?.photo || (data as any).staff?.headCoach?.image || '/images/club-avatar.png'),
+          license: (data as any).technical_director?.license || '',
+          experience: (data as any).technical_director?.experience || (data as any).staff?.headCoach?.experience || ''
         }
       };
       setAcademyData(mergedData);
