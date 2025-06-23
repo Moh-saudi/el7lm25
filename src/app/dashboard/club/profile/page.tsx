@@ -176,7 +176,7 @@ export default function ClubProfilePage() {
       let data = {};
       
       if (clubDoc.exists()) {
-        data = clubDoc.data();
+        data = clubDoc.data() as any;
       } else {
         // إنشاء مستند أساسي إذا لم يكن موجوداً
         const basicData = {
@@ -197,22 +197,22 @@ export default function ClubProfilePage() {
       
       const mergedData = {
         ...initialClubData,
-        ...data,
-        name: (data.name && data.name.trim()) ? data.name : (userData?.name || 'نادي جديد'),
-        phone: (data.phone && data.phone.trim()) ? data.phone : (userData?.phone || ''),
-        email: (data.email && data.email.trim()) ? data.email : (userData?.email || ''),
-        coverImage: getSupabaseImageUrl(data.coverImage || initialClubData.coverImage),
-        logo: getSupabaseImageUrl(data.logo || initialClubData.logo),
+        ...(data as any),
+        name: ((data as any).name && (data as any).name.trim()) ? (data as any).name : (userData?.name || 'نادي جديد'),
+        phone: ((data as any).phone && (data as any).phone.trim()) ? (data as any).phone : (userData?.phone || ''),
+        email: ((data as any).email && (data as any).email.trim()) ? (data as any).email : (userData?.email || ''),
+        coverImage: getSupabaseImageUrl((data as any).coverImage || initialClubData.coverImage),
+        logo: getSupabaseImageUrl((data as any).logo || initialClubData.logo),
         board: {
           chairman: {
             ...initialClubData.board.chairman,
-            ...(data.board?.chairman || {}),
-            image: getSupabaseImageUrl(data.board?.chairman?.image || initialClubData.board.chairman.image)
+            ...((data as any).board?.chairman || {}),
+            image: getSupabaseImageUrl((data as any).board?.chairman?.image || initialClubData.board.chairman.image)
           },
           youthDirector: {
             ...initialClubData.board.youthDirector,
-            ...(data.board?.youthDirector || {}),
-            image: getSupabaseImageUrl(data.board?.youthDirector?.image || initialClubData.board.youthDirector.image)
+            ...((data as any).board?.youthDirector || {}),
+            image: getSupabaseImageUrl((data as any).board?.youthDirector?.image || initialClubData.board.youthDirector.image)
           }
         }
       };
