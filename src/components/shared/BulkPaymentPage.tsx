@@ -963,7 +963,7 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
   // حساب الأسعار
   const selectedPlayers = players.filter(p => p.selected);
   const selectedCount = selectedPlayers.length;
-  const currentPackage = packages[selectedPackage];
+  const currentPackage = (packages as any)[selectedPackage];
   
   // السعر الأساسي للاشتراك
   let subscriptionPrice = currentPackage?.price || 0;
@@ -1264,7 +1264,7 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
             {selectedPackage && (
               <div className="bg-gradient-to-br from-slate-50 to-blue-50 border border-gray-200 rounded-2xl shadow-lg p-8">
                 <h3 className="text-2xl font-bold text-center text-slate-800 mb-8">
-                  ✨ ماذا ستحصل عليه مع {packages[selectedPackage].title}
+                  ✨ ماذا ستحصل عليه مع {(packages as any)[selectedPackage].title}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* الميزات الأساسية */}
@@ -1276,7 +1276,7 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
                       الميزات الأساسية
                     </h4>
                     <div className="space-y-4">
-                      {packages[selectedPackage].features.map((feature, index) => (
+                      {(packages as any)[selectedPackage].features.map((feature, index) => (
                         <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <div className="bg-green-100 p-1 rounded-full mt-0.5">
                             <Check className="w-4 h-4 text-green-600" />
@@ -1296,7 +1296,7 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
                       المكافآت الحصرية
                     </h4>
                     <div className="space-y-4">
-                      {packages[selectedPackage].bonusFeatures.map((bonus, index) => (
+                      {(packages as any)[selectedPackage].bonusFeatures.map((bonus, index) => (
                         <div key={index} className="flex items-start gap-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg hover:from-yellow-100 hover:to-orange-100 transition-colors">
                           <div className="bg-yellow-100 p-1 rounded-full mt-0.5">
                             <Star className="w-4 h-4 text-yellow-600" />
