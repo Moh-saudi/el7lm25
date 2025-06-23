@@ -323,7 +323,7 @@ export default function AddPlayerPage() {
 
     setFormData(prev => ({
       ...prev,
-      videos: [...prev.videos, newVideo]
+      videos: [...(prev.videos || []), newVideo]
     }));
 
     setNewVideoUrl('');
@@ -346,7 +346,7 @@ export default function AddPlayerPage() {
 
           setFormData(prev => ({
             ...prev,
-            videos: [...prev.videos, newVideo]
+            videos: [...(prev.videos || []), newVideo]
           }));
 
           toast.success('تم رفع الفيديو بنجاح إلى بوكت المدربين');
@@ -376,7 +376,7 @@ export default function AddPlayerPage() {
       const newImages = await Promise.all(uploadPromises);
       setFormData(prev => ({
         ...prev,
-        additional_images: [...prev.additional_images, ...newImages]
+        additional_images: [...(prev.additional_images || []), ...newImages]
       }));
 
       setNewImageCaption('');
@@ -392,7 +392,7 @@ export default function AddPlayerPage() {
   const removeVideo = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      videos: prev.videos.filter((_, i) => i !== index)
+      videos: (prev.videos || []).filter((_, i) => i !== index)
     }));
     toast.success('تم حذف الفيديو');
   };
@@ -400,7 +400,7 @@ export default function AddPlayerPage() {
   const removeImage = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      additional_images: prev.additional_images.filter((_, i) => i !== index)
+      additional_images: (prev.additional_images || []).filter((_, i) => i !== index)
     }));
     toast.success('تم حذف الصورة');
   };

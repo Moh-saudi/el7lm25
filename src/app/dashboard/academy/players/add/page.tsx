@@ -313,7 +313,7 @@ export default function AddAcademyPlayerPage() {
 
     setFormData(prev => ({
       ...prev,
-      videos: [...prev.videos, newVideo]
+      videos: [...(prev.videos || []), newVideo]
     }));
 
     setNewVideoUrl('');
@@ -336,7 +336,7 @@ export default function AddAcademyPlayerPage() {
 
         setFormData(prev => ({
           ...prev,
-          videos: [...prev.videos, newVideo]
+          videos: [...(prev.videos || []), newVideo]
         }));
 
         toast.success('تم رفع الفيديو بنجاح إلى بوكت الأكاديميات');
@@ -366,7 +366,7 @@ export default function AddAcademyPlayerPage() {
       const newImages = await Promise.all(uploadPromises);
       setFormData(prev => ({
         ...prev,
-        additional_images: [...prev.additional_images, ...newImages]
+        additional_images: [...(prev.additional_images || []), ...newImages]
       }));
 
       setNewImageCaption('');
@@ -382,7 +382,7 @@ export default function AddAcademyPlayerPage() {
   const removeVideo = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      videos: prev.videos.filter((_, i) => i !== index)
+      videos: (prev.videos || []).filter((_, i) => i !== index)
     }));
     toast.success('تم حذف الفيديو');
   };
@@ -390,7 +390,7 @@ export default function AddAcademyPlayerPage() {
   const removeImage = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      additional_images: prev.additional_images.filter((_, i) => i !== index)
+      additional_images: (prev.additional_images || []).filter((_, i) => i !== index)
     }));
     toast.success('تم حذف الصورة');
   };

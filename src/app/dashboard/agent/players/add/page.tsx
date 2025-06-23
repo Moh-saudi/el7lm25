@@ -313,7 +313,7 @@ export default function AddAgentPlayerPage() {
 
     setFormData(prev => ({
       ...prev,
-      videos: [...prev.videos, newVideo]
+      videos: [...(prev.videos || []), newVideo]
     }));
 
     setNewVideoUrl('');
@@ -336,7 +336,7 @@ export default function AddAgentPlayerPage() {
 
         setFormData(prev => ({
           ...prev,
-          videos: [...prev.videos, newVideo]
+          videos: [...(prev.videos || []), newVideo]
         }));
 
         toast.success('تم رفع الفيديو بنجاح إلى بوكت الوكلاء');

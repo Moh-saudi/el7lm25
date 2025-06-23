@@ -313,7 +313,7 @@ export default function AddClubPlayerPage() {
 
     setFormData(prev => ({
       ...prev,
-      videos: [...prev.videos, newVideo]
+      videos: [...(prev.videos || []), newVideo]
     }));
 
     setNewVideoUrl('');
