@@ -1276,7 +1276,7 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
                       الميزات الأساسية
                     </h4>
                     <div className="space-y-4">
-                      {(packages as any)[selectedPackage].features.map((feature, index) => (
+                      {(packages as any)[selectedPackage].features.map((feature: string, index: number) => (
                         <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <div className="bg-green-100 p-1 rounded-full mt-0.5">
                             <Check className="w-4 h-4 text-green-600" />
@@ -1296,7 +1296,7 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
                       المكافآت الحصرية
                     </h4>
                     <div className="space-y-4">
-                      {(packages as any)[selectedPackage].bonusFeatures.map((bonus, index) => (
+                      {(packages as any)[selectedPackage].bonusFeatures.map((bonus: string, index: number) => (
                         <div key={index} className="flex items-start gap-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg hover:from-yellow-100 hover:to-orange-100 transition-colors">
                           <div className="bg-yellow-100 p-1 rounded-full mt-0.5">
                             <Star className="w-4 h-4 text-yellow-600" />
