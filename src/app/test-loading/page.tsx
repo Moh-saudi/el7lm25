@@ -60,11 +60,7 @@ export default function TestLoadingPage() {
         <div className="space-y-2">
           <button 
             onClick={() => setCurrentDemo('simple')}
-            className={`block w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-              currentDemo === 'simple' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className="block w-full text-left px-3 py-2 rounded-md text-sm transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
           >
             ⚪ كرات بسيطة (مطبق)
           </button>
