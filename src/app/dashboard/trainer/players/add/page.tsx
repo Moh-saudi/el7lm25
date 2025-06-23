@@ -128,7 +128,7 @@ const defaultFormData: Partial<PlayerFormData> = {
     training: false,
     other: ''
   },
-  profile_image: null,
+  profile_image: undefined,
   additional_images: [],
   videos: [],
   training_courses: [],
@@ -229,7 +229,7 @@ export default function AddPlayerPage() {
           ...defaultFormData,
           ...playerData,
           birth_date: formattedBirthDate,
-          profile_image: playerData.profile_image_url || playerData.profile_image || null,
+          profile_image: playerData.profile_image_url || playerData.profile_image || undefined,
           additional_images: playerData.additional_images || [],
           videos: playerData.videos || [],
           technical_skills: playerData.technical_skills || {},
