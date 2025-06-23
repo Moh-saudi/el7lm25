@@ -451,12 +451,12 @@ const PlayerReport = () => {
       
       console.log('⚠️ لم يتم العثور على أي جهة تابع لها - اللاعب مستقل');
       setPlayerOrganization(null);
-      setOrganizationType(null);
+      setOrganizationType('');
       
     } catch (error) {
       console.error('❌ خطأ في جلب معلومات المنظمة:', error);
       setPlayerOrganization(null);
-      setOrganizationType(null);
+      setOrganizationType('');
     } finally {
       setOrganizationLoading(false);
       console.log('✅ انتهاء عملية البحث عن المنظمة');
@@ -1729,7 +1729,7 @@ const PlayerReport = () => {
       console.log('⚠️ لا توجد بيانات للاعب - تخطي استدعاء fetchPlayerOrganization');
       setOrganizationLoading(false);
       setPlayerOrganization(null);
-      setOrganizationType(null);
+      setOrganizationType('');
     }
   }, [player]); // إزالة fetchPlayerOrganization من dependencies لتجنب infinite loop
 
