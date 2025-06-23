@@ -1143,11 +1143,11 @@ export default function AddPlayerPage() {
                     <div key={skill} className="flex items-center justify-between p-3 border rounded-lg">
                       <span className="font-medium">{skill}</span>
                       <select
-                        value={formData.technical_skills[skill] || ''}
+                        value={(formData.technical_skills || {})[skill] || ''}
                         onChange={(e) => setFormData(prev => ({
                           ...prev,
                           technical_skills: {
-                            ...prev.technical_skills,
+                            ...(prev.technical_skills || {}),
                             [skill]: parseInt(e.target.value) || 0
                           }
                         }))}
@@ -1170,11 +1170,11 @@ export default function AddPlayerPage() {
                     <div key={skill} className="flex items-center justify-between p-3 border rounded-lg">
                       <span className="font-medium">{skill}</span>
                       <select
-                        value={formData.physical_skills[skill] || ''}
+                        value={(formData.physical_skills || {})[skill] || ''}
                         onChange={(e) => setFormData(prev => ({
                           ...prev,
                           physical_skills: {
-                            ...prev.physical_skills,
+                            ...(prev.physical_skills || {}),
                             [skill]: parseInt(e.target.value) || 0
                           }
                         }))}
