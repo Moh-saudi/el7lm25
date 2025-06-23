@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     // البحث عن الصور المكسورة
     for (const docData of allDocs) {
-      const brokenFields = [];
+      const brokenFields: string[] = [];
       
       // فحص كل حقل صورة متاح
       imageFields.forEach(field => {
