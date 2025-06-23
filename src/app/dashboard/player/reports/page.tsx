@@ -1719,7 +1719,7 @@ const PlayerReport = () => {
     console.log('🔥 useEffect للمنظمة triggered - حالة اللاعب:', {
       hasPlayer: !!player,
       playerName: player?.full_name,
-      playerId: player?.id
+      playerId: (player as any)?.id
     });
     
     if (player) {
