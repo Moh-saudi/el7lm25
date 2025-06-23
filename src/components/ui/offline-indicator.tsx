@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Alert, AlertDescription } from './alert';
+import { AlertContent, AlertDescription } from './alert';
 import { Wifi, WifiOff } from 'lucide-react';
 
 export default function OfflineIndicator() {
@@ -36,7 +36,7 @@ export default function OfflineIndicator() {
 
   return (
     <div className="fixed top-4 right-4 z-50">
-      <Alert className={`${isOnline ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+      <AlertContent className={`${isOnline ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
         <div className="flex items-center gap-2">
           {isOnline ? (
             <Wifi className="h-4 w-4 text-green-600" />
@@ -47,7 +47,7 @@ export default function OfflineIndicator() {
             {isOnline ? 'تم استعادة الاتصال بالإنترنت' : 'لا يوجد اتصال بالإنترنت'}
           </AlertDescription>
         </div>
-      </Alert>
+      </AlertContent>
     </div>
   );
 } 
