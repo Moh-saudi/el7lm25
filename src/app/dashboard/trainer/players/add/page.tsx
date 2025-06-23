@@ -87,7 +87,7 @@ const FOOT_PREFERENCES = [
 // Default values
 const defaultFormData: Partial<PlayerFormData> = {
   full_name: '',
-  birth_date: null,
+  birth_date: undefined,
   nationality: '',
   city: '',
   country: '',
@@ -485,7 +485,7 @@ export default function AddPlayerPage() {
       // Prepare form data
       const processedFormData = {
         ...formData,
-        birth_date: formData.birth_date ? new Date(formData.birth_date) : null,
+        birth_date: formData.birth_date ? new Date(formData.birth_date) : undefined,
         profile_image_url: formData.profile_image || '',
         updated_at: serverTimestamp(),
         updatedAt: serverTimestamp()
