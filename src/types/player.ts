@@ -45,6 +45,7 @@ export interface PlayerFormData {
   profile_image?: string;
   additional_images: Image[];
   videos: Video[];
+  video_urls?: string[];
   training_courses?: string[];
   has_passport: 'yes' | 'no';
   ref_source: string;
