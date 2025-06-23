@@ -717,7 +717,7 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
           const defaultPlayerProfile: PlayerData = {
             id: userId,
             name: user?.displayName || user?.email?.split('@')[0] || 'ملفي الشخصي',
-            email: user?.email,
+            email: user?.email || undefined,
             phone: '',
             position: '',
             currentSubscription: {
