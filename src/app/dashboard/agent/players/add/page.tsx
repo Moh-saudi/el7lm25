@@ -366,7 +366,7 @@ export default function AddAgentPlayerPage() {
       const newImages = await Promise.all(uploadPromises);
       setFormData(prev => ({
         ...prev,
-        additional_images: [...prev.additional_images, ...newImages]
+        additional_images: [...(prev.additional_images || []), ...newImages]
       }));
 
       setNewImageCaption('');
@@ -382,7 +382,7 @@ export default function AddAgentPlayerPage() {
   const removeVideo = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      videos: prev.videos.filter((_, i) => i !== index)
+      videos: (prev.videos || []).filter((_, i) => i !== index)
     }));
     toast.success('تم حذف الفيديو');
   };
@@ -390,7 +390,7 @@ export default function AddAgentPlayerPage() {
   const removeImage = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      additional_images: prev.additional_images.filter((_, i) => i !== index)
+      additional_images: (prev.additional_images || []).filter((_, i) => i !== index)
     }));
     toast.success('تم حذف الصورة');
   };
@@ -1328,7 +1328,7 @@ export default function AddAgentPlayerPage() {
                         type="url"
                         value={url}
                         onChange={(e) => {
-                          const newUrls = [...formData.video_urls];
+                          const newUrls = [...(formData.video_urls || [])];
                           newUrls[index] = e.target.value;
                           setFormData(prev => ({ ...prev, video_urls: newUrls }));
                         }}
