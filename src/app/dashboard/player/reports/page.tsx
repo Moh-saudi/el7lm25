@@ -78,8 +78,8 @@ const calculateAge = (birthDate: any) => {
     console.log('📅 calculateAge: معالجة تاريخ الميلاد:', birthDate, 'نوع:', typeof birthDate);
     
     // التعامل مع Firebase Timestamp
-    if (typeof birthDate === 'object' && birthDate.toDate && typeof birthDate.toDate === 'function') {
-      d = birthDate.toDate();
+          if (typeof birthDate === 'object' && (birthDate as any).toDate && typeof (birthDate as any).toDate === 'function') {
+              d = (birthDate as any).toDate();
       console.log('✅ calculateAge: تم تحويل Firebase Timestamp إلى Date:', d);
     } 
     // التعامل مع Firebase Timestamp مع seconds
@@ -477,8 +477,8 @@ const PlayerReport = () => {
             if (!player?.birth_date) return '--';
             try {
               let date: Date;
-              if (typeof player.birth_date === 'object' && player.birth_date.toDate && typeof player.birth_date.toDate === 'function') {
-                date = player.birth_date.toDate();
+              if (typeof player.birth_date === 'object' && (player.birth_date as any).toDate && typeof (player.birth_date as any).toDate === 'function') {
+                date = (player.birth_date as any).toDate();
               } else if (player.birth_date instanceof Date) {
                 date = player.birth_date;
               } else {
@@ -1586,7 +1586,7 @@ const PlayerReport = () => {
 
         let updatedAt = null;
         try {
-          updatedAt = data.updated_at?.toDate() || new Date();
+          updatedAt = (data.updated_at as any)?.toDate() || new Date();
         } catch (dateError) {
           console.error("Error converting updated_at:", dateError);
           updatedAt = new Date();
@@ -1594,7 +1594,7 @@ const PlayerReport = () => {
 
         let subscriptionEnd = null;
         try {
-          subscriptionEnd = data.subscription_end?.toDate() || null;
+          subscriptionEnd = (data.subscription_end as any)?.toDate() || null;
         } catch (dateError) {
           console.error("Error converting subscription_end:", dateError);
           subscriptionEnd = null;
