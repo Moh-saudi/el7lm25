@@ -651,7 +651,7 @@ export default function AddAgentPlayerPage() {
                     name="birth_date"
                     value={formData.birth_date ? new Date(formData.birth_date).toISOString().split('T')[0] : ''}
                     onChange={(e) => {
-                      const value = e.target.value ? new Date(e.target.value) : null;
+                      const value = e.target.value ? new Date(e.target.value) : undefined;
                       setFormData(prev => ({ ...prev, birth_date: value }));
                       if (errors.birth_date) {
                         setErrors(prev => ({ ...prev, birth_date: '' }));
@@ -1199,7 +1199,7 @@ export default function AddAgentPlayerPage() {
                       name="subscription_start"
                       value={formData.subscription_start ? new Date(formData.subscription_start).toISOString().split('T')[0] : ''}
                       onChange={(e) => {
-                        const value = e.target.value ? new Date(e.target.value) : null;
+                        const value = e.target.value ? new Date(e.target.value) : undefined;
                         setFormData(prev => ({ ...prev, subscription_start: value }));
                       }}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
@@ -1215,7 +1215,7 @@ export default function AddAgentPlayerPage() {
                       name="subscription_end"
                       value={formData.subscription_end ? new Date(formData.subscription_end).toISOString().split('T')[0] : ''}
                       onChange={(e) => {
-                        const value = e.target.value ? new Date(e.target.value) : null;
+                        const value = e.target.value ? new Date(e.target.value) : undefined;
                         setFormData(prev => ({ ...prev, subscription_end: value }));
                       }}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"

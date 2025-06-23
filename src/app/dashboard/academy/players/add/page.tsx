@@ -651,7 +651,7 @@ export default function AddAcademyPlayerPage() {
                     name="birth_date"
                     value={formData.birth_date ? new Date(formData.birth_date).toISOString().split('T')[0] : ''}
                     onChange={(e) => {
-                      const value = e.target.value ? new Date(e.target.value) : null;
+                      const value = e.target.value ? new Date(e.target.value) : undefined;
                       setFormData(prev => ({ ...prev, birth_date: value }));
                       if (errors.birth_date) {
                         setErrors(prev => ({ ...prev, birth_date: '' }));
