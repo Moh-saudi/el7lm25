@@ -325,11 +325,11 @@ export default function AcademyProfilePage() {
         .from('academy')
         .getPublicUrl(filePath);
 
-      let updatedData = { ...academyData };
+      let updatedData = { ...academyData } as any;
       let updateObj: any = {};
       
       if (type === 'gallery') {
-        updatedData.gallery = [...(academyData.gallery || []), publicUrl];
+        updatedData.gallery = [...((academyData as any).gallery || []), publicUrl];
         updateObj.gallery = updatedData.gallery;
       } else if (type === 'cover') {
         updatedData.coverImage = publicUrl;
