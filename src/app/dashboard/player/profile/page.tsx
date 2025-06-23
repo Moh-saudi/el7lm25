@@ -2030,7 +2030,7 @@ export default function PlayerProfile() {
               type="file"
               accept="image/*"
               multiple
-                                onChange={(e) => e.target.files?.[0] && handleAdditionalImageUpload(e.target.files[0])}
+                                onChange={handleAdditionalImageUpload}
               className="w-full p-2 text-sm text-gray-500 border border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
             />
             <p className="mt-1 text-xs text-gray-500">يمكن اختيار عدة صور مرة واحدة (PNG, JPG, JPEG)</p>
