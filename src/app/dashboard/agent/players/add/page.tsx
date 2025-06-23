@@ -128,6 +128,7 @@ const defaultFormData: Partial<PlayerFormData> = {
   profile_image: undefined,
   additional_images: [],
   videos: [],
+  video_urls: [],
   training_courses: [],
   has_passport: 'no',
   ref_source: '',
@@ -227,6 +228,7 @@ export default function AddAgentPlayerPage() {
           profile_image: playerData.profile_image_url || playerData.profile_image || undefined,
           additional_images: playerData.additional_images || [],
           videos: playerData.videos || [],
+          video_urls: playerData.video_urls || [],
           technical_skills: playerData.technical_skills || {},
           physical_skills: playerData.physical_skills || {},
           social_skills: playerData.social_skills || {},
@@ -303,14 +305,9 @@ export default function AddAgentPlayerPage() {
       return;
     }
 
-    const newVideo = {
-      url: newVideoUrl.trim(),
-      desc: newVideoDesc.trim() || 'فيديو جديد'
-    };
-
     setFormData(prev => ({
       ...prev,
-      videos: [...(prev.videos || []), newVideo]
+      video_urls: [...((prev as any).video_urls || []), newVideoUrl.trim()]
     }));
 
     setNewVideoUrl('');
@@ -374,6 +371,14 @@ export default function AddAgentPlayerPage() {
     } finally {
       setIsUploadingMedia(false);
     }
+  };
+
+  const removeVideoUrl = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      video_urls: ((prev as any).video_urls || []).filter((_: any, i: number) => i !== index)
+    }));
+    toast.success('تم حذف رابط الفيديو');
   };
 
   const removeVideo = (index: number) => {
@@ -1325,7 +1330,7 @@ export default function AddAgentPlayerPage() {
                         type="url"
                         value={url}
                         onChange={(e) => {
-                          const newUrls = [...(formData.video_urls || [])];
+                          const newUrls = [...((formData as any).video_urls || [])];
                           newUrls[index] = e.target.value;
                           setFormData(prev => ({ ...prev, video_urls: newUrls } as any));
                         }}
@@ -1334,7 +1339,7 @@ export default function AddAgentPlayerPage() {
                       />
                       <button
                         type="button"
-                        onClick={() => removeVideo(index)}
+                        onClick={() => removeVideoUrl(index)}
                         className="px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600"
                       >
                         حذف
@@ -1361,10 +1366,10 @@ export default function AddAgentPlayerPage() {
                   multiple
                   accept="video/*"
                   onChange={handleVideoFileUpload}
-                  disabled={uploadingVideos}
+                  disabled={isUploadingMedia}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 />
-                {uploadingVideos && (
+                                  {isUploadingMedia && (
                   <div className="mt-2 text-sm text-cyan-600">جاري رفع الفيديوهات...</div>
                 )}
                 {(formData as any).video_files && (formData as any).video_files.length > 0 && (
@@ -1398,10 +1403,10 @@ export default function AddAgentPlayerPage() {
                   multiple
                   accept="image/*"
                   onChange={handleAdditionalImagesUpload}
-                  disabled={uploadingImages}
+                  disabled={isUploadingMedia}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 />
-                {uploadingImages && (
+                                  {isUploadingMedia && (
                   <div className="mt-2 text-sm text-cyan-600">جاري رفع الصور...</div>
                 )}
                 {(formData as any).additional_images && (formData as any).additional_images.length > 0 && (
