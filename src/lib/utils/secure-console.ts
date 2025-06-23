@@ -75,8 +75,8 @@ if (isClient && !isSafeToDevelop()) {
     // نترك console.error للأخطاء المهمة فقط
     
     // إخفاء الأوامر المتقدمة
-    if (window.authDebugger) {
-      delete window.authDebugger;
+    if ((window as any).authDebugger) {
+      delete (window as any).authDebugger;
     }
     
     // رسالة بسيطة للمطورين الفضوليين
