@@ -1074,7 +1074,7 @@ export default function AddAgentPlayerPage() {
                   </label>
                   <select
                     name="current_level"
-                    value={formData.current_level}
+                    value={(formData as any).current_level}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   >
@@ -1124,7 +1124,7 @@ export default function AddAgentPlayerPage() {
                   <input
                     type="number"
                     name="desired_salary"
-                    value={formData.desired_salary}
+                    value={(formData as any).desired_salary}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                     placeholder="مثال: 5000"
@@ -1139,7 +1139,7 @@ export default function AddAgentPlayerPage() {
                 </label>
                 <textarea
                   name="sports_achievements"
-                  value={formData.sports_achievements}
+                  value={(formData as any).sports_achievements}
                   onChange={handleInputChange}
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
@@ -1158,7 +1158,7 @@ export default function AddAgentPlayerPage() {
                   </label>
                   <select
                     name="subscription_status"
-                    value={formData.subscription_status}
+                    value={(formData as any).subscription_status}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent ${
                       errors.subscription_status ? 'border-red-500' : 'border-gray-300'
@@ -1177,7 +1177,7 @@ export default function AddAgentPlayerPage() {
                   </label>
                   <select
                     name="subscription_type"
-                    value={formData.subscription_type}
+                    value={(formData as any).subscription_type}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   >
@@ -1188,7 +1188,7 @@ export default function AddAgentPlayerPage() {
                 </div>
               </div>
 
-              {formData.subscription_status === 'مدفوع' && (
+                              {(formData as any).subscription_status === 'مدفوع' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1197,7 +1197,7 @@ export default function AddAgentPlayerPage() {
                     <input
                       type="date"
                       name="subscription_start"
-                      value={formData.subscription_start ? new Date(formData.subscription_start).toISOString().split('T')[0] : ''}
+                      value={(formData as any).subscription_start ? new Date((formData as any).subscription_start).toISOString().split('T')[0] : ''}
                       onChange={(e) => {
                         const value = e.target.value ? new Date(e.target.value) : undefined;
                         setFormData(prev => ({ ...prev, subscription_start: value }));
@@ -1213,7 +1213,7 @@ export default function AddAgentPlayerPage() {
                     <input
                       type="date"
                       name="subscription_end"
-                      value={formData.subscription_end ? new Date(formData.subscription_end).toISOString().split('T')[0] : ''}
+                      value={(formData as any).subscription_end ? new Date((formData as any).subscription_end).toISOString().split('T')[0] : ''}
                       onChange={(e) => {
                         const value = e.target.value ? new Date(e.target.value) : undefined;
                         setFormData(prev => ({ ...prev, subscription_end: value }));
@@ -1230,7 +1230,7 @@ export default function AddAgentPlayerPage() {
                 </label>
                 <textarea
                   name="subscription_notes"
-                  value={formData.subscription_notes}
+                  value={(formData as any).subscription_notes}
                   onChange={handleInputChange}
                   rows={3}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
@@ -1248,7 +1248,7 @@ export default function AddAgentPlayerPage() {
                 </label>
                 <textarea
                   name="career_history"
-                  value={formData.career_history}
+                  value={(formData as any).career_history}
                   onChange={handleInputChange}
                   rows={5}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
@@ -1262,7 +1262,7 @@ export default function AddAgentPlayerPage() {
                 </label>
                 <textarea
                   name="career_goals"
-                  value={formData.career_goals}
+                  value={(formData as any).career_goals}
                   onChange={handleInputChange}
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
@@ -1275,7 +1275,7 @@ export default function AddAgentPlayerPage() {
                   <input
                     type="checkbox"
                     name="available_for_transfer"
-                    checked={formData.available_for_transfer}
+                    checked={(formData as any).available_for_transfer}
                     onChange={handleInputChange}
                     className="w-4 h-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500"
                   />
@@ -1288,7 +1288,7 @@ export default function AddAgentPlayerPage() {
                   <input
                     type="checkbox"
                     name="willing_to_relocate"
-                    checked={formData.willing_to_relocate}
+                    checked={(formData as any).willing_to_relocate}
                     onChange={handleInputChange}
                     className="w-4 h-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500"
                   />
@@ -1304,7 +1304,7 @@ export default function AddAgentPlayerPage() {
                 </label>
                 <textarea
                   name="additional_notes"
-                  value={formData.additional_notes}
+                  value={(formData as any).additional_notes}
                   onChange={handleInputChange}
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
@@ -1322,7 +1322,7 @@ export default function AddAgentPlayerPage() {
                   روابط الفيديوهات
                 </label>
                 <div className="space-y-3">
-                  {formData.video_urls.map((url, index) => (
+                  {((formData as any).video_urls || []).map((url: string, index: number) => (
                     <div key={index} className="flex gap-2">
                       <input
                         type="url"
@@ -1330,7 +1330,7 @@ export default function AddAgentPlayerPage() {
                         onChange={(e) => {
                           const newUrls = [...(formData.video_urls || [])];
                           newUrls[index] = e.target.value;
-                          setFormData(prev => ({ ...prev, video_urls: newUrls }));
+                          setFormData(prev => ({ ...prev, video_urls: newUrls } as any));
                         }}
                         className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                         placeholder="https://youtube.com/watch?v=..."
@@ -1370,11 +1370,11 @@ export default function AddAgentPlayerPage() {
                 {uploadingVideos && (
                   <div className="mt-2 text-sm text-cyan-600">جاري رفع الفيديوهات...</div>
                 )}
-                {formData.video_files && formData.video_files.length > 0 && (
+                {(formData as any).video_files && (formData as any).video_files.length > 0 && (
                   <div className="mt-3">
                     <p className="text-sm text-gray-600 mb-2">الفيديوهات المرفوعة:</p>
                     <div className="space-y-2">
-                      {formData.video_files.map((video, index) => (
+                      {((formData as any).video_files || []).map((video: any, index: number) => (
                         <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                           <span className="text-sm">{video.name}</span>
                           <button
@@ -1407,11 +1407,11 @@ export default function AddAgentPlayerPage() {
                 {uploadingImages && (
                   <div className="mt-2 text-sm text-cyan-600">جاري رفع الصور...</div>
                 )}
-                {formData.additional_images && formData.additional_images.length > 0 && (
+                {(formData as any).additional_images && (formData as any).additional_images.length > 0 && (
                   <div className="mt-4">
                     <p className="text-sm text-gray-600 mb-2">الصور المرفوعة:</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {formData.additional_images.map((image, index) => (
+                      {((formData as any).additional_images || []).map((image: string, index: number) => (
                         <div key={index} className="relative">
                           <img
                             src={image}
