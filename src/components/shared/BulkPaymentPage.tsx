@@ -1335,13 +1335,14 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
                       <Settings className="w-4 h-4" />
                     </button>
                   </Link>
-                  <button
-                    onClick={() => setShowAddPlayerModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors"
-                    title="إضافة لاعب جديد"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+                  <Link href={`/dashboard/${accountType}/players/add`}>
+                    <button
+                      className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors"
+                      title="إضافة لاعب جديد"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </Link>
                 </div>
               </div>
 
