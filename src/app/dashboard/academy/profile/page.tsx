@@ -266,7 +266,7 @@ export default function AcademyProfilePage() {
       
       if (academyDoc.exists()) {
         // المستند موجود - نحدثه
-        await updateDoc(academyRef, academyData);
+        await updateDoc(academyRef, { ...academyData } as any);
       } else {
         // المستند غير موجود - ننشئه
         await setDoc(academyRef, {
