@@ -426,7 +426,7 @@ export const createSafeImageUrl = (
  * تحسين جودة الفيديو حسب سرعة الاتصال
  */
 export const getOptimalVideoQuality = (): 'low' | 'medium' | 'high' => {
-  if (!navigator.connection) {
+  if (!(navigator as any).connection) {
     return 'medium'; // القيمة الافتراضية
   }
   
