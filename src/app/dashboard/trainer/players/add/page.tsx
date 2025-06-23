@@ -1239,10 +1239,10 @@ export default function AddPlayerPage() {
                         onChange={(e) => setFormData(prev => ({
                           ...prev,
                           objectives: {
-                            ...(prev.objectives || {}),
+                            ...(prev.objectives as any || {}),
                             [objective.key]: e.target.checked
                           }
-                        }))}
+                        } as any))}
                         className="w-4 h-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500 ml-3"
                       />
                       <span className="font-medium">{objective.label}</span>
@@ -1260,10 +1260,10 @@ export default function AddPlayerPage() {
                   onChange={(e) => setFormData(prev => ({
                     ...prev,
                     objectives: {
-                      ...(prev.objectives || {}),
+                      ...(prev.objectives as any || {}),
                       other: e.target.value
                     }
-                  }))}
+                  } as any))}
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   placeholder="اكتب أي أهداف أخرى..."
