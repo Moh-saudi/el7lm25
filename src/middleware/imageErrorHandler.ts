@@ -41,7 +41,7 @@ export async function validateImageResponse(imageUrl: string): Promise<boolean> 
       signal: AbortSignal.timeout(5000) // timeout بعد 5 ثواني
     });
     
-    return response.ok && response.headers.get('content-type')?.startsWith('image/');
+    return response.ok && (response.headers.get('content-type')?.startsWith('image/') ?? false);
   } catch (error) {
     console.warn(`فشل فحص الصورة: ${imageUrl}`, error);
     return false;
