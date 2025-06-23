@@ -1235,11 +1235,11 @@ export default function AddPlayerPage() {
                     <div key={objective.key} className="flex items-center p-3 border rounded-lg">
                       <input
                         type="checkbox"
-                        checked={formData.objectives[objective.key] || false}
+                        checked={(formData.objectives as any || {})[objective.key] || false}
                         onChange={(e) => setFormData(prev => ({
                           ...prev,
                           objectives: {
-                            ...prev.objectives,
+                            ...(prev.objectives || {}),
                             [objective.key]: e.target.checked
                           }
                         }))}
@@ -1256,11 +1256,11 @@ export default function AddPlayerPage() {
                   أهداف أخرى
                 </label>
                 <textarea
-                  value={formData.objectives.other || ''}
+                  value={(formData.objectives || {}).other || ''}
                   onChange={(e) => setFormData(prev => ({
                     ...prev,
                     objectives: {
-                      ...prev.objectives,
+                      ...(prev.objectives || {}),
                       other: e.target.value
                     }
                   }))}
