@@ -56,7 +56,15 @@ export async function GET(request: Request) {
       const ratings = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as Array<{
+        id: string;
+        overallRating?: number;
+        speedRating?: number;
+        skillRating?: number;
+        physicalRating?: number;
+        mentalRating?: number;
+        [key: string]: any;
+      }>;
 
       // حساب المتوسطات
       const totalRatings = ratings.length;
