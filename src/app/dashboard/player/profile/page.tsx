@@ -672,14 +672,11 @@ export default function PlayerProfile() {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => e.target.files?.[0] && handleProfileImageUpload(e.target.files[0])}
+                            onChange={(e) => e.target.files?.[0] && handleProfileImageUpload(e.target.files[0])}
               className="flex-1"
               disabled={uploadingImage}
             />
             {uploadingImage && <span className="text-blue-600">جاري الرفع...</span>}
-              disabled={uploadingProfileImage}
-            />
-            {uploadingProfileImage && <span className="text-blue-600">جاري الرفع...</span>}
                          {getImageUrl(editFormData.profile_image) && (
                <div className="relative w-24 h-24">
                  <Image
