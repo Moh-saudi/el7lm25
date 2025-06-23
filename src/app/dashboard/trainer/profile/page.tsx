@@ -185,15 +185,15 @@ export default function TrainerProfilePage() {
       const mergedData = {
         ...initialTrainerData,
         ...data,
-        full_name: data.full_name || data.name || userData?.name || 'مدرب رياضي',
-        phone: data.phone || userData?.phone || '',
-        email: data.email || userData?.email || '',
-        profile_photo: getSupabaseImageUrl(data.profile_photo || initialTrainerData.profile_photo),
-        coverImage: getSupabaseImageUrl(data.coverImage || initialTrainerData.coverImage),
-        social_media: {
-          linkedin: data.social_media?.linkedin || data.linkedin || '',
-          twitter: data.social_media?.twitter || data.twitter || '',
-          instagram: data.social_media?.instagram || data.instagram || ''
+        full_name: (data as any).full_name || (data as any).name || userData?.name || 'مدرب رياضي',
+        phone: (data as any).phone || userData?.phone || '',
+        email: (data as any).email || userData?.email || '',
+        profile_photo: getSupabaseImageUrl((data as any).profile_photo || initialTrainerData.profile_photo),
+        coverImage: getSupabaseImageUrl((data as any).coverImage || initialTrainerData.coverImage),
+                  social_media: {
+            linkedin: (data as any).social_media?.linkedin || (data as any).linkedin || '',
+                      twitter: (data as any).social_media?.twitter || (data as any).twitter || '',
+            instagram: (data as any).social_media?.instagram || (data as any).instagram || ''
         }
       };
       setTrainerData(mergedData);
