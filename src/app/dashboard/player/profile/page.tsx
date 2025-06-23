@@ -511,29 +511,29 @@ export default function PlayerProfile() {
   // دالة لتحديد نوع الحساب من بيانات اللاعب (محدثة لدعم كلا التنسيقين)
   const getAccountType = (): AccountType => {
     console.log('🔍 تحديد نوع الحساب من بيانات اللاعب:', {
-      trainer_id: playerData?.trainer_id,
-      trainerId: playerData?.trainerId,
-      club_id: playerData?.club_id,
-      clubId: playerData?.clubId,
-      agent_id: playerData?.agent_id,
-      agentId: playerData?.agentId,
-      academy_id: playerData?.academy_id,
-      academyId: playerData?.academyId
+      trainer_id: (playerData as any)?.trainer_id,
+      trainerId: (playerData as any)?.trainerId,
+      club_id: (playerData as any)?.club_id,
+      clubId: (playerData as any)?.clubId,
+              agent_id: (playerData as any)?.agent_id,
+        agentId: (playerData as any)?.agentId,
+              academy_id: (playerData as any)?.academy_id,
+        academyId: (playerData as any)?.academyId
     });
     
-    if (playerData?.trainer_id || playerData?.trainerId) {
+    if ((playerData as any)?.trainer_id || (playerData as any)?.trainerId) {
       console.log('✅ تم تحديد النوع: مدرب');
       return 'trainer';
     }
-    if (playerData?.club_id || playerData?.clubId) {
+    if ((playerData as any)?.club_id || (playerData as any)?.clubId) {
       console.log('✅ تم تحديد النوع: نادي');
       return 'club';
     }
-    if (playerData?.agent_id || playerData?.agentId) {
+    if ((playerData as any)?.agent_id || (playerData as any)?.agentId) {
       console.log('✅ تم تحديد النوع: وكيل');
       return 'agent';
     }
-    if (playerData?.academy_id || playerData?.academyId) {
+    if ((playerData as any)?.academy_id || (playerData as any)?.academyId) {
       console.log('✅ تم تحديد النوع: أكاديمية');
       return 'academy';
     }
