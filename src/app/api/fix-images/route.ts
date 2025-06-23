@@ -2,6 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase/config';
 import { collection, getDocs, doc, updateDoc, query, limit } from 'firebase/firestore';
 
+// Helper function to check if URL is broken
+function isBrokenUrl(url: any): boolean {
+  if (!url || typeof url !== 'string') return true;
+  
+  const cleanUrl = url.trim();
+  const badPatterns = [
+    'test-url.com',
+    'undefined',
+    'null',
+    '[object Object]',
+    'example.com',
+    'placeholder.com'
+  ];
+  
+  return badPatterns.some(pattern => cleanUrl.includes(pattern)) ||
+         cleanUrl === '' || 
+         cleanUrl === 'undefined' || 
+         cleanUrl === 'null';
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('🚀 بدء إصلاح الصور من API (Firebase)...');
@@ -91,25 +111,6 @@ export async function POST(request: NextRequest) {
 
     // فحص الصور المكسورة
     const brokenDocs = [];
-    
-    function isBrokenUrl(url: any): boolean {
-      if (!url || typeof url !== 'string') return true;
-      
-      const cleanUrl = url.trim();
-      const badPatterns = [
-        'test-url.com',
-        'undefined',
-        'null',
-        '[object Object]',
-        'example.com',
-        'placeholder.com'
-      ];
-      
-      return badPatterns.some(pattern => cleanUrl.includes(pattern)) ||
-             cleanUrl === '' || 
-             cleanUrl === 'undefined' || 
-             cleanUrl === 'null';
-    }
 
     // البحث عن الصور المكسورة
     for (const docData of allDocs) {
