@@ -212,7 +212,7 @@ export default function AgentProfilePage() {
       let data = {};
       
       if (agentDoc.exists()) {
-        data = agentDoc.data();
+        data = agentDoc.data() as any;
       } else {
         const basicData = {
           ...initialAgentData,
