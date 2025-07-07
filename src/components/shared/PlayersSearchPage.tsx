@@ -50,6 +50,17 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
   const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  // 1. متغيرات الحالة للصفحات
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 16;
+  const [totalPlayers, setTotalPlayers] = useState(0);
+
+  // 1. متغيرات الفلاتر
+  const [filterPosition, setFilterPosition] = useState('');
+  const [filterNationality, setFilterNationality] = useState('');
+  const [filterCountry, setFilterCountry] = useState('');
+  const [filterObjective, setFilterObjective] = useState('');
+
   // دالة إعداد معلومات المستخدم الحالي
   const setupCurrentUserInfo = () => {
     if (!user?.uid || !userData) {
@@ -97,40 +108,20 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
     }
   };
 
-  useEffect(() => {
-    secureConsole.debug('🚀 PlayersSearchPage useEffect triggered:', { 
-      accountType, 
-      userUID: user?.uid, 
-      hasUserData: !!userData,
-      authLoading 
-    });
-    
-    loadPlayers();
-    
-    // إعداد معلومات المستخدم إذا كانت البيانات متوفرة
-    if (user && userData && !authLoading) {
-      setupCurrentUserInfo();
-    } else if (!authLoading) {
-      setCurrentUserInfo(null);
-    }
-  }, [user, userData, accountType, authLoading]); // إضافة userData و authLoading كـ dependencies
-
+  // دالة جلب اللاعبين (تجلب جميع اللاعبين فقط)
   const loadPlayers = async () => {
     try {
       setIsLoading(true);
       const playersQuery = query(
         collection(db, 'players'),
-        orderBy('created_at', 'desc'),
-        limit(20)
+        orderBy('created_at', 'desc')
       );
-      
       const snapshot = await getDocs(playersQuery);
-      const playersData = snapshot.docs.map(doc => ({
+      const allPlayers = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Player[];
-      
-      setPlayers(playersData);
+      setPlayers(allPlayers);
     } catch (error) {
       secureConsole.error('خطأ في جلب اللاعبين:', error);
     } finally {
@@ -138,10 +129,42 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
     }
   };
 
-  const filteredPlayers = players.filter(player =>
-    player.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    player.primary_position?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // حدث الجلب عند تحميل الصفحة أو تغيير المستخدم
+  useEffect(() => {
+    loadPlayers();
+    if (user && userData && !authLoading) {
+      setupCurrentUserInfo();
+    } else if (!authLoading) {
+      setCurrentUserInfo(null);
+    }
+  }, [user, userData, accountType, authLoading]);
+
+  // 2. استخراج القيم الفريدة للفلاتر من اللاعبين (بعد الجلب)
+  const uniquePositions = Array.from(new Set(players.map(p => p.primary_position).filter(Boolean)));
+  const uniqueNationalities = Array.from(new Set(players.map(p => p.nationality).filter(Boolean)));
+  const uniqueCountries = Array.from(new Set(players.map(p => p.country).filter(Boolean)));
+
+  // 3. استخراج الأهداف الفريدة من بيانات اللاعبين
+  const uniqueObjectives = Array.from(new Set(players.flatMap(p => p.objectives ? Object.keys(p.objectives) : []).filter(Boolean)));
+
+  // 4. فلترة اللاعبين بناءً على البحث والفلاتر
+  const filteredPlayers = players.filter(player => {
+    const matchesSearch =
+      player.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      player.primary_position?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPosition = filterPosition ? player.primary_position === filterPosition : true;
+    const matchesNationality = filterNationality ? player.nationality === filterNationality : true;
+    const matchesCountry = filterCountry ? player.country === filterCountry : true;
+    const matchesObjective = filterObjective ? (player.objectives && player.objectives[filterObjective]) : true;
+    return matchesSearch && matchesPosition && matchesNationality && matchesCountry && matchesObjective;
+  });
+
+  // 5. إعادة الصفحة للأولى عند تغيير البحث أو الفلاتر
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterPosition, filterNationality, filterCountry, filterObjective]);
+
+  // 6. قص النتائج للصفحة الحالية بعد الفلترة
+  const pagedPlayers = filteredPlayers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalPages = Math.ceil(filteredPlayers.length / pageSize);
 
   const getPositionColor = (position: string) => {
     if (position?.includes('حارس')) return 'from-yellow-400 to-orange-500';
@@ -159,6 +182,64 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
     return '⚽';
   };
 
+  // 7. مكون الفلاتر
+  const Filters = () => (
+    <div className="flex flex-wrap gap-3 items-center justify-center mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+      <input
+        type="text"
+        placeholder="ابحث عن اسم اللاعب أو مهارته..."
+        value={searchTerm}
+        onChange={e => setSearchTerm(e.target.value)}
+        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900 placeholder-blue-400 w-48"
+      />
+      <select value={filterPosition} onChange={e => setFilterPosition(e.target.value)} className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900">
+        <option value="">كل المراكز</option>
+        {uniquePositions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+      </select>
+      <select value={filterNationality} onChange={e => setFilterNationality(e.target.value)} className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900">
+        <option value="">كل الجنسيات</option>
+        {uniqueNationalities.map(nat => <option key={nat} value={nat}>{nat}</option>)}
+      </select>
+      <select value={filterCountry} onChange={e => setFilterCountry(e.target.value)} className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900">
+        <option value="">كل الدول</option>
+        {uniqueCountries.map(c => <option key={c} value={c}>{c}</option>)}
+      </select>
+      <select value={filterObjective} onChange={e => setFilterObjective(e.target.value)} className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900">
+        <option value="">كل الأهداف</option>
+        {uniqueObjectives.map(obj => <option key={obj} value={obj}>{obj}</option>)}
+      </select>
+    </div>
+  );
+
+  // 8. مكون الصفحات
+  const Pagination = () => (
+    <div className="flex justify-center items-center gap-2 mt-8">
+      <button
+        className="px-3 py-1 rounded bg-blue-200 text-blue-800 disabled:opacity-50"
+        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+        disabled={currentPage === 1}
+      >
+        السابق
+      </button>
+      {Array.from({ length: totalPages }, (_, i) => (
+        <button
+          key={i}
+          className={`px-3 py-1 rounded ${currentPage === i + 1 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'}`}
+          onClick={() => setCurrentPage(i + 1)}
+        >
+          {i + 1}
+        </button>
+      ))}
+      <button
+        className="px-3 py-1 rounded bg-blue-200 text-blue-800 disabled:opacity-50"
+        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+        disabled={currentPage === totalPages}
+      >
+        التالي
+      </button>
+    </div>
+  );
+
   // عرض شاشة التحميل إذا كان النظام لا يزال يحمل بيانات المصادقة
   if (authLoading) {
     return (
@@ -171,41 +252,47 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
     );
   }
 
+  // أضف دالة getUserDisplayName بسيطة
+  const getUserDisplayName = () => {
+    if (!userData) return 'مستخدم';
+    return userData.full_name || userData.name || userData.email || 'مستخدم';
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900" dir="rtl">
+    <div className="min-h-screen bg-white" dir="rtl">
       {/* Header مع معلومات الحساب */}
-      <div className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-white/20 shadow-sm">
+      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-blue-100 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* عنوان الصفحة */}
             <div className="flex items-center gap-3">
-              <Sword className="w-8 h-8 text-yellow-400" />
-              <h1 className="text-2xl font-bold text-white">البحث عن اللاعبين</h1>
+              <Sword className="w-8 h-8 text-blue-400" />
+              <h1 className="text-2xl font-bold text-blue-900">اكتشف المواهب</h1>
             </div>
 
             {/* معلومات الحساب المصادق */}
             {currentUserInfo && (
               <div className="flex items-center gap-3">
                 {/* تسمية توضيحية */}
-                <div className="text-sm text-white/60 font-medium border-l border-white/20 pl-3">
+                <div className="text-sm text-blue-800/60 font-medium border-l border-blue-100 pl-3">
                   تتصفح بحساب:
                 </div>
                 
-                <div className="flex items-center gap-3 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 shadow-sm">
-                  <div className={`p-2 rounded-full ${currentUserInfo.color} text-white shadow-sm`}>
+                <div className="flex items-center gap-3 px-4 py-2 bg-blue-100 rounded-lg border border-blue-200 shadow-sm">
+                  <div className={`p-2 rounded-full ${currentUserInfo.color} text-blue-800 shadow-sm`}>
                     <currentUserInfo.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-white">
+                    <div className="text-sm font-bold text-blue-800">
                       {currentUserInfo.name || currentUserInfo.full_name}
                     </div>
-                    <div className="text-xs text-white/80 font-medium">
+                    <div className="text-xs text-blue-800/80 font-medium">
                       {currentUserInfo.type} • نشط
                     </div>
                   </div>
                   
                   {/* أيقونة التحقق */}
-                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                     <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
@@ -229,53 +316,58 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
               <Sword className="w-12 h-12 text-yellow-400 animate-bounce" />
             </div>
             
-            <p className="text-xl text-white/80 mb-6">
+            <p className="text-xl text-blue-800/80 mb-6">
               ابحث عن المحاربين الجدد في عالم كرة القدم
             </p>
             
             <div className="max-w-md mx-auto relative">
-              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
+              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-800/60 w-5 h-5" />
               <Input
                 type="text"
                 placeholder="ابحث عن اسم المحارب أو مهارته..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-4 pr-12 py-3 bg-slate-800/50 border-white/20 text-white placeholder-white/60"
+                className="pl-4 pr-12 py-3 bg-blue-100 border-blue-200 text-blue-800 placeholder-blue-800/60"
               />
             </div>
           </div>
         </div>
       </div>
 
+      {/* جزء الفلاتر */}
+      <div className="container mx-auto px-4">
+        <Filters />
+      </div>
+
       {/* قائمة اللاعبين */}
       <div className="container mx-auto px-4 pb-12">
-        <div className="mb-4 text-white/60 text-center">
+        <div className="mb-4 text-blue-800 text-center">
           <Users className="w-5 h-5 inline mr-2" />
-          {filteredPlayers.length} محارب جاهز للمعركة
+          {pagedPlayers.length} لاعب في هذه الصفحة من أصل {filteredPlayers.length}
         </div>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
-              <Card key={i} className="bg-slate-800/50 border-white/10 p-6 animate-pulse">
+              <Card key={i} className="bg-blue-100 border-blue-200 p-6 animate-pulse">
                 <div className="flex justify-center mb-4">
-                  <div className="w-24 h-24 bg-slate-700 rounded-full"></div>
+                  <div className="w-24 h-24 bg-blue-200 rounded-full"></div>
                 </div>
                 <div className="space-y-3">
-                  <div className="h-4 bg-slate-700 rounded"></div>
-                  <div className="h-3 bg-slate-700 rounded w-3/4 mx-auto"></div>
+                  <div className="h-4 bg-blue-200 rounded"></div>
+                  <div className="h-3 bg-blue-200 rounded w-3/4 mx-auto"></div>
                 </div>
               </Card>
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredPlayers.map((player) => {
+            {pagedPlayers.map((player) => {
               const positionColor = getPositionColor(player.primary_position || '');
               const positionEmoji = getPositionEmoji(player.primary_position || '');
               
               return (
-                <Card key={player.id} className="group relative overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 border-0 shadow-2xl hover:shadow-purple-500/25 transform hover:scale-105 transition-all duration-500 cursor-pointer">
+                <Card key={player.id} className="group relative overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 border-0 shadow-2xl hover:shadow-blue-500/25 transform hover:scale-105 transition-all duration-500 cursor-pointer">
                   <div className={`absolute inset-0 bg-gradient-to-br ${positionColor} opacity-10 group-hover:opacity-30 transition-all duration-500`} />
                   
                   <div className="relative p-6">
@@ -283,7 +375,7 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
                     <div className="flex justify-center mb-4">
                       <div className="relative">
                         <div className={`absolute inset-0 bg-gradient-to-r ${positionColor} rounded-full blur-md opacity-60 animate-pulse`} />
-                        <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shadow-xl">
+                        <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-blue-200 shadow-xl">
                           {player.profile_image || player.profile_image_url ? (
                             <Image
                               src={getValidImageUrl(player.profile_image_url || player.profile_image)}
@@ -302,13 +394,13 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
                               }}
                             />
                           ) : (
-                            <div className={`w-full h-full bg-gradient-to-br ${positionColor} flex items-center justify-center text-3xl text-white font-bold`}>
+                            <div className={`w-full h-full bg-gradient-to-br ${positionColor} flex items-center justify-center text-3xl text-blue-800 font-bold`}>
                               {positionEmoji}
                             </div>
                           )}
                         </div>
                         
-                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-slate-800 rounded-full border-2 border-white/30 flex items-center justify-center text-sm">
+                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-200 rounded-full border-2 border-blue-300 flex items-center justify-center text-sm">
                           {positionEmoji}
                         </div>
                       </div>
@@ -316,15 +408,15 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
 
                     {/* معلومات اللاعب */}
                     <div className="text-center space-y-3">
-                      <h3 className="font-bold text-lg text-white group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-yellow-400 group-hover:to-orange-500 group-hover:bg-clip-text transition-all duration-300">
+                      <h3 className="font-bold text-lg text-blue-800 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-yellow-400 group-hover:to-orange-500 group-hover:bg-clip-text transition-all duration-300">
                         {player.full_name || 'لاعب مجهول'}
                       </h3>
 
                       <div className="flex justify-center space-x-2 space-x-reverse">
-                        <Badge className={`bg-gradient-to-r ${positionColor} text-white border-0 shadow-lg`}>
+                        <Badge className={`bg-gradient-to-r ${positionColor} text-blue-800 border-0 shadow-lg`}>
                           {player.primary_position || 'غير محدد'}
                         </Badge>
-                        <Badge variant="outline" className="border-white/30 text-white/80">
+                        <Badge variant="outline" className="border-blue-300 text-blue-800/80">
                           {player.nationality || 'غير محدد'}
                         </Badge>
                       </div>
@@ -340,15 +432,18 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
                         <Eye className="w-4 h-4 mr-1" />
                         عرض
                       </Button>
-                      {player.id && (
+                      {player.id && user && userData && (
                         <SendMessageButton
+                          user={user}
+                          userData={userData}
+                          getUserDisplayName={getUserDisplayName}
                           targetUserId={player.id}
                           targetUserName={player.full_name || 'لاعب'}
                           targetUserType="player"
                           buttonText="راسل"
                           buttonVariant="outline"
                           buttonSize="sm"
-                          className="flex-1 border-white/30 text-white hover:bg-white/10"
+                          className="flex-1 border-blue-300 text-blue-800 hover:bg-blue-100"
                           redirectToMessages={true}
                         />
                       )}
@@ -361,12 +456,15 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
         )}
 
         {filteredPlayers.length === 0 && !isLoading && (
-          <Card className="bg-slate-800/50 border-white/10 p-12 text-center">
+          <Card className="bg-blue-100 border-blue-200 p-12 text-center">
             <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-white mb-2">لا توجد نتائج</h3>
-            <p className="text-white/60">لم نعثر على محاربين يطابقون معايير البحث</p>
+            <h3 className="text-xl font-semibold text-blue-800 mb-2">لا توجد نتائج</h3>
+            <p className="text-blue-800/80">لم نعثر على محاربين يطابقون معايير البحث</p>
           </Card>
         )}
+
+        {/* أضف مكون الصفحات أسفل القائمة */}
+        <Pagination />
       </div>
     </div>
   );

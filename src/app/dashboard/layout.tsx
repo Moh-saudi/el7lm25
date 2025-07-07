@@ -91,7 +91,8 @@ export default function DashboardLayout({
     pathname.startsWith('/dashboard/trainer') ||
     pathname.startsWith('/dashboard/club') ||
     pathname.startsWith('/dashboard/academy') ||
-    pathname.startsWith('/dashboard/agent')
+    pathname.startsWith('/dashboard/agent') ||
+    pathname.startsWith('/dashboard/player/reports')
   ) {
     return <>{children}</>;
   }
