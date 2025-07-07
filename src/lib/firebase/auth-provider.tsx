@@ -1,498 +1,633 @@
 "use client";
 
-import { User, createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithRedirect, signInWithPopup } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut,
+  User,
+  sendPasswordResetEmail,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential
+} from 'firebase/auth';
+import { 
+  doc, 
+  getDoc, 
+  setDoc, 
+  updateDoc, 
+  collection,
+  writeBatch,
+  serverTimestamp,
+  enableIndexedDbPersistence,
+  initializeFirestore,
+  CACHE_SIZE_UNLIMITED
+} from 'firebase/firestore';
 import { auth, db } from './config';
-import { debugFirebaseConfig } from './debug';
-import { debugSystem, checkCommonIssues, diagnoseAuthIssues, checkFirestoreConnection } from '../debug-system';
-import { executeWithRetry } from './connection-handler';
 import { secureConsole } from '../utils/secure-console';
+import { checkAccountStatus, updateLastLogin } from './account-status-checker';
+import { logInfo, logError, logWarn, logSuccess } from '../utils/debug-logger';
 import LoadingScreen from '@/components/shared/LoadingScreen';
 import ErrorScreen from '@/components/shared/ErrorScreen';
 import SimpleLoader from '@/components/shared/SimpleLoader';
+import { useRouter } from 'next/navigation';
 
+// Define user role types
+type UserRole = 'player' | 'club' | 'academy' | 'agent' | 'trainer' | 'admin' | 'marketer' | 'parent';
+
+// User data interface
 interface UserData {
-  accountType: 'club' | 'player' | 'agent' | 'academy' | 'trainer';
-  clubId?: string;
-  playerId?: string;
-  agentId?: string;
-  academyId?: string;
-  trainerId?: string;
-  name: string;
+  uid: string;
   email: string;
-  phone: string;
-  createdAt: string | any; // يمكن أن يكون serverTimestamp
-  updatedAt: string | any; // يمكن أن يكون serverTimestamp
-  isNewUser?: boolean; // للمستخدمين الجدد
+  accountType: UserRole;
+  full_name?: string;
+  phone?: string;
+  profile_image?: string;
+  isNewUser?: boolean;
+  created_at?: any;
+  updated_at?: any;
 }
 
+// Auth context interface
 interface AuthContextType {
   user: User | null;
   userData: UserData | null;
   loading: boolean;
   error: string | null;
-  signOut: () => Promise<void>;
-  registerUser: (email: string, password: string, userData: any) => Promise<void>;
-  loginUser: (phone: string, password: string) => Promise<void>;
-  logoutUser: () => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  login: (email: string, password: string) => Promise<{ user: User; userData: UserData }>;
+  register: (email: string, password: string, role: UserRole, additionalData?: any) => Promise<UserData>;
+  logout: () => Promise<void>;
+  updateUserData: (updates: Partial<UserData>) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  clearError: () => void;
+  refreshUserData: () => Promise<void>;
 }
 
+// Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface FirebaseAuthProviderProps {
   children: ReactNode;
 }
 
+// Initialize Firestore with better settings
+const initializeFirestoreWithSettings = async () => {
+  try {
+    if (typeof window !== 'undefined') {
+      // Enable offline persistence with better settings
+      await enableIndexedDbPersistence(db, {
+        synchronizeTabs: true
+      }).catch((err) => {
+        if (err.code === 'failed-precondition') {
+          console.warn('Multiple tabs open, persistence disabled');
+        } else if (err.code === 'unimplemented') {
+          console.warn('Browser does not support persistence');
+        }
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to enable persistence:', error);
+  }
+};
+
+// Call initialization
+initializeFirestoreWithSettings();
+
 export function AuthProvider({ children }: FirebaseAuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userDataUnsubscribe, setUserDataUnsubscribe] = useState<(() => void) | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const router = useRouter();
 
-  // Timeout عام للتحميل - في حالة فشل كامل لنظام المصادقة
+  // Enhanced loading state management
   useEffect(() => {
-    const emergencyTimeout = setTimeout(() => {
-      if (loading) {
-        secureConsole.warn('🚨 Emergency timeout - stopping loading state');
-        setLoading(false);
-        // إذا كان هناك مستخدم، نحاول المتابعة بدون بيانات المستخدم
-        if (user) {
-          secureConsole.log('User exists, continuing without user data');
-          setError(null); // مسح أي أخطاء سابقة
-        } else {
-          setError('انتهت مهلة التحميل - يرجى إعادة تحديث الصفحة');
-        }
-      }
-    }, 10000); // تقليل المهلة إلى 10 ثواني
-
-    return () => clearTimeout(emergencyTimeout);
-  }, [loading, user]);
-
-  // فحص مبكر للتأكد من أن Firebase يعمل - مع فحص أوسع
-  useEffect(() => {
-    const quickCheck = setTimeout(() => {
+    const timer = setTimeout(() => {
       if (loading && !hasInitialized) {
-        secureConsole.log('🔍 Quick check: Firebase auth state check...');
-        try {
-          const currentUser = auth.currentUser;
-          if (!currentUser) {
-            secureConsole.log('✅ No user signed in - stopping loading');
-            setLoading(false);
-            setHasInitialized(true);
-          } else {
-            secureConsole.log('✅ User found but auth state listener may not have triggered yet...');
-          }
-        } catch (error) {
-          secureConsole.error('❌ Firebase auth check failed:', error);
+        if (user) {
           setLoading(false);
           setHasInitialized(true);
-          setError('خطأ في تهيئة النظام - يرجى إعادة تحديث الصفحة');
+          setError(null); // Clear any previous errors
+        } else {
+          setError('Loading timeout - please refresh the page');
         }
-      } else if (loading && hasInitialized && user && !userData) {
-        // إذا تم التهيئة ولكن البيانات لم تحمل بعد
-        secureConsole.log('✅ Auth initialized but user data still loading...');
-        const extendedCheck = setTimeout(() => {
-          if (loading && !userData) {
-            secureConsole.warn('⚠️ Extended timeout - user data loading is taking too long');
-            setLoading(false);
-            setError('فشل في تحميل بيانات المستخدم - يرجى إعادة تحديث الصفحة');
-          }
-        }, 3000); // 3 ثوان إضافية للمستخدمين المسجلين
-        
-        return () => clearTimeout(extendedCheck);
       }
-    }, 2000); // 2 ثانية للفحص الأولي
+    }, 15000); // 15 second timeout
 
-    return () => clearTimeout(quickCheck);
-  }, [loading, userData, hasInitialized, user]);
+    return () => clearTimeout(timer);
+  }, [loading, hasInitialized, user]);
 
-  // وظيفة لإنشاء مستند مستخدم أساسي إذا لم يكن موجوداً
-  const createBasicUserDocument = async (currentUser: User) => {
-    return executeWithRetry(async () => {
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      const userDoc = await getDoc(userDocRef);
-      
+  // Check for data loading issues
+  useEffect(() => {
+    if (loading && hasInitialized && user && !userData) {
+      const dataTimer = setTimeout(() => {
+        if (!userData) {
+          setLoading(false);
+          setHasInitialized(true);
+          setError('System initialization error - please refresh the page');
+        }
+      }, 10000); // 10 second timeout for user data
+
+      return () => clearTimeout(dataTimer);
+    }
+  }, [loading, hasInitialized, user, userData]);
+
+  // If initialized and have user but no data after timeout
+  useEffect(() => {
+    if (hasInitialized && user && !userData && !loading) {
+      const missingDataTimer = setTimeout(() => {
+        if (!userData) {
+          setError('Failed to load user data - please refresh the page');
+        }
+      }, 5000);
+
+      return () => clearTimeout(missingDataTimer);
+    }
+  }, [hasInitialized, user, userData, loading]);
+
+  // Helper function to create basic user document if it doesn't exist
+  const createBasicUserDocument = async (user: User, role: UserRole = 'player', additionalData: any = {}) => {
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
       if (!userDoc.exists()) {
-        secureConsole.sensitive('Creating basic user document for:', currentUser.uid);
-        
-        // إنشاء مستند أساسي للمستخدم
         const basicUserData = {
-          accountType: 'player' as const, // نوع افتراضي
-          name: currentUser.displayName || 'مستخدم جديد',
-          email: currentUser.email || '',
-          phone: '',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          isNewUser: true // علامة للتمييز بين المستخدمين الجدد والموجودين
+          uid: user.uid,
+          email: user.email || '',
+          accountType: role, // Use accountType instead of role for consistency
+          full_name: additionalData.full_name || additionalData.name || user.displayName || '',
+          phone: additionalData.phone || '',
+          profile_image: additionalData.profile_image || additionalData.profileImage || user.photoURL || '',
+          isNewUser: false, // Since we found data in role collection, not actually new
+          created_at: additionalData.created_at || additionalData.createdAt || new Date(),
+          updated_at: new Date(),
+          ...additionalData
         };
-        
-        await setDoc(userDocRef, basicUserData);
-        secureConsole.log('Basic user document created successfully');
-        
+        await setDoc(userRef, basicUserData);
+        console.log(`✅ Created user document for ${role} with UID: ${user.uid}`);
         return basicUserData;
+      } else {
+        console.log('User document already exists; skipping creation to avoid ID conflict');
+        return userDoc.data() as UserData;  // Return existing data if it exists
       }
-      
-      return userDoc.data();
-    });
-  };
-
-  // تشخيص Firebase عند بدء التطبيق
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // تحميل فلتر الكونسول لإخفاء أخطاء Geidea CORS
-      import('@/utils/console-filter').then(() => {
-        secureConsole.log('Console filter imported successfully');
-      }).catch((error) => {
-        secureConsole.warn('Failed to load console filter:', error);
-      });
-      
-      // تشغيل أدوات التشخيص فقط في التطوير
-      if (secureConsole.isDev()) {
-        debugFirebaseConfig();
-        debugSystem();
-        checkCommonIssues();
-        
-        // فحص اتصال Firestore
-        checkFirestoreConnection().then((connected) => {
-          if (!connected) {
-            secureConsole.error('🔥 Firestore connection failed - this may cause loading issues');
-          }
-        });
-      }
-    }
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      setLoading(true);
-      // إيقاف مراقبة بيانات المستخدم قبل تسجيل الخروج
-      if (userDataUnsubscribe) {
-        userDataUnsubscribe();
-        setUserDataUnsubscribe(null);
-      }
-      
-      // مسح البيانات المحلية أولاً
-      setUserData(null);
-      setUser(null);
-      
-      // ثم تسجيل الخروج من Firebase
-      await signOut(auth);
-      
-      // إعادة توجيه المستخدم إلى صفحة تسجيل الدخول
-      window.location.href = '/auth/login';
     } catch (error) {
-      secureConsole.error('Error signing out:', error);
-      setError(error instanceof Error ? error.message : 'حدث خطأ أثناء تسجيل الخروج');
-    } finally {
-      setLoading(false);
+      console.error('Error creating basic user document:', error);
+      throw error;
     }
   };
 
+  // Enhanced authentication state listener
   useEffect(() => {
-    secureConsole.log('🔥 Setting up auth state listener...');
-    
-    try {
-      const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      secureConsole.sensitive('🔥 Auth state changed:', {
-        userId: currentUser?.uid,
-        email: currentUser?.email,
-        isAnonymous: currentUser?.isAnonymous,
-        hasUser: !!currentUser,
-        hasInitialized
-      });
-      
-      // تعيين علامة التهيئة في أول استدعاء
-      if (!hasInitialized) {
-        setHasInitialized(true);
-      }
-      
-      if (currentUser) {
-        setUser(currentUser);
-        setError(null); // مسح أي أخطاء سابقة
-        setLoading(true); // بدء التحميل فقط عند وجود مستخدم
-        
-        try {
-          // إيقاف المراقبة السابقة إذا كانت موجودة
-          if (userDataUnsubscribe) {
-            userDataUnsubscribe();
-            setUserDataUnsubscribe(null);
-          }
+    let isSubscribed = true;
+    let userDocUnsubscribe: (() => void) | null = null;
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      try {
+        if (user && isSubscribed) {
+          setUser(user);
+          setError(null);
           
-          // بدء مراقبة جديدة لبيانات المستخدم مع timeout
-          const timeoutId = setTimeout(() => {
-            secureConsole.warn('User data loading timeout - proceeding without user data');
-            setUserData(null);
-            setLoading(false);
-            setError('انتهت مهلة تحميل البيانات - يرجى إعادة المحاولة');
-          }, 5000); // 5 ثواني timeout
-          
-          const unsubscribeSnapshot = onSnapshot(
-            doc(db, 'users', currentUser.uid),
-            async (docSnapshot) => {
-              clearTimeout(timeoutId); // إلغاء الـ timeout
+          try {
+            // Check if user document exists
+            const userRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userRef);
+            
+            if (userDoc.exists()) {
+              const data = userDoc.data() as UserData;
+              console.log('📋 AuthProvider - User document found:', {
+                uid: user.uid,
+                email: data.email,
+                accountType: data.accountType,
+                isActive: data.isActive,
+                hasAllRequiredFields: !!(data.uid && data.email && data.accountType)
+              });
               
-              if (docSnapshot.exists()) {
-                setUserData(docSnapshot.data() as UserData);
-                secureConsole.log('✅ User data loaded successfully - stopping loading');
-                setLoading(false); // التأكد من إيقاف التحميل
-              } else {
-                secureConsole.warn('User document does not exist, creating basic document...');
+              if (isSubscribed) {
+                setUserData(data);
+                console.log('✅ AuthProvider - User data set in state successfully');
+              }
+            } else {
+              // Handle new or admin users
+              const adminEmails = ['admin@el7lm.com', 'admin@el7hm-go.com', 'admin@el7lm-go.com'];
+              if (adminEmails.includes(user.email || '')) {
+                const adminData: UserData = {
+                  uid: user.uid,
+                  email: user.email || '',
+                  accountType: 'admin',
+                  full_name: 'System Administrator',
+                  phone: '',
+                  profile_image: '',
+                  isNewUser: false,
+                  created_at: serverTimestamp(),
+                  updated_at: serverTimestamp()
+                };
                 
+                if (isSubscribed) {
+                await setDoc(userRef, adminData);
+                setUserData(adminData);
+                }
+              } else {
+                // Handle other users
                 try {
-                  // محاولة إنشاء مستند أساسي للمستخدم
-                  const basicUserData = await createBasicUserDocument(currentUser);
-                  setUserData(basicUserData as UserData);
-                  secureConsole.log('✅ Basic user document created and loaded - stopping loading');
-                  setLoading(false); // التأكد من إيقاف التحميل
-                } catch (error) {
-                  secureConsole.error('Failed to create basic user document:', error);
-                  setUserData(null);
-                  setError('فشل في إنشاء بيانات المستخدم - يرجى المحاولة مرة أخرى');
-                  setLoading(false); // إيقاف التحميل حتى في حالة الخطأ
+                  const accountTypes = ['clubs', 'academies', 'trainers', 'agents', 'players'];
+                  let userAccountType: UserRole = 'player';
+                  let foundData = null;
+                  
+                  // Use Promise.all for parallel queries
+                  const queries = accountTypes.map(collection => 
+                    getDoc(doc(db, collection, user.uid))
+                  );
+                  
+                  const results = await Promise.all(queries);
+                    
+                  for (let i = 0; i < results.length; i++) {
+                    if (results[i].exists()) {
+                      foundData = results[i].data();
+                      userAccountType = accountTypes[i].slice(0, -1) as UserRole;
+                      break;
+                    }
+                  }
+                  
+                  if (isSubscribed) {
+                    const basicData = await createBasicUserDocument(user, userAccountType, foundData || {});
+                    setUserData(basicData);
+                  }
+                } catch (createError) {
+                  console.error('Failed to create user document:', createError);
+                  if (isSubscribed) {
+                    setError('Failed to create user data - please try again later');
+                  }
                 }
               }
-            },
-            (error) => {
-              clearTimeout(timeoutId); // إلغاء الـ timeout
-              secureConsole.error('Error fetching user data:', error);
-              setError('خطأ في جلب بيانات المستخدم - يرجى إعادة تحديث الصفحة');
-              setUserData(null);
-              setLoading(false);
             }
-          );
-          
-          setUserDataUnsubscribe(() => unsubscribeSnapshot);
-        } catch (error) {
-          secureConsole.error('Error setting up user data listener:', error);
-          setError(error instanceof Error ? error.message : 'حدث خطأ في جلب بيانات المستخدم');
+          } catch (firestoreError) {
+            console.error('Error fetching user data:', firestoreError);
+            if (isSubscribed) {
+              setError('Error fetching user data - please refresh');
+            }
+          }
+        } else if (isSubscribed) {
+          setUser(null);
           setUserData(null);
-          setLoading(false);
         }
-      } else {
-        // إيقاف مراقبة بيانات المستخدم عند تسجيل الخروج
-        if (userDataUnsubscribe) {
-          userDataUnsubscribe();
-          setUserDataUnsubscribe(null);
+      } catch (authError) {
+        console.error('Auth state change error:', authError);
+        if (isSubscribed) {
+          setError('Authentication error - please refresh');
         }
-        setUser(null);
-        setUserData(null);
-        setError(null);
+      } finally {
+        if (isSubscribed) {
         setLoading(false);
+        setHasInitialized(true);
       }
-    }, (error) => {
-      secureConsole.error('Auth state change error:', error);
-      setError(error.message);
-      setLoading(false);
+      }
     });
 
-      return () => {
-        unsubscribe();
-        if (userDataUnsubscribe) {
-          userDataUnsubscribe();
-        }
-      };
-      
-    } catch (error) {
-      secureConsole.error('❌ Failed to set up auth listener:', error);
-      setError('خطأ في تهيئة نظام المصادقة - يرجى إعادة تحديث الصفحة');
-      setLoading(false);
-      
-      // لا نستطيع return unsubscribe في catch، لذا نعود دالة فارغة
-      return () => {};
-    }
+    return () => {
+      isSubscribed = false;
+      if (userDocUnsubscribe) {
+        userDocUnsubscribe();
+      }
+      unsubscribe();
+    };
   }, []);
 
-  // إضافة سجلات تصحيح إضافية مع تشخيص المشاكل
-  useEffect(() => {
-    secureConsole.debug('🔄 AuthProvider State Update:', {
-      hasUser: !!user,
-      userId: user?.uid || 'none',
-      hasUserData: !!userData,
-      userDataType: userData?.accountType || 'none',
-      isLoading: loading,
-      hasError: !!error,
-      timestamp: new Date().toISOString()
-    });
-    
-    // إذا كان هناك مستخدم وبيانات ولكن لا يزال يحمل، فهناك مشكلة
-    if (user && userData && loading) {
-      secureConsole.warn('⚠️ User and data loaded but still in loading state - forcing stop');
-      setLoading(false);
-    }
-    
-    // تشخيص مشاكل المصادقة إذا كان هناك مشكلة
-    if (user && !userData && !loading) {
-      secureConsole.warn('⚠️ User exists but no user data found');
-      if (secureConsole.isDev()) {
-        diagnoseAuthIssues(user, userData, loading);
-      }
-    }
-  }, [user, userData, loading, error]);
-
-  const registerUser = async (email: string, password: string, userData: any) => {
+  // Enhanced login function
+  const login = async (email: string, password: string): Promise<{ user: User; userData: UserData }> => {
     try {
-      setError(null);
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      try {
-        await setDoc(doc(db, 'users', user.uid), {
-          ...userData,
-          email,
-          createdAt: new Date().toISOString(),
-        });
-        secureConsole.sensitive('User document created in Firestore:', user.uid);
-      } catch (firestoreError) {
-        secureConsole.error('Error creating user document in Firestore:', firestoreError);
-        throw new Error('فشل إنشاء بيانات المستخدم في قاعدة البيانات. يرجى المحاولة لاحقاً.');
-      }
-
-      setUser(user);
-    } catch (error: any) {
-      secureConsole.error('Registration error:', error);
-      let errorMessage = 'حدث خطأ أثناء التسجيل';
-      
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'البريد الإلكتروني مستخدم بالفعل';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'كلمة المرور ضعيفة جداً';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'البريد الإلكتروني غير صالح';
-      }
-      
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  };
-
-  const loginUser = async (phone: string, password: string) => {
-    try {
-      setError(null);
-      
-      // تنظيف رقم الهاتف من أي أحرف غير رقمية
-      const cleanPhone = phone.replace(/[^0-9]/g, '');
-      
-      // التحقق من صحة رقم الهاتف
-      if (!/^[0-9]{10}$/.test(cleanPhone)) {
-        throw new Error('يرجى إدخال رقم هاتف صحيح مكون من 10 أرقام');
-      }
-
-      // استخدم نفس الدومين الذي سجلت به المستخدمين
-      const email = `${cleanPhone}@hagzzgo.com`;
-      
-      secureConsole.sensitive('Attempting login with:', { email, phone: cleanPhone });
-      
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      secureConsole.sensitive('Login successful, fetching user data for:', user.uid);
-
-      // جلب بيانات المستخدم باستخدام UID
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (!userDoc.exists()) {
-        secureConsole.error('User document not found for:', user.uid);
-        throw new Error('لم يتم العثور على بيانات المستخدم');
-      }
-
-      secureConsole.log('User data retrieved successfully');
-      setUser(user);
-    } catch (error: any) {
-      secureConsole.sensitive('Login error details:', {
-        code: error.code,
-        message: error.message,
-        fullError: error
+      console.log('🔐 AuthProvider - Login attempt started:', {
+        email: email,
+        timestamp: new Date().toISOString()
       });
       
-      let errorMessage = 'حدث خطأ أثناء تسجيل الدخول';
-      
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        errorMessage = 'رقم الهاتف أو كلمة المرور غير صحيحة';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'رقم الهاتف غير صالح';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'تم تجاوز عدد محاولات تسجيل الدخول. يرجى المحاولة لاحقاً';
-      } else if (error.code === 'auth/invalid-credential') {
-        errorMessage = 'بيانات الدخول غير صحيحة. يرجى التأكد من رقم الهاتف وكلمة المرور';
-      }
-      
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  };
-
-  const logoutUser = async () => {
-    try {
       setError(null);
-      await handleSignOut();
-      setUser(null);
+
+      // تحقق أساسي من صيغة البريد الإلكتروني
+      if (!email.includes('@')) {
+        console.log('❌ AuthProvider - Invalid email format:', email);
+        throw new Error('صيغة البريد الإلكتروني غير صحيحة');
+      }
+
+      // محاولة تسجيل الدخول
+      console.log('🔑 AuthProvider - Attempting Firebase Auth login...');
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const user = result.user;
+      console.log('✅ AuthProvider - Firebase Auth login successful:', {
+        uid: user.uid,
+        email: user.email
+      });
+
+      // جلب بيانات المستخدم من Firestore
+      console.log('📋 AuthProvider - Fetching user data from Firestore...');
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        // البحث في المجموعات الخاصة بالأدوار إذا لم يكن لدى المستخدم وثيقة
+        const accountTypes = ['clubs', 'academies', 'trainers', 'agents', 'players'];
+        let foundData = null;
+        let userAccountType: UserRole = 'player';
+
+        // استخدام Promise.all للبحث المتوازي
+        const queries = accountTypes.map(collection => 
+          getDoc(doc(db, collection, user.uid))
+        );
+        
+        const results = await Promise.all(queries);
+        
+        for (let i = 0; i < results.length; i++) {
+          if (results[i].exists()) {
+            foundData = results[i].data();
+            userAccountType = accountTypes[i].slice(0, -1) as UserRole;
+            break;
+          }
+        }
+
+        // إنشاء وثيقة المستخدم إذا لم يتم العثور عليها
+        const userData = await createBasicUserDocument(user, userAccountType, foundData || {});
+        setUserData(userData);
+        return { user, userData };
+      }
+
+      const userData = userDoc.data() as UserData;
+
+      // فحص حالة الحساب
+      const accountStatus = await checkAccountStatus(user.uid);
+      
+      if (!accountStatus.canLogin) {
+        // إذا كان الحساب غير مفعل أو محذوف، قم بتسجيل الخروج ورمي خطأ
+        await signOut(auth);
+        throw new Error(accountStatus.message);
+      }
+
+      // تحديث آخر دخول
+      try {
+        await updateLastLogin(user.uid);
+      } catch (updateError) {
+        console.warn('Failed to update last login:', updateError);
+        // لا نرمي خطأ هنا لأن تسجيل الدخول نجح
+      }
+
+      console.log('✅ Login successful for user:', userData.accountType);
+
+      setUser(user);
+      setUserData(userData);
+
+      // عرض رسالة الحالة للمستخدم
+      if (accountStatus.messageType === 'warning') {
+        // يمكن إضافة toast أو notification هنا
+        console.warn('Account status warning:', accountStatus.message);
+      }
+
+      return { user, userData };
     } catch (error: any) {
-      secureConsole.error('Logout error:', error);
-      setError('حدث خطأ أثناء تسجيل الخروج');
-      throw new Error('حدث خطأ أثناء تسجيل الخروج');
+      console.error('Login error:', error);
+      
+      // إعادة رمي الخطأ الأصلي مع الاحتفاظ بـ error.code
+      // هذا يسمح لصفحة تسجيل الدخول بالتعرف على نوع الخطأ
+      throw error;
     }
   };
 
-  const loginWithGoogle = async () => {
-    setLoading(true);
-    setError(null);
-    const provider = new GoogleAuthProvider();
+  // Enhanced registration function
+  const register = async (
+    email: string, 
+    password: string, 
+    role: UserRole, 
+    additionalData: any = {}
+  ): Promise<UserData> => {
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      // تحقق أو أنشئ مستند Firestore للمستخدم
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-      if (!userDoc.exists()) {
-        try {
-          await setDoc(userDocRef, {
-            email: user.email,
-            name: user.displayName || '',
-            createdAt: new Date().toISOString(),
-            accountType: 'player', // أو أي نوع افتراضي مناسب
-          });
-        } catch (firestoreError) {
-          setError('فشل إنشاء بيانات المستخدم في قاعدة البيانات.');
-          secureConsole.error('Firestore error:', firestoreError);
-        }
+      setLoading(true);
+      setError(null);
+
+      // Validate inputs
+      if (!email || !password || !role) {
+        throw new Error('Email, password, and role are required');
       }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new Error('Invalid email format');
+      }
+
+      // Validate password strength
+      if (password.length < 8) {
+        throw new Error('Password must be at least 8 characters long');
+      }
+
+      console.log('🔐 Starting user registration...', {
+        email,
+        role,
+        hasAdditionalData: Object.keys(additionalData).length > 0
+      });
+
+      // Create user in Firebase Auth
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const user = result.user;
+
+      console.log('✅ Firebase Auth user created:', user.uid);
+
+      // Prepare user data
+      const userData: UserData = {
+        uid: user.uid,
+        email: user.email || email,
+        accountType: role,
+        full_name: additionalData.full_name || additionalData.name || '',
+        phone: additionalData.phone || '',
+        profile_image: additionalData.profile_image || additionalData.profileImage || '',
+        isNewUser: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+        ...additionalData
+      };
+
+      console.log('📝 Saving user data to Firestore...', {
+        uid: userData.uid,
+        email: userData.email,
+        accountType: userData.accountType
+      });
+
+      // Save to main users collection
+      const userRef = doc(db, 'users', user.uid);
+      await setDoc(userRef, userData);
+
+      console.log('✅ User data saved to main collection');
+
+      // Also save to role-specific collection
+      if (role !== 'admin') {
+        const roleRef = doc(db, role + 's', user.uid);
+        await setDoc(roleRef, {
+          ...userData,
+          created_at: new Date(),
+          updated_at: new Date()
+        });
+        console.log(`✅ User data saved to ${role}s collection`);
+      }
+
       setUser(user);
+      setUserData(userData);
+
+      console.log('🎉 Registration completed successfully');
+      return userData;
     } catch (error: any) {
-      setError(error.message || 'حدث خطأ أثناء تسجيل الدخول بجوجل');
-      throw error;
+      console.error('❌ Registration error:', error);
+      
+      let errorMessage = 'Registration failed';
+      
+      // Handle specific Firebase Auth errors
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'An account with this email already exists';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak. Please use at least 8 characters';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Invalid email address format';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Email/password accounts are not enabled. Please contact support';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your internet connection';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many failed attempts. Please try again later';
+          break;
+        default:
+          if (error.message) {
+            errorMessage = error.message;
+          }
+          break;
+      }
+
+      // If user was created in Auth but Firestore failed, we should handle cleanup
+      // لا نقوم بتعيين error في الحالة العامة، بل نرمي الخطأ فقط
+      // if (error.message && error.message.includes('database')) {
+      //   setError('Failed to create user profile. Please contact support.');
+      // } else {
+      //   setError(errorMessage);
+      // }
+      
+      throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const value = {
+  // Logout function
+  const logout = async (): Promise<void> => {
+    try {
+      await signOut(auth);
+      setUser(null);
+      setUserData(null);
+      setError(null);
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // لا نقوم بتعيين error في الحالة العامة للـ logout
+      // setError('Error during logout');
+    }
+  };
+
+  // Update user data function
+  const updateUserData = async (updates: Partial<UserData>): Promise<void> => {
+    if (!user || !userData) return;
+
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const updatedData = {
+        ...updates,
+        updated_at: new Date()
+      };
+
+      await updateDoc(userRef, updatedData);
+      setUserData({ ...userData, ...updatedData });
+
+      // Also update role-specific collection
+      if (userData.accountType !== 'admin') {
+        const roleRef = doc(db, userData.accountType + 's', user.uid);
+        await updateDoc(roleRef, updatedData);
+      }
+    } catch (error) {
+      console.error('Error updating user data:', error);
+      throw error;
+    }
+  };
+
+  // Password reset function
+  const resetPassword = async (email: string): Promise<void> => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
+  };
+
+  // Change password function
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
+    if (!user || !user.email) throw new Error('User not authenticated');
+
+    try {
+      // Re-authenticate user
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      
+      // Update password
+      await updatePassword(user, newPassword);
+    } catch (error) {
+      console.error('Change password error:', error);
+      throw error;
+    }
+  };
+
+  // Refresh user data function
+  const refreshUserData = async (): Promise<void> => {
+    if (!user) return;
+
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const data = userDoc.data() as UserData;
+        setUserData(data);
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
+  // Clear error function
+  const clearError = () => setError(null);
+
+  // Context value
+  const value: AuthContextType = {
     user,
     userData,
     loading,
     error,
-    signOut: handleSignOut,
-    registerUser,
-    loginUser,
-    logoutUser: handleSignOut,
-    loginWithGoogle,
+    login,
+    register,
+    logout,
+    updateUserData,
+    resetPassword,
+    changePassword,
+    clearError,
+    refreshUserData
   };
 
-  // إظهار المحتوى دائماً مع إظهار حالة التحميل إذا لزم الأمر
   return (
     <AuthContext.Provider value={value}>
-      {loading ? (
+      {loading && hasInitialized && user ? (
         <SimpleLoader 
           size="medium"
           color="blue"
-        />
-              ) : error ? (
-        <ErrorScreen 
-          title="حدث خطأ"
-          message={error}
-          type="error"
         />
       ) : (
         children
@@ -508,3 +643,5 @@ export function useAuth() {
   }
   return context;
 }
+
+

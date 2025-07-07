@@ -8,15 +8,17 @@ import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import { useRouter } from 'next/navigation';
 
 export default function Page() {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [stats, setStats] = useState({
-    players: 0,
-    clubs: 0,
-    countries: 0,
-    success: 0
+    players: 1500,
+    clubs: 250,
+    countries: 15,
+    success: 800
   });
   const [activePartner, setActivePartner] = useState(0);
   const [activeClub, setActiveClub] = useState(0);
@@ -101,12 +103,12 @@ export default function Page() {
   useEffect(() => {
     const statsInterval = setInterval(() => {
       setStats(prev => ({
-        players: Math.min(prev.players + 2, 500),
-        clubs: Math.min(prev.clubs + 1, 200),
-        countries: Math.min(prev.countries + 1, 50),
-        success: Math.min(prev.success + 1, 150)
+        players: Math.min(prev.players + Math.floor(Math.random() * 3), 2000),
+        clubs: Math.min(prev.clubs + Math.floor(Math.random() * 2), 300),
+        countries: Math.min(prev.countries + (Math.random() > 0.8 ? 1 : 0), 20),
+        success: Math.min(prev.success + Math.floor(Math.random() * 4), 1200)
       }));
-    }, 50);
+    }, 3000);
 
     return () => clearInterval(statsInterval);
   }, []);
@@ -114,6 +116,7 @@ export default function Page() {
   useEffect(() => {
     const sectionIds = ['services', 'clubs', 'team', 'branches', 'contact'];
     const handleScroll = () => {
+      if (typeof window === 'undefined') return;
       const scrollPosition = window.scrollY + 120; // تعويض الهيدر الثابت
       let currentSection = '';
       for (const id of sectionIds) {
@@ -124,18 +127,25 @@ export default function Page() {
       }
       setActiveSection(currentSection);
     };
-    window.addEventListener('scroll', handleScroll);
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', handleScroll);
+      handleScroll();
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
   }, []);
 
   useEffect(() => {
     const handleResize = () => {
+      if (typeof window === 'undefined') return;
       setIsMobile(window.innerWidth < 768);
     };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    
+    if (typeof window !== 'undefined') {
+      handleResize();
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
   }, []);
 
   return (
@@ -146,9 +156,9 @@ export default function Page() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <img src="/hagzz-logo.png" alt="Logo" className="w-auto h-10" />
+              <img src="/el7hm-logo.png" alt="Logo" className="w-auto h-10" />
               <span className="text-2xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text">
-                Hagzz Go
+                El7hm
               </span>
             </div>
 
@@ -161,13 +171,13 @@ export default function Page() {
               <a href="#contact" className={`transition-colors font-semibold ${activeSection === 'contact' ? 'text-blue-400 underline underline-offset-8' : 'hover:text-blue-600'}`}>اتصل بنا</a>
               <div className="flex gap-2 ml-6">
                 <button
-                  onClick={() => window.location.href = '/auth/login'}
+                  onClick={() => router.push('/auth/login')}
                   className="px-6 py-2 text-white transition-all bg-blue-500 rounded-lg hover:bg-blue-700"
                 >
                   تسجيل الدخول
                 </button>
                 <button
-                  onClick={() => window.location.href = '/auth/register'}
+                  onClick={() => router.push('/auth/register')}
                   className="px-8 py-2 text-xl font-bold text-white transition-all bg-blue-600 rounded-lg hover:bg-blue-700"
                 >
                   ابدأ رحلتك الآن
@@ -191,13 +201,13 @@ export default function Page() {
               <a href="#contact" className={`block py-2 font-semibold ${activeSection === 'contact' ? 'text-blue-400 underline underline-offset-8' : ''}`}>اتصل بنا</a>
               <div className="flex gap-2 mt-2">
                 <button
-                  onClick={() => window.location.href = '/auth/login'}
+                  onClick={() => router.push('/auth/login')}
                   className="w-1/2 px-4 py-2 text-white bg-blue-500 rounded-lg"
                 >
                   تسجيل الدخول
                 </button>
                 <button
-                  onClick={() => window.location.href = '/auth/register'}
+                  onClick={() => router.push('/auth/register')}
                   className="w-1/2 px-4 py-2 text-white bg-blue-600 rounded-lg"
                 >
                   ابدأ رحلتك الآن
@@ -464,22 +474,24 @@ export default function Page() {
               }}
             >
               {[
-                { name: 'FIFA', logo: 'fifa.png' },
-                { name: 'QFA', logo: 'qfa.png' },
-                { name: 'QFC', logo: 'qfc.png' },
-                { name: 'Microsoft', logo: 'microsoft.png' },
-                { name: 'Peachscore', logo: '672ceef70dff7bc08ab4727a_peachscore-dealum-logo-new.png' },
-                { name: 'YJPPG', logo: 'YJPPG.jpg' }
+                { name: 'FIFA', src: '/images/supports/fifa.png' },
+                { name: 'QFA', src: '/images/supports/qfa.png' },
+                { name: 'QFC', src: '/images/supports/qfc.png' },
+                { name: 'Microsoft', src: '/images/supports/microsoft.png' },
+                { name: 'Peachscore', src: '/images/supports/peachscore-dealum-logo-new.png' },
+                { name: 'YJPPG', src: '/images/supports/YJPPG.jpg' }
               ].map((partner, index) => (
                 <SwiperSlide key={index}>
                   <div className="p-6 transition-all duration-300 transform bg-white rounded-2xl hover:shadow-lg hover:-translate-y-2">
                     <div className="relative mb-6 overflow-hidden rounded-xl aspect-[4/3]">
-                      <img 
-                        src={`/images/supports/${partner.logo}`}
+                      <Image 
+                        src={partner.src}
                         alt={`شعار ${partner.name}`}
+                        width={300}
+                        height={200}
                         className="object-contain w-full h-full p-4 transition-transform duration-300 hover:scale-110"
                         onError={(e) => {
-                          console.error(`Error loading image: ${partner.logo}`);
+                          console.error(`Error loading image: ${partner.name}`);
                           e.currentTarget.src = '/images/default-avatar.png';
                         }}
                       />
@@ -760,7 +772,7 @@ export default function Page() {
         <div className="container px-4 mx-auto">
           <div className="grid gap-8 md:grid-cols-4">
             <div>
-              <img src="/hagzz-logo.png" alt="Logo" className="w-auto h-14 mb-4" />
+              <img src="/el7hm-logo.png" alt="Logo" className="w-auto h-14 mb-4" />
               <p className="text-gray-100 text-lg">
                 منصة متكاملة لاكتشاف وتطوير المواهب الرياضية
               </p>
@@ -784,30 +796,50 @@ export default function Page() {
                 </li>
                 <li className="flex items-center text-gray-100">
                   <Mail className="w-5 h-5 ml-2 text-violet-300" />
-                  info@hagzzgo.com
+                  info@el7hm.com
                 </li>
               </ul>
             </div>
             <div>
               <h3 className="mb-4 text-lg font-bold text-white">تابعنا</h3>
               <div className="flex gap-4 mt-2">
-                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#3b2667] to-[#bc78ec] shadow-lg">
+                <a 
+                  href="https://www.facebook.com/hagzz" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#3b2667] to-[#bc78ec] shadow-lg hover:scale-110 transition-transform duration-300"
+                >
                   <img src="/images/medialogo/facebook.svg" alt="فيسبوك" width={28} height={28} />
-                </span>
-                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#bc2a8d] to-[#e94057] shadow-lg">
+                </a>
+                <a 
+                  href="https://www.instagram.com/hagzzel7lm?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#bc2a8d] to-[#e94057] shadow-lg hover:scale-110 transition-transform duration-300"
+                >
                   <img src="/images/medialogo/instagram.svg" alt="إنستجرام" width={28} height={28} />
-                </span>
-                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#0077b5] to-[#0a2342] shadow-lg">
+                </a>
+                <a 
+                  href="https://www.linkedin.com/company/hagzz" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#0077b5] to-[#0a2342] shadow-lg hover:scale-110 transition-transform duration-300"
+                >
                   <img src="/images/medialogo/linkedin.svg" alt="لينكدإن" width={28} height={28} />
-                </span>
-                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#000000] to-[#636363] shadow-lg">
+                </a>
+                <a 
+                  href="https://www.tiktok.com/@hagzz25?is_from_webapp=1&sender_device=pc" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#000000] to-[#636363] shadow-lg hover:scale-110 transition-transform duration-300"
+                >
                   <img src="/images/medialogo/tiktok.svg" alt="تيك توك" width={28} height={28} />
-                </span>
+                </a>
               </div>
             </div>
           </div>
           <div className="pt-8 mt-8 text-center text-gray-200 border-t border-violet-900">
-            <p>© {new Date().getFullYear()} Hagzz Go. جميع الحقوق محفوظة</p>
+            <p>© {new Date().getFullYear()} El7hm. جميع الحقوق محفوظة</p>
           </div>
         </div>
         {/* جزء محفور في أسفل الصفحة */}
@@ -824,4 +856,5 @@ export default function Page() {
     </div>
   );
 }
+
 

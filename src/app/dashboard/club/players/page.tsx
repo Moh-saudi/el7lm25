@@ -34,6 +34,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { Player } from '@/types/player';
+import SendMessageButton from '@/components/messaging/SendMessageButton';
 
 export default function ClubPlayersPage() {
   const { user } = useAuth();
@@ -680,6 +681,20 @@ export default function ClubPlayersPage() {
                               <Edit className="w-4 h-4" />
                             </Button>
                           </Link>
+                          
+                          {player.id && (
+                            <SendMessageButton
+                              targetUserId={player.id}
+                              targetUserName={player.full_name || player.name || 'لاعب'}
+                              targetUserType="player"
+                              buttonText=""
+                              buttonVariant="outline"
+                              buttonSize="sm"
+                              className="text-blue-600 hover:bg-blue-50"
+                              redirectToMessages={true}
+                            />
+                          )}
+                          
                           <Button
                             variant="outline"
                             size="sm"

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/auth-provider';
@@ -33,13 +33,11 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Player } from '@/types/player';
-import { safeNavigate } from '@/lib/utils/url-validator';
+import SendMessageButton from '@/components/messaging/SendMessageButton';
 
 export default function TrainerPlayersPage() {
   const { user } = useAuth();
-  const router = useRouter();
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -162,54 +160,6 @@ export default function TrainerPlayersPage() {
     setCurrentPage(1);
   }, [searchTerm, filterStatus]);
 
-  // Calculate age from birth date
-  const calculateAge = (birthDate: any) => {
-    if (!birthDate) return null;
-    try {
-      let d: Date;
-      
-      // معالجة Firebase Timestamp
-      if (typeof birthDate === 'object' && birthDate.toDate && typeof birthDate.toDate === 'function') {
-        d = birthDate.toDate();
-      } 
-      // معالجة Firebase Timestamp مع seconds
-      else if (typeof birthDate === 'object' && birthDate.seconds) {
-        d = new Date(birthDate.seconds * 1000);
-      }
-      // معالجة كائن Date عادي
-      else if (birthDate instanceof Date) {
-        d = birthDate;
-      } 
-      // معالجة string أو number
-      else if (typeof birthDate === 'string' || typeof birthDate === 'number') {
-        d = new Date(birthDate);
-      }
-      // معالجة أي نوع آخر
-      else {
-        console.warn('Unsupported birth_date format:', birthDate);
-        return null;
-      }
-      
-      if (isNaN(d.getTime())) {
-        console.warn('Invalid date created from:', birthDate);
-        return null;
-      }
-      
-      const today = new Date();
-      let age = today.getFullYear() - d.getFullYear();
-      const monthDiff = today.getMonth() - d.getMonth();
-      
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < d.getDate())) {
-        age--;
-      }
-      
-      return age > 0 && age < 100 ? age : null; // تحقق من صحة العمر
-    } catch (error) {
-      console.warn('Error calculating age:', error, 'for birthDate:', birthDate);
-      return null;
-    }
-  };
-
   // Get subscription status badge
   const getSubscriptionBadge = (status: string, endDate: any) => {
     const now = new Date();
@@ -240,6 +190,35 @@ export default function TrainerPlayersPage() {
     }
   };
 
+  // Calculate age from birth date
+  const calculateAge = (birthDate: any) => {
+    if (!birthDate) return null;
+    try {
+      let d: Date;
+      if (typeof birthDate === 'object' && birthDate.toDate && typeof birthDate.toDate === 'function') {
+        d = birthDate.toDate();
+      } else if (birthDate instanceof Date) {
+        d = birthDate;
+      } else if (birthDate) {
+        d = new Date(birthDate);
+      } else {
+        return null;
+      }
+      
+      const today = new Date();
+      let age = today.getFullYear() - d.getFullYear();
+      const monthDiff = today.getMonth() - d.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < d.getDate())) {
+        age--;
+      }
+      
+      return age;
+    } catch (error) {
+      return null;
+    }
+  };
+
   // Format date
   const formatDate = (date: any) => {
     if (!date) return 'غير محدد';
@@ -249,23 +228,21 @@ export default function TrainerPlayersPage() {
         d = date.toDate();
       } else if (date instanceof Date) {
         d = date;
-      } else if (typeof date === 'string' || typeof date === 'number') {
-        d = new Date(date);
       } else {
-        return 'غير محدد';
+        d = new Date(date);
       }
       
-      if (isNaN(d.getTime())) {
-        return 'غير محدد';
-      }
-      
-      return d.toLocaleDateString('ar-SA');
+      return d.toLocaleDateString('ar-EG', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
     } catch (error) {
       return 'غير محدد';
     }
   };
 
-  // Calculate time ago
+  // Get time ago
   const getTimeAgo = (date: any) => {
     if (!date) return 'غير محدد';
     try {
@@ -279,94 +256,67 @@ export default function TrainerPlayersPage() {
       }
       
       const now = new Date();
-      const diffMs = now.getTime() - d.getTime();
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffDays = Math.floor(diffHours / 24);
-      const diffWeeks = Math.floor(diffDays / 7);
-      const diffMonths = Math.floor(diffDays / 30);
+      const diffInSeconds = Math.floor((now.getTime() - d.getTime()) / 1000);
       
-      if (diffMonths > 0) {
-        return `منذ ${diffMonths} شهر`;
-      } else if (diffWeeks > 0) {
-        return `منذ ${diffWeeks} أسبوع`;
-      } else if (diffDays > 0) {
-        return `منذ ${diffDays} يوم`;
-      } else if (diffHours > 0) {
-        return `منذ ${diffHours} ساعة`;
-      } else {
-        return 'منذ قليل';
-      }
+      if (diffInSeconds < 60) return 'الآن';
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} دقيقة`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} ساعة`;
+      if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} يوم`;
+      if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)} شهر`;
+      return `${Math.floor(diffInSeconds / 31536000)} سنة`;
     } catch (error) {
       return 'غير محدد';
     }
   };
 
-  // Export to Excel (comprehensive version)
+  // Export to Excel
   const exportToExcel = () => {
     const headers = [
       'الاسم الكامل',
-      'تاريخ الميلاد',
-      'العمر',
+      'البريد الإلكتروني',
+      'رقم الهاتف',
       'الجنسية',
       'المدينة',
-      'الدولة',
-      'الهاتف',
-      'البريد الإلكتروني',
-      'المركز الأساسي',
-      'المركز الثانوي',
-      'القدم المفضلة',
+      'الموقع الأساسي',
+      'الموقع الثانوي',
+      'العمر',
       'الطول',
       'الوزن',
-      'سنوات الخبرة',
-      'النادي الحالي',
       'حالة الاشتراك',
-      'نوع الاشتراك',
-      'تاريخ انتهاء الاشتراك',
-      'عدد الفيديوهات',
-      'عدد الصور',
-      'تاريخ الإنشاء',
-      'آخر تحديث'
+      'تاريخ الإنشاء'
     ];
 
-    const data = sortedPlayers.map(player => [
+    const data = players.map(player => [
       player.full_name || player.name || '',
-      formatDate(player.birth_date),
-      calculateAge(player.birth_date) || 'غير محدد',
+      player.email || '',
+      player.phone || '',
       player.nationality || '',
       player.city || '',
-      player.country || '',
-      player.phone || '',
-      player.email || '',
       player.primary_position || player.position || '',
       player.secondary_position || '',
-      player.preferred_foot || '',
+      calculateAge(player.birth_date) || '',
       player.height || '',
       player.weight || '',
-      player.experience_years || '',
-      player.current_club || '',
-      player.subscription_status || '',
-      player.subscription_type || '',
-      formatDate(player.subscription_end),
-      player.videos?.length || 0,
-      player.additional_images?.length || 0,
-      formatDate(player.created_at),
-      formatDate(player.updated_at)
+      player.subscription_status || 'غير نشط',
+      formatDate(player.created_at)
     ]);
 
-    // Create CSV content
     const csvContent = [headers, ...data]
       .map(row => row.map(cell => `"${cell}"`).join(','))
       .join('\n');
 
-    // Download CSV file
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `players_${new Date().toISOString().split('T')[0]}.csv`;
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `players_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   };
 
-  // Delete player
+  // Handle delete player
   const handleDeletePlayer = async (player: Player) => {
     setPlayerToDelete(player);
     setIsDeleteModalOpen(true);
@@ -374,309 +324,229 @@ export default function TrainerPlayersPage() {
 
   const confirmDelete = async () => {
     if (!playerToDelete) return;
-
+    
     try {
       await deleteDoc(doc(db, 'players', playerToDelete.id));
-      setPlayers(prev => prev.filter(p => p.id !== playerToDelete.id));
+      setPlayers(players.filter(p => p.id !== playerToDelete.id));
       setIsDeleteModalOpen(false);
       setPlayerToDelete(null);
-      alert('تم حذف اللاعب بنجاح!');
     } catch (error) {
-      console.error('خطأ في حذف اللاعب:', error);
-      alert('حدث خطأ أثناء حذف اللاعب');
+      console.error('Error deleting player:', error);
     }
   };
 
   if (loading) {
     return (
-      <main className="flex-1 p-6 mx-4 my-6 bg-gray-50 rounded-lg shadow-inner md:p-10" dir="rtl">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="mx-auto mb-4 w-16 h-16 rounded-full border-4 border-cyan-600 animate-spin border-t-transparent"></div>
-            <p className="text-lg text-gray-600">جاري تحميل اللاعبين...</p>
-          </div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 border-4 border-green-500 rounded-full border-t-transparent animate-spin"></div>
+          <p className="mt-4 text-gray-600">جاري تحميل اللاعبين...</p>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="flex-1 p-6 mx-4 my-6 bg-gray-50 rounded-lg shadow-inner md:p-10" dir="rtl">
-      <div className="space-y-6">
-        
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white" dir="rtl">
+      <main className="container px-4 py-8 mx-auto">
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="mb-2 text-3xl font-bold text-cyan-600">إدارة اللاعبين</h1>
-            <p className="text-gray-600">إدارة قائمة اللاعبين التابعين لك ({players.length} لاعب)</p>
-          </div>
-          
-          <div className="flex gap-3">
-            <Button
-              onClick={exportToExcel}
-              className="text-white bg-green-600 hover:bg-green-700"
-              disabled={players.length === 0}
-            >
-              <Download className="mr-2 w-4 h-4" />
-              تصدير Excel
-            </Button>
-            
-            <Link href="/dashboard/trainer/players/add">
-              <Button className="text-white bg-cyan-600 hover:bg-cyan-700">
-                <Plus className="mr-2 w-4 h-4" />
-                إضافة لاعب جديد
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">إدارة اللاعبين</h1>
+              <p className="text-gray-600">عرض وإدارة جميع اللاعبين المسجلين</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={exportToExcel}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                تصدير البيانات
               </Button>
-            </Link>
+              <Link href="/dashboard/trainer/players/add">
+                <Button className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
+                  <Plus className="w-4 h-4" />
+                  إضافة لاعب جديد
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+            <Card className="p-4">
+              <div className="flex items-center">
+                <Users className="w-8 h-8 text-green-600" />
+                <div className="mr-3">
+                  <p className="text-sm text-gray-600">إجمالي اللاعبين</p>
+                  <p className="text-2xl font-bold text-gray-900">{players.length}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+                <div className="mr-3">
+                  <p className="text-sm text-gray-600">اللاعبين النشطين</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {players.filter(p => p.subscription_status === 'active').length}
+                  </p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center">
+                <AlertCircle className="w-8 h-8 text-yellow-600" />
+                <div className="mr-3">
+                  <p className="text-sm text-gray-600">الاشتراكات المنتهية</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {players.filter(p => p.subscription_status === 'expired').length}
+                  </p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center">
+                <XCircle className="w-8 h-8 text-red-600" />
+                <div className="mr-3">
+                  <p className="text-sm text-gray-600">غير النشطين</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {players.filter(p => !p.subscription_status || p.subscription_status === 'inactive').length}
+                  </p>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <Card className="p-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
-              <Input
-                type="text"
-                placeholder="البحث في الاسم، الإيميل، أو الهاتف..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
-              />
+        <Card className="p-6 mb-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center">
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="البحث بالاسم أو البريد الإلكتروني أو الهاتف..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10 w-full md:w-80"
+                />
+              </div>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="تصفية حسب الحالة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الحالات</SelectItem>
+                  <SelectItem value="active">نشط</SelectItem>
+                  <SelectItem value="expired">منتهي</SelectItem>
+                  <SelectItem value="inactive">غير نشط</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger>
-                <Filter className="mr-2 w-4 h-4" />
-                <SelectValue placeholder="حالة الاشتراك" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع الحالات</SelectItem>
-                <SelectItem value="active">نشط</SelectItem>
-                <SelectItem value="inactive">غير نشط</SelectItem>
-                <SelectItem value="expired">منتهي</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger>
-                <SelectValue placeholder="الترتيب حسب" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="created_at">تاريخ الإضافة</SelectItem>
-                <SelectItem value="updated_at">آخر تحديث</SelectItem>
-                <SelectItem value="name">الاسم</SelectItem>
-                <SelectItem value="subscription_status">حالة الاشتراك</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="ترتيب" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="desc">تنازلي</SelectItem>
-                <SelectItem value="asc">تصاعدي</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                >
+                  جدول
+                </Button>
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                >
+                  بطاقات
+                </Button>
+              </div>
+            </div>
           </div>
         </Card>
 
-        {/* Results Summary */}
-        <div className="flex justify-between items-center text-sm text-gray-600">
-          <span>
-            عرض {startIndex + 1}-{Math.min(endIndex, totalPlayers)} من {totalPlayers} نتيجة
-          </span>
-          <Select value={playersPerPage.toString()} onValueChange={(value) => setPlayersPerPage(parseInt(value))}>
-            <SelectTrigger className="w-auto">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5 لكل صفحة</SelectItem>
-              <SelectItem value="10">10 لكل صفحة</SelectItem>
-              <SelectItem value="25">25 لكل صفحة</SelectItem>
-              <SelectItem value="50">50 لكل صفحة</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Players Table */}
-        {currentPlayers.length === 0 ? (
-          <Card className="p-12 text-center">
-            <Users className="mx-auto mb-4 w-16 h-16 text-gray-400" />
-            <h3 className="mb-2 text-xl font-semibold text-gray-600">لا توجد نتائج</h3>
-            <p className="mb-6 text-gray-500">
-              {searchTerm || filterStatus !== 'all' 
-                ? 'لم يتم العثور على لاعبين يطابقون معايير البحث' 
-                : 'لم تقم بإضافة أي لاعبين بعد'
-              }
-            </p>
-            {(!searchTerm && filterStatus === 'all') && (
-              <Link href="/dashboard/trainer/players/add">
-                <Button className="text-white bg-cyan-600 hover:bg-cyan-700">
-                  <Plus className="mr-2 w-4 h-4" />
-                  إضافة لاعب جديد
-                </Button>
-              </Link>
-            )}
-          </Card>
-        ) : (
+        {viewMode === 'table' && (
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead>
-                  <tr className="text-white bg-gradient-to-r from-cyan-500 to-blue-600">
-                    <th className="px-6 py-4 text-xs font-medium tracking-wider text-right uppercase">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       اللاعب
                     </th>
-                    <th className="px-6 py-4 text-xs font-medium tracking-wider text-right uppercase">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       معلومات الاتصال
                     </th>
-                    <th className="px-6 py-4 text-xs font-medium tracking-wider text-right uppercase">
-                      المركز والمقاسات
-                    </th>
-                    <th className="px-6 py-4 text-xs font-medium tracking-wider text-right uppercase">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       الموقع
                     </th>
-                    <th className="px-6 py-4 text-xs font-medium tracking-wider text-right uppercase">
-                      الاشتراك
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      العمر
                     </th>
-                    <th className="px-6 py-4 text-xs font-medium tracking-wider text-right uppercase">
-                      الوسائط
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      حالة الاشتراك
                     </th>
-                    <th className="px-6 py-4 text-xs font-medium tracking-wider text-right uppercase">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       التواريخ
                     </th>
-                    <th className="px-6 py-4 text-xs font-medium tracking-wider text-right uppercase">
-                      العمليات
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      الإجراءات
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {currentPlayers.map((player) => (
-                    <tr key={player.id} className="transition-colors hover:bg-gray-50">
-                      {/* Player Info */}
+                    <tr key={player.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 w-12 h-12">
-                            <button
-                              onClick={() => safeNavigate(router, `/dashboard/player/reports?view=${player.id}`)}
-                              className="group"
-                            >
-                              {player.profile_image_url || player.profile_image ? (
-                                <img
-                                  src={player.profile_image_url || player.profile_image}
-                                  alt={`صورة اللاعب ${player.full_name || player.name || 'غير محدد'}`}
-                                  className="object-cover w-12 h-12 rounded-full border border-gray-200 group-hover:border-cyan-400 transition-colors cursor-pointer"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = "/images/default-avatar.png";
-                                  }}
-                                />
-                              ) : (
-                                <div className="flex justify-center items-center w-12 h-12 bg-gray-200 rounded-full border border-gray-300 group-hover:border-cyan-400 transition-colors cursor-pointer">
-                                  <User className="w-6 h-6 text-gray-400" />
-                                </div>
-                              )}
-                            </button>
+                          <div className="flex-shrink-0 h-10 w-10">
+                            {player.profile_image ? (
+                              <Image
+                                src={player.profile_image}
+                                alt={player.full_name || player.name || ''}
+                                width={40}
+                                height={40}
+                                className="h-10 w-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                <User className="w-5 h-5 text-gray-600" />
+                              </div>
+                            )}
                           </div>
                           <div className="mr-4">
-                            <button
-                              onClick={() => safeNavigate(router, `/dashboard/player/reports?view=${player.id}`)}
-                              className="text-left hover:text-cyan-600 transition-colors"
-                            >
-                              <div className="text-sm font-medium text-gray-900">
-                                {player.full_name || player.name}
-                              </div>
-                            </button>
+                            <div className="text-sm font-medium text-gray-900">
+                              {player.full_name || player.name || 'غير محدد'}
+                            </div>
                             <div className="text-sm text-gray-500">
-                              {(() => {
-                                const age = calculateAge(player.birth_date);
-                                return age ? `${age} سنة` : 'العمر غير محدد';
-                              })()}
-                            </div>
-                            <div className="text-xs text-gray-400">
-                              #{player.id?.slice(0, 8)}
+                              {player.nationality || 'غير محدد'}
                             </div>
                           </div>
                         </div>
                       </td>
-
-                      {/* Contact Info */}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{player.email || 'غير محدد'}</div>
+                        <div className="text-sm text-gray-500">{player.phone || 'غير محدد'}</div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          <div className="flex gap-1 items-center mb-1">
-                            <Phone className="w-3 h-3 text-gray-400" />
-                            {player.phone || 'غير محدد'}
-                          </div>
-                          <div className="flex gap-1 items-center">
-                            <Mail className="w-3 h-3 text-gray-400" />
-                            <span className="text-xs">{player.email || 'غير محدد'}</span>
-                          </div>
+                          {player.primary_position || player.position || 'غير محدد'}
                         </div>
+                        {player.secondary_position && (
+                          <div className="text-sm text-gray-500">
+                            {player.secondary_position}
+                          </div>
+                        )}
                       </td>
-
-                      {/* Position & Measurements */}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {calculateAge(player.birth_date) || 'غير محدد'}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          <div className="font-medium">
-                            {player.primary_position || player.position || 'غير محدد'}
-                          </div>
-                          {player.secondary_position && (
-                            <div className="text-xs text-gray-500">
-                              ثانوي: {player.secondary_position}
-                            </div>
-                          )}
-                          <div className="mt-1 text-xs text-gray-500">
-                            {player.height && `${player.height} سم`}
-                            {player.height && player.weight && ' • '}
-                            {player.weight && `${player.weight} كج`}
-                          </div>
-                        </div>
+                        {getSubscriptionBadge(player.subscription_status || 'inactive', player.subscription_end)}
                       </td>
-
-                      {/* Location */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          <div className="flex gap-1 items-center mb-1">
-                            <MapPin className="w-3 h-3 text-gray-400" />
-                            {player.city || 'غير محدد'}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {player.nationality || player.country || 'غير محدد'}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Subscription */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm">
-                          {getSubscriptionBadge(player.subscription_status, player.subscription_end)}
-                          <div className="mt-1 text-xs text-gray-500">
-                            {player.subscription_type && (
-                              <div>نوع: {player.subscription_type}</div>
-                            )}
-                            <div className="flex gap-1 items-center">
-                              <Calendar className="w-3 h-3" />
-                              {formatDate(player.subscription_end)}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Media */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            <Video className="mr-1 w-3 h-3" />
-                            {player.videos?.length || 0}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            <ImageIcon className="mr-1 w-3 h-3" />
-                            {player.additional_images?.length || 0}
-                          </Badge>
-                        </div>
-                      </td>
-
-                      {/* Dates */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-xs text-gray-600">
                           <div className="flex gap-1 items-center mb-1">
@@ -698,26 +568,29 @@ export default function TrainerPlayersPage() {
                           </div>
                         </div>
                       </td>
-
-                      {/* Actions */}
-                      <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                        <div className="flex gap-2">
-                          <Link href={`/dashboard/trainer/players/add?edit=${player.id}`}>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-green-600 hover:bg-green-50"
-                              title="تعديل البيانات"
-                            >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center gap-2">
+                          <Link href={`/dashboard/trainer/players/${player.id}`}>
+                            <Button variant="outline" size="sm">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Link href={`/dashboard/trainer/players/${player.id}/edit`}>
+                            <Button variant="outline" size="sm">
                               <Edit className="w-4 h-4" />
                             </Button>
                           </Link>
+                          <SendMessageButton
+                            recipientId={player.id}
+                            recipientName={player.full_name || player.name || ''}
+                            variant="outline"
+                            size="sm"
+                          />
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleDeletePlayer(player)}
-                            className="text-red-600 hover:bg-red-50"
-                            title="حذف اللاعب"
+                            className="text-red-600 hover:text-red-800"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -731,92 +604,139 @@ export default function TrainerPlayersPage() {
           </Card>
         )}
 
+        {/* Players Cards View */}
+        {viewMode === 'cards' && (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {currentPlayers.map((player) => (
+              <Card key={player.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="flex-shrink-0 h-16 w-16">
+                      {player.profile_image ? (
+                        <Image
+                          src={player.profile_image}
+                          alt={player.full_name || player.name || ''}
+                          width={64}
+                          height={64}
+                          className="h-16 w-16 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-16 w-16 rounded-full bg-gray-300 flex items-center justify-center">
+                          <User className="w-8 h-8 text-gray-600" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="mr-4 flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {player.full_name || player.name || 'غير محدد'}
+                      </h3>
+                      <p className="text-sm text-gray-500">{player.nationality || 'غير محدد'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Mail className="w-4 h-4 ml-2" />
+                      {player.email || 'غير محدد'}
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Phone className="w-4 h-4 ml-2" />
+                      {player.phone || 'غير محدد'}
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <MapPin className="w-4 h-4 ml-2" />
+                      {player.city || 'غير محدد'}
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <User className="w-4 h-4 ml-2" />
+                      {player.primary_position || player.position || 'غير محدد'}
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Calendar className="w-4 h-4 ml-2" />
+                      العمر: {calculateAge(player.birth_date) || 'غير محدد'}
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    {getSubscriptionBadge(player.subscription_status || 'inactive', player.subscription_end)}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Link href={`/dashboard/trainer/players/${player.id}`}>
+                        <Button variant="outline" size="sm">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                      <Link href={`/dashboard/trainer/players/${player.id}/edit`}>
+                        <Button variant="outline" size="sm">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <SendMessageButton
+                        recipientId={player.id}
+                        recipientName={player.full_name || player.name || ''}
+                        variant="outline"
+                        size="sm"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeletePlayer(player)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
         {/* Pagination */}
         {totalPages > 1 && (
-          <Card className="p-4">
-            <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
-              <div className="text-sm text-gray-600">
-                عرض {startIndex + 1}-{Math.min(endIndex, totalPlayers)} من {totalPlayers} نتيجة
-              </div>
-              
-              <div className="flex gap-2 items-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                >
-                  الأولى
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                >
-                  السابق
-                </Button>
-                
-                <div className="flex gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNumber: number;
-                    if (totalPages <= 5) {
-                      pageNumber = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNumber = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNumber = totalPages - 4 + i;
-                    } else {
-                      pageNumber = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <Button
-                        key={pageNumber}
-                        variant={currentPage === pageNumber ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(pageNumber)}
-                        className="p-0 w-8 h-8"
-                      >
-                        {pageNumber}
-                      </Button>
-                    );
-                  })}
-                </div>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                >
-                  التالي
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  الأخيرة
-                </Button>
-              </div>
+          <div className="flex items-center justify-between mt-6">
+            <div className="text-sm text-gray-700">
+              عرض {startIndex + 1} إلى {Math.min(endIndex, totalPlayers)} من {totalPlayers} لاعب
             </div>
-          </Card>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                السابق
+              </Button>
+              <span className="text-sm text-gray-700">
+                صفحة {currentPage} من {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                التالي
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* Delete Confirmation Modal */}
         {isDeleteModalOpen && (
-          <div className="flex fixed inset-0 z-50 justify-center items-center bg-black bg-opacity-50">
-            <div className="p-6 mx-4 w-full max-w-md bg-white rounded-lg">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900">تأكيد الحذف</h3>
-              <p className="mb-6 text-gray-600">
-                هل أنت متأكد من حذف اللاعب "{playerToDelete?.full_name || playerToDelete?.name}"؟
-                هذا الإجراء لا يمكن التراجع عنه.
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">تأكيد الحذف</h3>
+              <p className="text-gray-600 mb-6">
+                هل أنت متأكد من حذف اللاعب "{playerToDelete?.full_name || playerToDelete?.name}"؟ 
+                لا يمكن التراجع عن هذا الإجراء.
               </p>
-              <div className="flex gap-3 justify-end">
+              <div className="flex items-center justify-end gap-4">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -827,8 +747,8 @@ export default function TrainerPlayersPage() {
                   إلغاء
                 </Button>
                 <Button
+                  variant="destructive"
                   onClick={confirmDelete}
-                  className="text-white bg-red-600 hover:bg-red-700"
                 >
                   حذف
                 </Button>
@@ -836,7 +756,7 @@ export default function TrainerPlayersPage() {
             </div>
           </div>
         )}
-      </div>
-    </main>
+      </main>
+    </div>
   );
-}
+} 

@@ -69,7 +69,12 @@ const menuItems = [
     path: '/dashboard/player/stats'
   },
   {
-            title: 'إدارة الاشتراكات',
+    title: 'الرسائل',
+    icon: <MessageSquare className="w-5 h-5" />,
+    path: '/dashboard/messages'
+  },
+  {
+    title: 'إدارة الاشتراكات',
     icon: <CreditCard className="w-5 h-5" />,
     path: '/dashboard/player/bulk-payment'
   },
@@ -128,7 +133,7 @@ const clubMenuItems = [
   },
   {
     title: 'الرسائل',
-    icon: <MessageSquare className="w-5 h-5" />, path: '/dashboard/club/messages'
+    icon: <MessageSquare className="w-5 h-5" />, path: '/dashboard/messages'
   },
   {
     title: 'دفع جماعي للاعبين',
@@ -168,7 +173,7 @@ const agentMenuItems = [
   },
   {
     title: 'الرسائل',
-    icon: <MessageSquare className="w-5 h-5" />, path: '/dashboard/agent/messages'
+    icon: <MessageSquare className="w-5 h-5" />, path: '/dashboard/messages'
   },
   {
     title: 'الإشعارات',
@@ -189,12 +194,24 @@ const Sidebar = () => {
   // تحديد نوع القائمة حسب نوع الحساب
   let items = menuItems;
   let sidebarTitle = 'منصة اللاعب';
+  let messagesPath = '/dashboard/player/messages';
   if (user?.accountType === 'club') {
     items = clubMenuItems;
     sidebarTitle = 'منصة النادي';
+    messagesPath = '/dashboard/club/messages';
   } else if (user?.accountType === 'agent') {
     items = agentMenuItems;
     sidebarTitle = 'منصة الوكيل';
+    messagesPath = '/dashboard/agent/messages';
+  } else if (user?.accountType === 'academy') {
+    sidebarTitle = 'منصة الأكاديمية';
+    messagesPath = '/dashboard/academy/messages';
+  } else if (user?.accountType === 'trainer') {
+    sidebarTitle = 'منصة المدرب';
+    messagesPath = '/dashboard/trainer/messages';
+  } else if (user?.accountType === 'admin') {
+    sidebarTitle = 'منصة الإدارة';
+    messagesPath = '/dashboard/admin/messages';
   }
 
   const handleLogout = async () => {

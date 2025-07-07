@@ -72,7 +72,7 @@ const getPlayerStats = (userData: Record<string, unknown>): StatItem[] => [
     subText: "رسالة جديدة",
     change: "+8%",
     color: "bg-violet-500",
-    href: "/dashboard/player/messages"
+    href: "/dashboard/messages"
   },
   {
     icon: Heart,

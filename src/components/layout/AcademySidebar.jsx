@@ -38,9 +38,10 @@ const academyMenuItems = [
 
 export default function AcademySidebar({ collapsed, setCollapsed }) {
   const router = useRouter();
-  const { signOut, user } = useAuth();
+  const { logout, user, userData } = useAuth();
   const [lang, setLang] = useState('ar');
   const [logo, setLogo] = useState('/images/club-avatar.png');
+  const [academyName, setAcademyName] = useState('');
 
   useEffect(() => {
     const htmlLang = document.documentElement.lang;
@@ -57,20 +58,39 @@ export default function AcademySidebar({ collapsed, setCollapsed }) {
         const data = doc.data();
         const logoUrl = getSupabaseImageUrl(data.logo);
         setLogo(logoUrl);
+        
+        // تحديد اسم الأكاديمية من عدة مصادر
+        const name = data.academy_name || data.name || data.full_name || userData?.full_name || userData?.name || 'أكاديمية رياضية';
+        setAcademyName(name);
+      } else {
+        // استخدم userData في حالة عدم وجود بيانات الأكاديمية
+        const name = userData?.full_name || userData?.name || 'أكاديمية رياضية';
+        setAcademyName(name);
       }
     }, (error) => {
       console.log('خطأ في جلب شعار الأكاديمية:', error);
+      // في حالة الخطأ، استخدم userData
+      const name = userData?.full_name || userData?.name || 'أكاديمية رياضية';
+      setAcademyName(name);
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, userData]);
+
+  // تحديث اسم الأكاديمية عند تغيير userData
+  useEffect(() => {
+    if (userData && !academyName) {
+      const name = userData.full_name || userData.name || 'أكاديمية رياضية';
+      setAcademyName(name);
+    }
+  }, [userData, academyName]);
 
   const sidebarDir = lang === 'ar' ? 'rtl' : 'ltr';
   const borderDir = lang === 'ar' ? 'border-l' : 'border-r';
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      await logout();
       router.push('/auth/login');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -95,6 +115,7 @@ export default function AcademySidebar({ collapsed, setCollapsed }) {
           <img src={logo} alt="شعار الأكاديمية" className="w-32 h-32 rounded-full border-4 border-orange-400 shadow" />
           <div className="mt-2 text-center">
             <div className="text-sm font-medium text-orange-600 dark:text-orange-400">الأكاديمية الرياضية</div>
+            <div className="text-lg font-bold text-gray-800 dark:text-gray-200 mt-1">{academyName}</div>
           </div>
         </div>
       )}

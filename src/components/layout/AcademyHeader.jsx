@@ -5,6 +5,7 @@ import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '@/lib/firebase/auth-provider';
 import { db } from '@/lib/firebase/config';
 import { supabase } from '@/lib/supabase/client';
+import NotificationsButton from '@/components/shared/NotificationsButton';
 
 const getSupabaseImageUrl = (path) => {
   if (!path) return '/images/club-avatar.png';
@@ -40,39 +41,69 @@ export default function AcademyHeader() {
   useEffect(() => {
     if (!user?.uid) return;
 
-    const academyRef = doc(db, 'academies', user.uid);
-    const unsubscribe = onSnapshot(academyRef, (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
-        const logoUrl = getSupabaseImageUrl(data.logo);
-        setLogo(logoUrl);
-      }
-    }, (error) => {
-      console.log('خطأ في جلب شعار الأكاديمية:', error);
-    });
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2 seconds
 
+    const fetchLogo = () => {
+      const academyRef = doc(db, 'academies', user.uid);
+      
+      return onSnapshot(academyRef, 
+        (doc) => {
+          if (doc.exists()) {
+            const data = doc.data();
+            const logoUrl = getSupabaseImageUrl(data.logo);
+            setLogo(logoUrl);
+          }
+        }, 
+        (error) => {
+          console.error('خطأ في جلب شعار الأكاديمية:', error);
+          
+          // إعادة المحاولة في حالة الفشل
+          if (retryCount < maxRetries) {
+            retryCount++;
+            setTimeout(() => {
+              console.log(`إعادة محاولة جلب الشعار (${retryCount}/${maxRetries})`);
+              unsubscribe();
+              setupListener();
+            }, retryDelay);
+          }
+        }
+      );
+    };
+
+    let unsubscribe = () => {};
+    
+    const setupListener = () => {
+      try {
+        unsubscribe = fetchLogo();
+      } catch (error) {
+        console.error('خطأ في إعداد مراقب الشعار:', error);
+      }
+    };
+
+    setupListener();
     return () => unsubscribe();
   }, [user]);
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow flex items-center h-16 px-6 justify-between" style={{ direction: dir }}>
-      <div className="flex items-center gap-3">
-        <img src={logo} alt="شعار الأكاديمية" className="w-10 h-10 rounded-full border-2 border-orange-400 shadow" />
-        <span className="text-xl font-bold tracking-tight text-orange-700 dark:text-orange-300">منصة الأكاديميات</span>
-      </div>
-      <div className="flex items-center gap-4">
-        <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-          {darkMode ? <Sun className="w-6 h-6 text-yellow-400" /> : <Moon className="w-6 h-6 text-gray-600" />}
-        </button>
-        <Link href="/dashboard/academy/notifications" className="relative hover:text-orange-600 dark:hover:text-orange-300">
-          <Bell className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-        </Link>
-        <Link href="/dashboard/academy/profile" className="hover:text-orange-600 dark:hover:text-orange-300">
-          <User className="w-7 h-7" />
-        </Link>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b">
+      <div className="flex items-center justify-between h-16 px-4">
+        <div className="flex items-center gap-3">
+          <img src={logo} alt="شعار الأكاديمية" className="w-10 h-10 rounded-full border-2 border-orange-400 shadow" />
+          <span className="text-xl font-bold tracking-tight text-orange-700 dark:text-orange-300">منصة الأكاديميات</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <NotificationsButton />
+          <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            {darkMode ? <Sun className="w-6 h-6 text-yellow-400" /> : <Moon className="w-6 h-6 text-gray-600" />}
+          </button>
+          <Link href="/dashboard/academy/profile" className="hover:text-orange-600 dark:hover:text-orange-300">
+            <User className="w-7 h-7" />
+          </Link>
+        </div>
       </div>
     </header>
   );

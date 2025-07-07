@@ -37,7 +37,7 @@ async function fetchLiveRates(): Promise<Record<string, CurrencyInfo> | null> {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'HagzzGo-Platform/1.0'
+        'User-Agent': 'el7hm-Platform/1.0'
       },
       signal: AbortSignal.timeout(10000) // timeout بعد 10 ثواني
     });

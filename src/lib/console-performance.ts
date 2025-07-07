@@ -162,9 +162,11 @@ export const handleUnhandledErrors = () => {
   });
 };
 
-// تطبيق الإعدادات تلقائياً
-if (typeof window !== 'undefined') {
-  suppressKnownMessages();
-  handleUnhandledErrors();
-  console.debug('✅ تم تحسين console لتقليل الرسائل المتكررة ومعالجة الأخطاء');
-} 
+// دالة للتهيئة اليدوية (لا يتم استدعاؤها تلقائياً)
+export const initializeConsoleOptimization = () => {
+  if (typeof window !== 'undefined') {
+    suppressKnownMessages();
+    handleUnhandledErrors();
+    console.debug('✅ تم تحسين console لتقليل الرسائل المتكررة ومعالجة الأخطاء');
+  }
+}; 

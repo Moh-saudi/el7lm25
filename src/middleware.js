@@ -18,6 +18,20 @@ const BROKEN_IMAGE_PATTERNS = [
 // فحص الروابط المكسورة
 const isBrokenImageUrl = (url) => {
   if (!url || typeof url !== 'string') return true;
+  
+  // Prevent redirect loops by allowing default images to pass through
+  if (url.includes('default-avatar.png') || 
+      url.includes('club-avatar.png') || 
+      url.includes('agent-avatar.png')) {
+    return false;
+  }
+  
+  // Allow local URLs (starting with /)
+  if (url.startsWith('/')) {
+    return BROKEN_IMAGE_PATTERNS.some(pattern => url.includes(pattern));
+  }
+  
+  // For external URLs, must start with http
   return BROKEN_IMAGE_PATTERNS.some(pattern => url.includes(pattern)) ||
          url.length < 10 || !url.startsWith('http');
 };
@@ -25,19 +39,20 @@ const isBrokenImageUrl = (url) => {
 export function middleware(request) {
   const { pathname, searchParams } = request.nextUrl;
   
-  // فلتر طلبات الصور المكسورة
+  // Filter broken image requests
   if (pathname.startsWith('/_next/image')) {
     const imageUrl = searchParams.get('url');
     
     if (imageUrl) {
       const decodedUrl = decodeURIComponent(imageUrl);
       
-      if (isBrokenImageUrl(decodedUrl)) {
-        console.warn('🚨 حجب رابط صورة مكسور:', decodedUrl);
+      // Only redirect if it's not already a fallback image
+      if (isBrokenImageUrl(decodedUrl) && !decodedUrl.includes('default-avatar.png')) {
+        console.warn('🚨 Blocked broken image URL:', decodedUrl);
         
-        // إعادة توجيه إلى الصورة الافتراضية
+        // Redirect to default avatar
         const newUrl = new URL('/_next/image', request.url);
-        newUrl.searchParams.set('url', '/images/default-avatar.png');
+        newUrl.searchParams.set('url', '/default-avatar.png');
         newUrl.searchParams.set('w', searchParams.get('w') || '96');
         newUrl.searchParams.set('q', searchParams.get('q') || '75');
         

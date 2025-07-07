@@ -1,4 +1,4 @@
-// HAGZZ GO - Firestore Error Fix
+// El7hm - Firestore Error Fix
 // حل مشاكل أخطاء 400 Bad Request في Firestore
 
 (function() {

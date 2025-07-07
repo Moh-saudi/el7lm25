@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '@/lib/firebase/config';
+import { auth, db } from '@/lib/firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 import { 
   Bell, 
   Search, 
@@ -19,6 +20,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '@/lib/context/SidebarContext';
+import MessageNotifications from '@/components/messaging/MessageNotifications';
+import ExternalNotifications from '@/components/messaging/ExternalNotifications';
 
 const Header = () => {
   const pathname = usePathname();
@@ -27,22 +30,105 @@ const Header = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userProfileImage, setUserProfileImage] = useState('/default-avatar.png');
+  const [userName, setUserName] = useState('');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { toggleMobileSidebar } = useSidebar();
 
-  const notifications = [
-    { id: 1, title: 'تم تحديث ملفك الشخصي', time: 'منذ 5 دقائق' },
-    { id: 2, title: 'لديك تقرير جديد', time: 'منذ ساعة' },
-    { id: 3, title: 'تم إضافة صورة جديدة', time: 'منذ 3 ساعات' }
-  ];
+  // Check if we're on a player dashboard page
+  const isPlayerDashboard = pathname.startsWith('/dashboard/player');
+
+  // Fetch user profile data
+  useEffect(() => {
+    if (user && isPlayerDashboard) {
+      const fetchUserData = async () => {
+        try {
+          const userDoc = await getDoc(doc(db, 'players', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // Handle profile image
+            if (userData?.profile_image) {
+              // If profile_image is an object with url
+              if (typeof userData.profile_image === 'object' && userData.profile_image.url) {
+                setUserProfileImage(userData.profile_image.url);
+              }
+              // If profile_image is a direct string URL
+              else if (typeof userData.profile_image === 'string') {
+                setUserProfileImage(userData.profile_image);
+              }
+            } else {
+              // Set default image if no profile image exists
+              setUserProfileImage('/default-avatar.png');
+            }
+
+            // Set user name
+            let displayName = '';
+            if (userData?.full_name && userData.full_name !== 'undefined undefined') {
+              displayName = userData.full_name;
+            } else if (userData?.firstName && userData?.lastName) {
+              displayName = `${userData.firstName} ${userData.lastName}`.trim();
+            } else if (userData?.name) {
+              displayName = userData.name;
+            }
+            setUserName(displayName || 'اللاعب');
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          // Set defaults on error
+          setUserProfileImage('/default-avatar.png');
+        }
+      };
+
+      fetchUserData();
+    }
+  }, [user, isPlayerDashboard, refreshTrigger]);
+
+  // Auto-refresh profile image every 30 seconds
+  useEffect(() => {
+    if (isPlayerDashboard) {
+      const interval = setInterval(() => {
+        setRefreshTrigger(prev => prev + 1);
+      }, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isPlayerDashboard]);
+
+  const handleLogoClick = () => {
+    router.push('/');
+  };
+
+  const handleLoginClick = () => {
+    router.push('/auth/login');
+  };
 
   const handleLogout = async () => {
     try {
       await auth.signOut();
-      router.push('/auth/login');
+      router.push('/');
     } catch (error) {
-      console.error('خطأ في تسجيل الخروج:', error);
+      console.error('Logout error:', error);
     }
   };
+
+  const getNavItems = () => {
+    const isAuthPage = pathname === '/auth/login' || pathname === '/auth/register';
+    const isHomePage = pathname === '/';
+    
+    if (isAuthPage) return [];
+    if (isHomePage) {
+      return [
+        { label: 'الرئيسية', href: '/' },
+        { label: 'من نحن', href: '/#about' },
+        { label: 'الخدمات', href: '/#services' },
+        { label: 'تواصل معنا', href: '/contact' }
+      ];
+    }
+    return [];
+  };
+
+  const navItems = getNavItems();
 
   // Check if we're on a dashboard page
   const isDashboardPage = pathname.startsWith('/dashboard');
@@ -76,179 +162,97 @@ const Header = () => {
            
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <img src="/hagzz-logo.png" alt="Logo" className="w-auto h-10" />
-            <span className="hidden md:block text-xl font-bold text-gray-800">HagzZGo</span>
+            <img src="/el7hm-logo.png" alt="Logo" className="w-auto h-10" />
+            <span className="hidden md:block text-xl font-bold text-gray-800">El7hm</span>
           </div>
            
           {/* Search Bar */}
-          <div className="flex-1 hidden max-w-xl mx-4 lg:block">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="بحث..."
-                className="w-full px-4 py-2 pr-10 text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              />
-              <Search className="absolute right-3 top-2.5 w-5 h-5 text-gray-400" />
-            </div>
-          </div>
-           
-          {/* Right Side Icons */}
-          <div className="flex items-center gap-2">
-            {/* Notifications */}
-            <div className="relative">
-              <button
-                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="p-2 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200 relative"
-              >
-                <Bell className="w-6 h-6" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              </button>
-
-              <AnimatePresence>
-                {isNotificationsOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 w-80 z-50"
-                  >
-                    <div className="p-4">
-                      <h3 className="mb-4 text-lg font-semibold text-gray-800">الإشعارات</h3>
-                      <div className="space-y-3">
-                        {notifications.map((notification) => (
-                          <div key={notification.id} className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200 cursor-pointer">
-                            <p className="font-medium text-gray-800">{notification.title}</p>
-                            <p className="text-sm text-gray-500">{notification.time}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-4 pt-3 border-t border-gray-200">
-                        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                          عرض جميع الإشعارات
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Messages */}
-            <button className="p-2 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-              <MessageSquare className="w-6 h-6" />
-            </button>
-
-            {/* Help */}
-            <button className="p-2 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-              <HelpCircle className="w-6 h-6" />
-            </button>
-
-            {/* Profile */}
-            <div className="relative">
-              <button
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2 p-2 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-              >
-                <img
-                  src="/default-avatar.png"
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full border-2 border-gray-200"
+          {isDashboardPage && (
+            <div className="hidden md:flex items-center flex-1 max-w-md mx-4">
+              <div className="relative w-full">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="بحث..."
+                  className="w-full pl-4 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              <AnimatePresence>
-                {isProfileOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute left-0 w-48 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
-                  >
-                    <div className="p-2">
-                      <Link
-                        href="/dashboard/profile"
-                        className="flex items-center gap-2 p-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                        onClick={() => setIsProfileOpen(false)}
-                      >
-                        <User className="w-5 h-5" />
-                        <span>الملف الشخصي</span>
-                      </Link>
-                      <Link
-                        href="/dashboard/settings"
-                        className="flex items-center gap-2 p-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                        onClick={() => setIsProfileOpen(false)}
-                      >
-                        <Settings className="w-5 h-5" />
-                        <span>الإعدادات</span>
-                      </Link>
-                      <div className="border-t border-gray-200 my-2"></div>
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 p-2 text-red-600 rounded-lg hover:bg-red-50 transition-colors duration-200 w-full"
-                      >
-                        <LogOut className="w-5 h-5" />
-                        <span>تسجيل الخروج</span>
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              </div>
             </div>
+          )}
+
+          {/* Right Side Actions */}
+          <div className="flex items-center gap-4">
+            {/* Dashboard Actions */}
+            {isDashboardPage && user && (
+              <>
+                {/* Unified Notifications */}
+                <ExternalNotifications />
+
+                {/* User Profile Image Only */}
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full border-2 border-gray-200 overflow-hidden">
+                    <img
+                      src={userProfileImage}
+                      alt={userName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = '/default-avatar.png';
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">{userName}</span>
+                </div>
+              </>
+            )}
+
+            {/* Login Button for Non-Dashboard Pages */}
+            {!isDashboardPage && !user && (
+              <button
+                onClick={handleLoginClick}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+              >
+                تسجيل الدخول
+              </button>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Mobile Menu for Non-Dashboard Pages */}
-      {!isDashboardPage && (
+        {/* Mobile Menu for Non-Dashboard Pages */}
         <AnimatePresence>
-          {isMobileMenuOpen && (
+          {isMobileMenuOpen && !isDashboardPage && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="lg:hidden border-t border-gray-200"
+              className="lg:hidden border-t border-gray-200 bg-white"
             >
-              <div className="px-4 py-4 space-y-3 bg-gray-50">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="بحث..."
-                    className="w-full px-4 py-2 pr-10 text-gray-700 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <Search className="absolute right-3 top-2.5 w-5 h-5 text-gray-400" />
-                </div>
-                <nav className="flex flex-col space-y-2">
-                  <Link 
-                    href="/dashboard" 
-                    className="p-3 text-gray-700 rounded-lg hover:bg-white transition-colors duration-200"
+              <nav className="px-4 py-4 space-y-3">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="block text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    الرئيسية
+                    {item.label}
                   </Link>
-                  <Link 
-                    href="/dashboard/profile" 
-                    className="p-3 text-gray-700 rounded-lg hover:bg-white transition-colors duration-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                ))}
+                {!user && (
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleLoginClick();
+                    }}
+                    className="w-full mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
                   >
-                    الملف الشخصي
-                  </Link>
-                  <Link 
-                    href="/dashboard/settings" 
-                    className="p-3 text-gray-700 rounded-lg hover:bg-white transition-colors duration-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    الإعدادات
-                  </Link>
-                </nav>
-              </div>
+                    تسجيل الدخول
+                  </button>
+                )}
+              </nav>
             </motion.div>
           )}
         </AnimatePresence>
-      )}
+      </div>
     </header>
   );
 };

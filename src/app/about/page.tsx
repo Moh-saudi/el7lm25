@@ -3,8 +3,18 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Users, Target, Award, Globe } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function AboutPage() {
+  const router = useRouter();
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      window.history.back();
+    } else {
+      router.push('/');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white" dir="rtl">
       {/* Header */}
@@ -12,9 +22,9 @@ export default function AboutPage() {
         <div className="container px-4 py-4 mx-auto">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <img src="/hagzz-logo.png" alt="Logo" className="w-auto h-10" />
+              <img src="/el7hm-logo.png" alt="Logo" className="w-auto h-10" />
               <span className="text-2xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text">
-                Hagzz Go
+                El7hm
               </span>
             </Link>
             <Link
@@ -31,14 +41,15 @@ export default function AboutPage() {
       {/* Main Content */}
       <main className="container px-4 py-12 mx-auto">
         {/* Hero Section */}
-        <div className="mb-16 text-center">
-          <h1 className="mb-4 text-4xl font-bold text-gray-900 md:text-5xl">
-            عن منصة
-            <span className="text-transparent bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text"> Hagzz Go</span>
-          </h1>
-          <p className="max-w-3xl mx-auto text-xl text-gray-600">
-            منصة شاملة لإدارة لاعبي كرة القدم تهدف إلى ربط المواهب الرياضية بالأندية والوكلاء في جميع أنحاء العالم
-          </p>
+        <div className="max-w-2xl mx-auto py-12 text-center">
+          <button
+            onClick={handleBack}
+            className="mb-6 px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 text-gray-700 font-medium"
+          >
+            العودة
+          </button>
+          <h1 className="text-3xl font-bold mb-4">عن المنصة</h1>
+          <p className="text-gray-700 text-lg">منصة الحلم (el7lm) تحت مِيسك القابضة تهدف إلى تطوير كرة القدم العربية من خلال ربط اللاعبين، الأندية، الأكاديميات، الوكلاء والمدربين في مكان واحد.</p>
         </div>
 
         {/* Mission & Vision */}
@@ -127,10 +138,10 @@ export default function AboutPage() {
           </p>
           <div className="flex flex-col items-center gap-4 md:flex-row md:justify-center">
             <a
-              href="mailto:info@hagzzgo.com"
+              href="mailto:info@el7hm.com"
               className="px-6 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              info@hagzzgo.com
+              info@el7hm.com
             </a>
             <a
               href="tel:+201017799580"
@@ -145,7 +156,7 @@ export default function AboutPage() {
       {/* Footer */}
       <footer className="py-8 bg-gray-900 text-white">
         <div className="container px-4 mx-auto text-center">
-          <p>&copy; 2024 Hagzz Go. جميع الحقوق محفوظة.</p>
+          <p>&copy; 2024 El7hm. جميع الحقوق محفوظة.</p>
         </div>
       </footer>
     </div>

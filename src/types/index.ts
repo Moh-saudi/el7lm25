@@ -46,10 +46,24 @@ export interface Player {
     createdAt: Date;
     updatedAt: Date;
   }
+
+  export interface Admin {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    role: 'superadmin' | 'admin' | 'moderator';
+    permissions: string[];
+    isActive: boolean;
+    lastLogin?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    createdBy?: string;
+  }
   
   export interface UserProfile {
     uid: string;
-    type: 'player' | 'club' | 'agent';
+    type: 'player' | 'club' | 'agent' | 'academy' | 'trainer' | 'admin';
     email: string;
     phone: string;
     verified: boolean;
@@ -57,3 +71,5 @@ export interface Player {
     createdAt: Date;
     updatedAt: Date;
   }
+
+export type UserRole = 'player' | 'club' | 'agent' | 'academy' | 'trainer' | 'admin' | 'marketer' | 'parent';

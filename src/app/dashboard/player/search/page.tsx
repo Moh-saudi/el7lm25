@@ -11,7 +11,8 @@ import {
   orderBy, 
   limit, 
   getDocs, 
-  doc, 
+  doc,
+  getDoc,
   updateDoc, 
   arrayUnion, 
   arrayRemove, 
@@ -46,6 +47,7 @@ import {
   User,
   Users
 } from 'lucide-react';
+import SendMessageButton from '@/components/messaging/SendMessageButton';
 
 // أنواع البيانات
 interface SearchEntity {
@@ -121,6 +123,7 @@ const COUNTRIES = [
 export default function SearchPage() {
   const [user, loading] = useAuthState(auth);
   const router = useRouter();
+  const [userData, setUserData] = useState<any>(null);
   
   // حالة البحث والتصفية
   const [filters, setFilters] = useState<FilterOptions>({
@@ -675,6 +678,67 @@ export default function SearchPage() {
     }
   }, [user, fetchEntities]);
 
+  // Fetch user data when component mounts
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user) return;
+      
+      try {
+        // First get the user's basic info to determine account type
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (!userDoc.exists()) {
+          console.error('User document not found');
+          return;
+        }
+
+        const basicUserData = userDoc.data();
+        const accountType = basicUserData.accountType;
+
+        // Get detailed user data from the appropriate collection
+        let detailedUserDoc;
+        switch (accountType) {
+          case 'player':
+            detailedUserDoc = await getDoc(doc(db, 'players', user.uid));
+            break;
+          case 'club':
+            detailedUserDoc = await getDoc(doc(db, 'clubs', user.uid));
+            break;
+          case 'agent':
+            detailedUserDoc = await getDoc(doc(db, 'agents', user.uid));
+            break;
+          case 'academy':
+            detailedUserDoc = await getDoc(doc(db, 'academies', user.uid));
+            break;
+          case 'trainer':
+            detailedUserDoc = await getDoc(doc(db, 'trainers', user.uid));
+            break;
+          case 'admin':
+            detailedUserDoc = await getDoc(doc(db, 'admins', user.uid));
+            break;
+          default:
+            console.error('Unknown account type:', accountType);
+            return;
+        }
+
+        if (detailedUserDoc?.exists()) {
+          // Combine basic and detailed user data
+          setUserData({
+            ...basicUserData,
+            ...detailedUserDoc.data(),
+            accountType // Ensure accountType is included
+          });
+        } else {
+          // If no detailed doc exists, use basic user data
+          setUserData(basicUserData);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
+
   // متابعة كيان
   const handleFollow = async (entityId: string) => {
     if (!user || actionLoading) return;
@@ -1009,15 +1073,21 @@ export default function SearchPage() {
                 )}
               </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleMessage(entity.id)}
-                className="flex-1"
-              >
-                <MessageSquare className="w-4 h-4 mr-1" />
-                رسالة
-              </Button>
+              {userData && entity && (
+                <SendMessageButton
+                  user={user}
+                  userData={userData}
+                  getUserDisplayName={() => user?.displayName || userData?.name || 'مستخدم'}
+                  targetUserId={entity.id}
+                  targetUserName={entity.name}
+                  targetUserType={entity.type as any}
+                  buttonText="رسالة"
+                  buttonVariant="outline"
+                  buttonSize="sm"
+                  className="flex-1"
+                  redirectToMessages={false}
+                />
+              )}
             </div>
           </div>
 
@@ -1174,8 +1244,8 @@ export default function SearchPage() {
         ) : (
           <>
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {entities.map((entity) => (
-                <EntityCard key={entity.id} entity={entity} />
+              {entities.map((entity, index) => (
+                <EntityCard key={`${entity.id}-${entity.type}-${index}`} entity={entity} />
               ))}
             </div>
 

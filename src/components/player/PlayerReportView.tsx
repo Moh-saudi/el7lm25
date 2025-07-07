@@ -364,6 +364,53 @@ const PlayerReportView: React.FC<PlayerReportViewProps> = ({ player }) => {
     </div>
   );
 
+  // --- Tracking Info ---
+  const renderTrackingInfo = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="p-4 rounded-lg bg-blue-50">
+          <div className="mb-1 font-semibold text-blue-700">تاريخ الإضافة</div>
+          <div className="text-lg font-bold text-blue-900">
+            {player?.created_at ? dayjs(player.created_at).format('DD/MM/YYYY HH:mm') : '--'}
+          </div>
+        </div>
+        <div className="p-4 rounded-lg bg-green-50">
+          <div className="mb-1 font-semibold text-green-700">آخر تحديث</div>
+          <div className="text-lg font-bold text-green-900">
+            {player?.updated_at ? dayjs(player.updated_at).format('DD/MM/YYYY HH:mm') : '--'}
+          </div>
+        </div>
+      </div>
+      
+      {(player as any)?.addedBy && (
+        <div className="p-4 rounded-lg bg-purple-50">
+          <div className="mb-2 font-semibold text-purple-700">معلومات الإضافة</div>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+            <div>
+              <span className="text-sm text-purple-600">نوع الحساب:</span>
+              <div className="font-bold text-purple-900">
+                {(player as any).addedBy.accountType === 'club' ? 'نادي' :
+                 (player as any).addedBy.accountType === 'academy' ? 'أكاديمية' :
+                 (player as any).addedBy.accountType === 'trainer' ? 'مدرب' :
+                 (player as any).addedBy.accountType === 'agent' ? 'وكيل' : 'غير محدد'}
+              </div>
+            </div>
+            <div>
+              <span className="text-sm text-purple-600">اسم الحساب:</span>
+              <div className="font-bold text-purple-900">{(player as any).addedBy.accountName || '--'}</div>
+            </div>
+            <div>
+              <span className="text-sm text-purple-600">تاريخ الإضافة:</span>
+              <div className="font-bold text-purple-900">
+                {(player as any).addedBy.dateAdded ? dayjs((player as any).addedBy.dateAdded).format('DD/MM/YYYY HH:mm') : '--'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   // --- Tab Content Switcher ---
   const renderTabContent = () => {
     switch (activeTab) {
@@ -408,6 +455,12 @@ const PlayerReportView: React.FC<PlayerReportViewProps> = ({ player }) => {
       </div>
       <div className="mt-8">
         {renderTabContent()}
+      </div>
+      
+      {/* معلومات التتبع - تظهر دائماً */}
+      <div className="mt-8 pt-8 border-t border-gray-200">
+        <h3 className="mb-4 text-lg font-semibold text-gray-800">معلومات التتبع</h3>
+        {renderTrackingInfo()}
       </div>
     </div>
   );

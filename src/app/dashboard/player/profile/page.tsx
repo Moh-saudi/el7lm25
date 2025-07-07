@@ -234,17 +234,17 @@ const FOOT_PREFERENCES = [
 
 // Loading Component
 const LoadingSpinner: React.FC = () => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div className="w-16 h-16 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+  <div className="flex fixed inset-0 z-50 justify-center items-center bg-black bg-opacity-50">
+    <div className="w-16 h-16 rounded-full border-4 border-blue-500 animate-spin border-t-transparent"></div>
   </div>
 );
 
 // Success Message Component
 const SuccessMessage: React.FC<{ message: string }> = ({ message }) => (
   <div className="fixed inset-x-0 top-0 z-50 p-4">
-    <div className="w-full max-w-md p-4 mx-auto bg-green-100 rounded-lg shadow-lg">
+    <div className="p-4 mx-auto w-full max-w-md bg-green-100 rounded-lg shadow-lg">
       <div className="flex items-center">
-        <Check className="w-5 h-5 mr-2 text-green-500" />
+        <Check className="mr-2 w-5 h-5 text-green-500" />
         <p className="text-green-700">{message}</p>
       </div>
     </div>
@@ -253,9 +253,9 @@ const SuccessMessage: React.FC<{ message: string }> = ({ message }) => (
 
 // Error Message Component
 const ErrorMessage: React.FC<{ message: string }> = ({ message }) => (
-  <div className="p-4 mb-4 bg-red-100 border border-red-400 rounded-md">
+  <div className="p-4 mb-4 bg-red-100 rounded-md border border-red-400">
     <div className="flex items-center">
-      <X className="w-5 h-5 mr-2 text-red-500" />
+      <X className="mr-2 w-5 h-5 text-red-500" />
       <p className="text-red-700">{message}</p>
     </div>
   </div>
@@ -279,8 +279,8 @@ const validatePersonalInfo = (data: PlayerFormData): FormErrors => {
       age--;
     }
     
-    if (age < 7) {
-      errors.birth_date = 'يجب أن يكون العمر 7 سنوات على الأقل';
+    if (age < 3) {
+      errors.birth_date = 'يجب أن يكون العمر 3 سنوات على الأقل';
     }
     
     if (age > 50) {
@@ -552,10 +552,23 @@ export default function PlayerProfile() {
       const result = await uploadPlayerProfileImage(file, user.uid, accountType);
       
       if (result?.url) {
+        // Update local state immediately
         setPlayerData(prev => prev ? {
           ...prev,
           profile_image_url: result.url
         } : null);
+        
+        setFormData(prev => ({
+          ...prev,
+          profile_image: { url: result.url },
+          profile_image_url: result.url
+        }));
+        
+        setEditFormData(prev => ({
+          ...prev,
+          profile_image: { url: result.url },
+          profile_image_url: result.url
+        }));
         
         // Update in database
         if (user.uid) {
@@ -565,14 +578,14 @@ export default function PlayerProfile() {
           });
         }
         
-        const accountTypeText = accountType === 'trainer' ? 'المدربين' : 
-                               accountType === 'club' ? 'الأندية' :
-                               accountType === 'agent' ? 'الوكلاء' : 'الأكاديميات';
-        toast.success(`تم رفع الصورة الشخصية بنجاح إلى بوكت ${accountTypeText}`);
+        // Trigger header update for player dashboard
+        window.dispatchEvent(new CustomEvent('playerProfileImageUpdated'));
+        
+        toast.success('✅ تم رفع الصورة الشخصية بنجاح');
       }
     } catch (error) {
       console.error('Error uploading profile image:', error);
-      toast.error('فشل في رفع الصورة الشخصية');
+      toast.error('❌ فشل في رفع الصورة الشخصية - ' + (error instanceof Error ? error.message : 'خطأ غير معروف'));
     } finally {
       setUploadingImage(false);
     }
@@ -645,7 +658,7 @@ export default function PlayerProfile() {
           name={name}
           value={editFormData[name] as string || ''}
           onChange={handleInputChange}
-          className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
         />
       );
     } else {
@@ -668,7 +681,7 @@ export default function PlayerProfile() {
           الصورة الشخصية <span className="text-red-500">*</span>
         </label>
         {isEditing ? (
-          <div className="flex items-center gap-4">
+          <div className="flex gap-4 items-center">
             <input
               type="file"
               accept="image/*"
@@ -746,7 +759,7 @@ export default function PlayerProfile() {
               name="nationality"
               value={editFormData.nationality || ''}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="">اختر الجنسية</option>
               {NATIONALITIES.map(nat => (
@@ -772,7 +785,7 @@ export default function PlayerProfile() {
               name="country"
               value={editFormData.country || ''}
               onChange={(e) => handleCountryChange(e.target.value)}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             >
               <option value="">اختر الدولة</option>
               {COUNTRIES.map(country => (
@@ -811,18 +824,18 @@ export default function PlayerProfile() {
                   setTimeout(() => setShowCityDropdown(false), 150);
                 }}
                 placeholder={editFormData.country ? "ابحث عن المدينة أو اختر من القائمة" : "اختر الدولة أولاً"}
-                className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 disabled={!editFormData.country}
               />
               
               {showCityDropdown && availableCities.length > 0 && (
-                <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                <div className="overflow-y-auto absolute right-0 left-0 top-full z-10 mt-1 max-h-60 bg-white rounded-md border border-gray-300 shadow-lg">
                   {availableCities.map((city, index) => (
                     <button
                       key={index}
                       type="button"
                       onClick={() => handleCityChange(city)}
-                      className="w-full px-3 py-2 text-right text-gray-900 hover:bg-blue-50 hover:text-blue-900 border-b border-gray-100 last:border-b-0"
+                      className="px-3 py-2 w-full text-right text-gray-900 border-b border-gray-100 hover:bg-blue-50 hover:text-blue-900 last:border-b-0"
                     >
                       {city}
                     </button>
@@ -831,7 +844,7 @@ export default function PlayerProfile() {
               )}
               
               {editFormData.country && availableCities.length === 0 && citySearchQuery && (
-                <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-3 text-center text-gray-500">
+                <div className="absolute right-0 left-0 top-full z-10 p-3 mt-1 text-center text-gray-500 bg-white rounded-md border border-gray-300 shadow-lg">
                   لا توجد مدن تطابق البحث "{citySearchQuery}"
                 </div>
               )}
@@ -899,7 +912,7 @@ export default function PlayerProfile() {
             value={editFormData.brief || ''}
             onChange={handleInputChange}
             rows={3}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             placeholder="اكتب نبذة مختصرة عن نفسك..."
           />
         ) : (
@@ -924,7 +937,7 @@ export default function PlayerProfile() {
               name="education_level"
               value={editFormData.education_level || ''}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="">اختر المستوى</option>
               {EDUCATION_LEVELS.map(level => (
@@ -945,7 +958,7 @@ export default function PlayerProfile() {
               name="graduation_year"
               value={editFormData.graduation_year || ''}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="">اختر سنة التخرج</option>
               {Array.from({ length: 30 }, (_, i) => {
@@ -969,7 +982,7 @@ export default function PlayerProfile() {
               name="degree"
               value={editFormData.degree || ''}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="">اختر الدرجة</option>
               <option value="مقبول">مقبول</option>
@@ -992,7 +1005,7 @@ export default function PlayerProfile() {
               name="english_level"
               value={editFormData.english_level || ''}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="">اختر المستوى</option>
               {LANGUAGE_LEVELS.map(level => (
@@ -1013,7 +1026,7 @@ export default function PlayerProfile() {
               name="arabic_level"
               value={editFormData.arabic_level || ''}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="">اختر المستوى</option>
               {LANGUAGE_LEVELS.map(level => (
@@ -1034,7 +1047,7 @@ export default function PlayerProfile() {
               name="spanish_level"
               value={editFormData.spanish_level || ''}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="">اختر المستوى</option>
               {LANGUAGE_LEVELS.map(level => (
@@ -1065,7 +1078,7 @@ export default function PlayerProfile() {
                     newCourses[index] = e.target.value;
                     setEditFormData(prev => ({ ...prev, training_courses: newCourses }));
                   }}
-                  className="flex-1 p-1 border rounded"
+                  className="flex-1 p-1 rounded border"
                 />
                 <button
                   type="button"
@@ -1073,7 +1086,7 @@ export default function PlayerProfile() {
                     const newCourses = (editFormData.training_courses || []).filter((_, i) => i !== index);
                     setEditFormData(prev => ({ ...prev, training_courses: newCourses }));
                   }}
-                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                  className="p-1 text-red-600 rounded hover:bg-red-100"
                 >
                   <Trash className="w-4 h-4" />
                 </button>
@@ -1085,7 +1098,7 @@ export default function PlayerProfile() {
                 const newCourses = [...(editFormData.training_courses || []), ''];
                 setEditFormData(prev => ({ ...prev, training_courses: newCourses }));
               }}
-              className="flex items-center gap-2 p-2 text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
+              className="flex gap-2 items-center p-2 text-blue-600 rounded border border-blue-300 hover:bg-blue-50"
             >
               <Plus className="w-4 h-4" />
               إضافة دورة تدريبية
@@ -1121,7 +1134,7 @@ export default function PlayerProfile() {
               name="blood_type"
               value={editFormData.blood_type || ''}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="">اختر فصيلة الدم</option>
               {BLOOD_TYPES.map(type => (
@@ -1182,7 +1195,7 @@ export default function PlayerProfile() {
               value={editFormData.chronic_details || ''}
               onChange={handleInputChange}
               rows={3}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
               placeholder="اذكر تفاصيل الحالات المزمنة..."
             />
           ) : (
@@ -1209,7 +1222,7 @@ export default function PlayerProfile() {
                     newInjuries[index] = { ...injury, type: e.target.value };
                     setEditFormData(prev => ({ ...prev, injuries: newInjuries }));
                   }}
-                  className="flex-1 p-1 border rounded"
+                  className="flex-1 p-1 rounded border"
                 />
                 <input
                   type="date"
@@ -1219,7 +1232,7 @@ export default function PlayerProfile() {
                     newInjuries[index] = { ...injury, date: e.target.value };
                     setEditFormData(prev => ({ ...prev, injuries: newInjuries }));
                   }}
-                  className="p-1 border rounded"
+                  className="p-1 rounded border"
                 />
                 <button
                   type="button"
@@ -1227,7 +1240,7 @@ export default function PlayerProfile() {
                     const newInjuries = (editFormData.injuries || []).filter((_, i) => i !== index);
                     setEditFormData(prev => ({ ...prev, injuries: newInjuries }));
                   }}
-                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                  className="p-1 text-red-600 rounded hover:bg-red-100"
                 >
                   <Trash className="w-4 h-4" />
                 </button>
@@ -1239,7 +1252,7 @@ export default function PlayerProfile() {
                 const newInjuries = [...(editFormData.injuries || []), { type: '', date: '', status: '' }];
                 setEditFormData(prev => ({ ...prev, injuries: newInjuries }));
               }}
-              className="flex items-center gap-2 p-2 text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
+              className="flex gap-2 items-center p-2 text-blue-600 rounded border border-blue-300 hover:bg-blue-50"
             >
               <Plus className="w-4 h-4" />
               إضافة إصابة
@@ -1277,7 +1290,7 @@ export default function PlayerProfile() {
                     newSurgeries[index] = { ...surgery, type: e.target.value };
                     setEditFormData(prev => ({ ...prev, surgeries: newSurgeries }));
                   }}
-                  className="flex-1 p-1 border rounded"
+                  className="flex-1 p-1 rounded border"
                 />
                 <input
                   type="date"
@@ -1287,7 +1300,7 @@ export default function PlayerProfile() {
                     newSurgeries[index] = { ...surgery, date: e.target.value };
                     setEditFormData(prev => ({ ...prev, surgeries: newSurgeries }));
                   }}
-                  className="p-1 border rounded"
+                  className="p-1 rounded border"
                 />
                 <button
                   type="button"
@@ -1295,7 +1308,7 @@ export default function PlayerProfile() {
                     const newSurgeries = (editFormData.surgeries || []).filter((_, i) => i !== index);
                     setEditFormData(prev => ({ ...prev, surgeries: newSurgeries }));
                   }}
-                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                  className="p-1 text-red-600 rounded hover:bg-red-100"
                 >
                   <Trash className="w-4 h-4" />
                 </button>
@@ -1307,7 +1320,7 @@ export default function PlayerProfile() {
                 const newSurgeries = [...(editFormData.surgeries || []), { type: '', date: '' }];
                 setEditFormData(prev => ({ ...prev, surgeries: newSurgeries }));
               }}
-              className="flex items-center gap-2 p-2 text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
+              className="flex gap-2 items-center p-2 text-blue-600 rounded border border-blue-300 hover:bg-blue-50"
             >
               <Plus className="w-4 h-4" />
               إضافة عملية
@@ -1337,7 +1350,7 @@ export default function PlayerProfile() {
             value={editFormData.medical_notes || ''}
             onChange={handleInputChange}
             rows={3}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             placeholder="أي ملاحظات طبية..."
           />
         ) : (
@@ -1364,7 +1377,7 @@ export default function PlayerProfile() {
               name="primary_position"
               value={editFormData.primary_position || ''}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="">اختر المركز</option>
               {POSITIONS.map(pos => (
@@ -1388,7 +1401,7 @@ export default function PlayerProfile() {
               name="secondary_position"
               value={editFormData.secondary_position || ''}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="">اختر المركز</option>
               {POSITIONS.map(pos => (
@@ -1411,7 +1424,7 @@ export default function PlayerProfile() {
               name="preferred_foot"
               value={editFormData.preferred_foot || ''}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="">اختر القدم المفضلة</option>
               {FOOT_PREFERENCES.map(foot => (
@@ -1445,7 +1458,7 @@ export default function PlayerProfile() {
               name="currently_contracted"
               value={editFormData.currently_contracted || 'no'}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="no">لا</option>
               <option value="yes">نعم</option>
@@ -1464,7 +1477,7 @@ export default function PlayerProfile() {
               name="has_passport"
               value={editFormData.has_passport || 'no'}
               onChange={handleInputChange}
-              className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+              className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             >
               <option value="no">لا</option>
               <option value="yes">نعم</option>
@@ -1508,7 +1521,7 @@ export default function PlayerProfile() {
                     newHistory[index] = { ...club, name: e.target.value };
                     setEditFormData(prev => ({ ...prev, club_history: newHistory }));
                   }}
-                  className="flex-1 p-1 border rounded"
+                  className="flex-1 p-1 rounded border"
                 />
                 <input
                   type="date"
@@ -1519,7 +1532,7 @@ export default function PlayerProfile() {
                     newHistory[index] = { ...club, from: e.target.value };
                     setEditFormData(prev => ({ ...prev, club_history: newHistory }));
                   }}
-                  className="p-1 border rounded"
+                  className="p-1 rounded border"
                 />
                 <input
                   type="date"
@@ -1530,7 +1543,7 @@ export default function PlayerProfile() {
                     newHistory[index] = { ...club, to: e.target.value };
                     setEditFormData(prev => ({ ...prev, club_history: newHistory }));
                   }}
-                  className="p-1 border rounded"
+                  className="p-1 rounded border"
                 />
                 <button
                   type="button"
@@ -1538,7 +1551,7 @@ export default function PlayerProfile() {
                     const newHistory = (editFormData.club_history || []).filter((_, i) => i !== index);
                     setEditFormData(prev => ({ ...prev, club_history: newHistory }));
                   }}
-                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                  className="p-1 text-red-600 rounded hover:bg-red-100"
                 >
                   <Trash className="w-4 h-4" />
                 </button>
@@ -1550,7 +1563,7 @@ export default function PlayerProfile() {
                 const newHistory = [...(editFormData.club_history || []), { name: '', from: '', to: '' }];
                 setEditFormData(prev => ({ ...prev, club_history: newHistory }));
               }}
-              className="flex items-center gap-2 p-2 text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
+              className="flex gap-2 items-center p-2 text-blue-600 rounded border border-blue-300 hover:bg-blue-50"
             >
               <Plus className="w-4 h-4" />
               إضافة نادي
@@ -1584,7 +1597,7 @@ export default function PlayerProfile() {
             value={editFormData.sports_notes || ''}
             onChange={handleInputChange}
             rows={3}
-            className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+            className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
             placeholder="أي ملاحظات رياضية إضافية..."
           />
         ) : (
@@ -1609,9 +1622,9 @@ export default function PlayerProfile() {
     };
 
     return (
-      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+      <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
         <span className="text-sm font-medium">{skill}</span>
-        <div className="flex items-center gap-1">
+        <div className="flex gap-1 items-center">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
               key={star}
@@ -1673,7 +1686,7 @@ export default function PlayerProfile() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* المهارات الفنية */}
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="text-lg font-semibold mb-4 text-blue-800">المهارات الفنية</h3>
+            <h3 className="mb-4 text-lg font-semibold text-blue-800">المهارات الفنية</h3>
             <div className="space-y-2">
               {technicalSkills.map((skill) => (
                 <div key={skill}>
@@ -1685,7 +1698,7 @@ export default function PlayerProfile() {
 
           {/* المهارات البدنية */}
           <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-            <h3 className="text-lg font-semibold mb-4 text-green-800">المهارات البدنية</h3>
+            <h3 className="mb-4 text-lg font-semibold text-green-800">المهارات البدنية</h3>
             <div className="space-y-2">
               {physicalSkills.map((skill) => (
                 <div key={skill}>
@@ -1697,7 +1710,7 @@ export default function PlayerProfile() {
 
           {/* المهارات الاجتماعية */}
           <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-            <h3 className="text-lg font-semibold mb-4 text-purple-800">المهارات الاجتماعية</h3>
+            <h3 className="mb-4 text-lg font-semibold text-purple-800">المهارات الاجتماعية</h3>
             <div className="space-y-2">
               {socialSkills.map((skill) => (
                 <div key={skill}>
@@ -1710,7 +1723,7 @@ export default function PlayerProfile() {
 
         {isEditing && (
           <div className="p-4 text-sm text-gray-600 bg-yellow-50 rounded-lg border border-yellow-200">
-            <p className="font-medium text-yellow-800 mb-2">نصائح لتقييم المهارات:</p>
+            <p className="mb-2 font-medium text-yellow-800">نصائح لتقييم المهارات:</p>
             <ul className="space-y-1 text-yellow-700">
               <li>• 1 نجمة = مبتدئ</li>
               <li>• 2 نجمة = أقل من المتوسط</li>
@@ -1789,13 +1802,13 @@ export default function PlayerProfile() {
       <div className="space-y-6">
         <h2 className="pr-4 text-2xl font-semibold border-r-4 border-blue-500">الأهداف والطموحات</h2>
         
-        <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200">
-          <h3 className="text-lg font-semibold mb-4 text-blue-800">أهدافك الرياضية</h3>
-          <p className="text-sm text-gray-600 mb-4">اختر الأهداف التي تسعى لتحقيقها في مسيرتك الكروية (يمكن اختيار أكثر من هدف)</p>
+        <div className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+          <h3 className="mb-4 text-lg font-semibold text-blue-800">أهدافك الرياضية</h3>
+          <p className="mb-4 text-sm text-gray-600">اختر الأهداف التي تسعى لتحقيقها في مسيرتك الكروية (يمكن اختيار أكثر من هدف)</p>
           
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {objectiveOptions.map((objective) => (
-              <label key={objective} className="flex items-center p-2 bg-white rounded-lg border hover:bg-blue-50 cursor-pointer">
+              <label key={objective} className="flex items-center p-2 bg-white rounded-lg border cursor-pointer hover:bg-blue-50">
                 <input
                   type="checkbox"
                   checked={editFormData.objectives?.[objective] || formData.objectives?.[objective] || false}
@@ -1810,13 +1823,13 @@ export default function PlayerProfile() {
 
           {/* هدف آخر */}
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">هدف آخر (اختياري)</label>
+            <label className="block mb-2 text-sm font-medium text-gray-700">هدف آخر (اختياري)</label>
             {isEditing ? (
               <textarea
                 value={editFormData.objectives?.other || ''}
                 onChange={(e) => handleOtherObjectiveChange(e.target.value)}
                 rows={2}
-                className="w-full p-2 text-gray-900 bg-white border rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                className="p-2 w-full text-gray-900 bg-white rounded-md border focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 placeholder="اكتب أي أهداف أخرى لديك..."
               />
             ) : (
@@ -1828,8 +1841,8 @@ export default function PlayerProfile() {
 
           {/* إحصائيات الأهداف */}
           {!isEditing && (
-            <div className="mt-4 p-3 bg-white rounded-lg border">
-              <h4 className="text-sm font-semibold text-gray-800 mb-2">إحصائيات أهدافك:</h4>
+            <div className="p-3 mt-4 bg-white rounded-lg border">
+              <h4 className="mb-2 text-sm font-semibold text-gray-800">إحصائيات أهدافك:</h4>
               <div className="text-sm text-gray-600">
                 {(() => {
                   const selectedObjectives = objectiveOptions.filter(obj => formData.objectives?.[obj]);
@@ -1846,7 +1859,7 @@ export default function PlayerProfile() {
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {selectedObjectives.map((obj, index) => (
-                          <span key={index} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                          <span key={index} className="px-2 py-1 text-xs text-blue-800 bg-blue-100 rounded-full">
                             {obj}
                           </span>
                         ))}
@@ -2021,8 +2034,8 @@ export default function PlayerProfile() {
       
       {/* الصور الإضافية */}
       <div className="p-6 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border border-green-200">
-        <h3 className="text-lg font-semibold mb-4 text-green-800">الصور الإضافية</h3>
-        <p className="text-sm text-gray-600 mb-4">أضف صور تظهر مهاراتك أو لحظات مميزة من مسيرتك الرياضية</p>
+        <h3 className="mb-4 text-lg font-semibold text-green-800">الصور الإضافية</h3>
+        <p className="mb-4 text-sm text-gray-600">أضف صور تظهر مهاراتك أو لحظات مميزة من مسيرتك الرياضية</p>
         
         {isEditing && (
           <div className="mb-4">
@@ -2031,7 +2044,7 @@ export default function PlayerProfile() {
               accept="image/*"
               multiple
                                 onChange={handleAdditionalImageUpload}
-              className="w-full p-2 text-sm text-gray-500 border border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+              className="p-2 w-full text-sm text-gray-500 bg-gray-50 rounded-lg border border-gray-300 border-dashed cursor-pointer hover:bg-gray-100"
             />
             <p className="mt-1 text-xs text-gray-500">يمكن اختيار عدة صور مرة واحدة (PNG, JPG, JPEG)</p>
           </div>
@@ -2040,7 +2053,7 @@ export default function PlayerProfile() {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {(editFormData.additional_images || formData.additional_images || []).map((image, index) => (
             <div key={index} className="relative group">
-              <div className="relative w-full h-32 bg-gray-200 rounded-lg overflow-hidden">
+              <div className="overflow-hidden relative w-full h-32 bg-gray-200 rounded-lg">
                 <Image
                   src={image.url}
                   alt={`إضافية ${index + 1}`}
@@ -2056,7 +2069,7 @@ export default function PlayerProfile() {
                   <button
                     type="button"
                     onClick={() => removeAdditionalImage(index)}
-                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 p-1 text-white bg-red-500 rounded-full opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <Trash className="w-3 h-3" />
                   </button>
@@ -2068,7 +2081,7 @@ export default function PlayerProfile() {
           {(!editFormData.additional_images?.length && !formData.additional_images?.length) && (
             <div className="col-span-full p-8 text-center text-gray-500 bg-gray-100 rounded-lg border-2 border-dashed">
               <span>لا توجد صور إضافية</span>
-              {isEditing && <p className="text-sm mt-2">استخدم الزر أعلاه لإضافة صور</p>}
+              {isEditing && <p className="mt-2 text-sm">استخدم الزر أعلاه لإضافة صور</p>}
             </div>
           )}
         </div>
@@ -2076,25 +2089,25 @@ export default function PlayerProfile() {
 
       {/* مقاطع الفيديو */}
       <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-        <h3 className="text-lg font-semibold mb-4 text-purple-800">مقاطع الفيديو</h3>
-        <p className="text-sm text-gray-600 mb-4">أضف روابط فيديوهات من يوتيوب أو منصات أخرى تظهر مهاراتك</p>
+        <h3 className="mb-4 text-lg font-semibold text-purple-800">مقاطع الفيديو</h3>
+        <p className="mb-4 text-sm text-gray-600">أضف روابط فيديوهات من يوتيوب أو منصات أخرى تظهر مهاراتك</p>
         
         <div className="space-y-4">
           {(editFormData.videos || formData.videos || []).map((video, index) => (
             <div key={index} className="p-4 bg-white rounded-lg border">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">رابط الفيديو</label>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">رابط الفيديو</label>
                   {isEditing ? (
                     <input
                       type="url"
                       value={video.url || ''}
                       onChange={(e) => handleVideoChange(index, 'url', e.target.value)}
                       placeholder="https://youtube.com/watch?v=..."
-                      className="w-full p-2 text-sm border rounded-md focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                      className="p-2 w-full text-sm rounded-md border focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                     />
                   ) : (
-                    <div className="p-2 bg-gray-100 rounded text-sm break-all">
+                    <div className="p-2 text-sm break-all bg-gray-100 rounded">
                       {video.url ? (
                         <a href={video.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                           {video.url}
@@ -2107,17 +2120,17 @@ export default function PlayerProfile() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">وصف الفيديو</label>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">وصف الفيديو</label>
                   {isEditing ? (
                     <input
                       type="text"
                       value={video.desc || ''}
                       onChange={(e) => handleVideoChange(index, 'desc', e.target.value)}
                       placeholder="وصف مختصر للفيديو..."
-                      className="w-full p-2 text-sm border rounded-md focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                      className="p-2 w-full text-sm rounded-md border focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                     />
                   ) : (
-                    <div className="p-2 bg-gray-100 rounded text-sm">
+                    <div className="p-2 text-sm bg-gray-100 rounded">
                       {video.desc || 'لا يوجد وصف'}
                     </div>
                   )}
@@ -2125,11 +2138,11 @@ export default function PlayerProfile() {
               </div>
 
               {isEditing && (
-                <div className="mt-3 flex justify-end">
+                <div className="flex justify-end mt-3">
                   <button
                     type="button"
                     onClick={() => removeVideo(index)}
-                    className="flex items-center gap-1 px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-md"
+                    className="flex gap-1 items-center px-3 py-1 text-sm text-red-600 rounded-md hover:bg-red-50"
                   >
                     <Trash className="w-4 h-4" />
                     حذف
@@ -2142,7 +2155,7 @@ export default function PlayerProfile() {
           {(!editFormData.videos?.length && !formData.videos?.length) && (
             <div className="p-8 text-center text-gray-500 bg-gray-100 rounded-lg border-2 border-dashed">
               <span>لا توجد فيديوهات مضافة</span>
-              {isEditing && <p className="text-sm mt-2">استخدم الزر أدناه لإضافة فيديو</p>}
+              {isEditing && <p className="mt-2 text-sm">استخدم الزر أدناه لإضافة فيديو</p>}
             </div>
           )}
 
@@ -2150,7 +2163,7 @@ export default function PlayerProfile() {
             <button
               type="button"
               onClick={addVideo}
-              className="flex items-center gap-2 px-4 py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50"
+              className="flex gap-2 items-center px-4 py-2 text-purple-600 rounded-lg border border-purple-300 hover:bg-purple-50"
             >
               <Plus className="w-4 h-4" />
               إضافة فيديو جديد
@@ -2159,9 +2172,9 @@ export default function PlayerProfile() {
         </div>
 
                  {/* نصائح للفيديوهات */}
-         <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-           <h4 className="text-sm font-semibold text-yellow-800 mb-2">نصائح للفيديوهات:</h4>
-           <ul className="text-xs text-yellow-700 space-y-1">
+         <div className="p-3 mt-4 bg-yellow-50 rounded-lg border border-yellow-200">
+           <h4 className="mb-2 text-sm font-semibold text-yellow-800">نصائح للفيديوهات:</h4>
+           <ul className="space-y-1 text-xs text-yellow-700">
              <li>• استخدم روابط من يوتيوب، فيميو، أو أي منصة فيديو أخرى</li>
              <li>• أضف وصف واضح لكل فيديو (مثل: "مهارات المراوغة"، "أهداف الموسم")</li>
              <li>• تأكد من أن الفيديو يظهر مهاراتك بوضوح</li>
@@ -2172,15 +2185,15 @@ export default function PlayerProfile() {
 
        {/* المستندات الرسمية */}
        <div className="p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-lg border border-orange-200">
-         <h3 className="text-lg font-semibold mb-4 text-orange-800">المستندات الرسمية</h3>
-         <p className="text-sm text-gray-600 mb-4">أرفق صور من مستنداتك الرسمية (جواز السفر، الشهادات، إلخ)</p>
+         <h3 className="mb-4 text-lg font-semibold text-orange-800">المستندات الرسمية</h3>
+         <p className="mb-4 text-sm text-gray-600">أرفق صور من مستنداتك الرسمية (جواز السفر، الشهادات، إلخ)</p>
          
          <div className="space-y-4">
            {(editFormData.documents || formData.documents || []).map((document, index) => (
              <div key={index} className="p-4 bg-white rounded-lg border">
                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                  <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">نوع المستند</label>
+                   <label className="block mb-1 text-sm font-medium text-gray-700">نوع المستند</label>
                    {isEditing ? (
                      <select
                        value={document.type || ''}
@@ -2191,7 +2204,7 @@ export default function PlayerProfile() {
                            return { ...prev, documents: newDocs };
                          });
                        }}
-                       className="w-full p-2 text-sm border rounded-md focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                       className="p-2 w-full text-sm rounded-md border focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                      >
                        <option value="">اختر نوع المستند</option>
                        <option value="passport">جواز السفر</option>
@@ -2203,7 +2216,7 @@ export default function PlayerProfile() {
                        <option value="other">أخرى</option>
                      </select>
                    ) : (
-                     <div className="p-2 bg-gray-100 rounded text-sm">
+                     <div className="p-2 text-sm bg-gray-100 rounded">
                        {(() => {
                          const types: Record<string, string> = {
                            passport: 'جواز السفر',
@@ -2221,7 +2234,7 @@ export default function PlayerProfile() {
                  </div>
 
                  <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">اسم المستند</label>
+                   <label className="block mb-1 text-sm font-medium text-gray-700">اسم المستند</label>
                    {isEditing ? (
                      <input
                        type="text"
@@ -2234,10 +2247,10 @@ export default function PlayerProfile() {
                          });
                        }}
                        placeholder="اسم المستند..."
-                       className="w-full p-2 text-sm border rounded-md focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                       className="p-2 w-full text-sm rounded-md border focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                      />
                    ) : (
-                     <div className="p-2 bg-gray-100 rounded text-sm">
+                     <div className="p-2 text-sm bg-gray-100 rounded">
                        {document.name || 'غير محدد'}
                      </div>
                    )}
@@ -2246,7 +2259,7 @@ export default function PlayerProfile() {
                  {/* حقل رفع الملف */}
                  {isEditing && (
                    <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">رفع الملف</label>
+                     <label className="block mb-1 text-sm font-medium text-gray-700">رفع الملف</label>
                      <input
                        type="file"
                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -2256,16 +2269,16 @@ export default function PlayerProfile() {
                            handleDocumentUpload(file, index, document.type || 'document');
                          }
                        }}
-                       className="w-full p-2 text-sm border border-dashed border-orange-300 rounded-md bg-orange-50 hover:bg-orange-100"
+                       className="p-2 w-full text-sm bg-orange-50 rounded-md border border-orange-300 border-dashed hover:bg-orange-100"
                      />
-                     <p className="text-xs text-gray-500 mt-1">
+                     <p className="mt-1 text-xs text-gray-500">
                        يدعم: PDF, JPG, PNG, DOC, DOCX
                      </p>
                    </div>
                  )}
 
                  <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">رابط المستند</label>
+                   <label className="block mb-1 text-sm font-medium text-gray-700">رابط المستند</label>
                    {isEditing ? (
                      <div className="flex gap-2">
                        <input
@@ -2279,7 +2292,7 @@ export default function PlayerProfile() {
                            });
                          }}
                          placeholder="رابط المستند (اختياري)..."
-                         className="flex-1 p-2 text-sm border rounded-md focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                         className="flex-1 p-2 text-sm rounded-md border focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                        />
                        <button
                          type="button"
@@ -2289,13 +2302,13 @@ export default function PlayerProfile() {
                              documents: prev.documents?.filter((_, i) => i !== index) || []
                            }));
                          }}
-                         className="p-2 text-red-600 hover:bg-red-50 rounded-md"
+                         className="p-2 text-red-600 rounded-md hover:bg-red-50"
                        >
                          <Trash className="w-4 h-4" />
                        </button>
                      </div>
                    ) : (
-                     <div className="p-2 bg-gray-100 rounded text-sm break-all">
+                     <div className="p-2 text-sm break-all bg-gray-100 rounded">
                        {document.url ? (
                          <a href={document.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                            عرض المستند
@@ -2313,7 +2326,7 @@ export default function PlayerProfile() {
            {(!editFormData.documents?.length && !formData.documents?.length) && (
              <div className="p-8 text-center text-gray-500 bg-gray-100 rounded-lg border-2 border-dashed">
                <span>لا توجد مستندات مرفوعة</span>
-               {isEditing && <p className="text-sm mt-2">استخدم الزر أدناه لإضافة مستند</p>}
+               {isEditing && <p className="mt-2 text-sm">استخدم الزر أدناه لإضافة مستند</p>}
              </div>
            )}
 
@@ -2326,7 +2339,7 @@ export default function PlayerProfile() {
                    documents: [...(prev.documents || []), { type: '', name: '', url: '' }]
                  }));
                }}
-               className="flex items-center gap-2 px-4 py-2 text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50"
+               className="flex gap-2 items-center px-4 py-2 text-orange-600 rounded-lg border border-orange-300 hover:bg-orange-50"
              >
                <Plus className="w-4 h-4" />
                إضافة مستند جديد
@@ -2335,9 +2348,9 @@ export default function PlayerProfile() {
          </div>
 
          {/* نصائح للمستندات */}
-         <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-           <h4 className="text-sm font-semibold text-blue-800 mb-2">نصائح للمستندات:</h4>
-           <ul className="text-xs text-blue-700 space-y-1">
+         <div className="p-3 mt-4 bg-blue-50 rounded-lg border border-blue-200">
+           <h4 className="mb-2 text-sm font-semibold text-blue-800">نصائح للمستندات:</h4>
+           <ul className="space-y-1 text-xs text-blue-700">
              <li>• تأكد من وضوح النص في صور المستندات</li>
              <li>• يمكنك رفع المستندات على خدمات التخزين السحابي ووضع الرابط هنا</li>
              <li>• حافظ على خصوصية المعلومات الحساسة</li>
@@ -2369,7 +2382,7 @@ export default function PlayerProfile() {
                     newHistory[index] = { ...contract, club: e.target.value };
                     setEditFormData(prev => ({ ...prev, contract_history: newHistory }));
                   }}
-                  className="flex-1 p-1 border rounded"
+                  className="flex-1 p-1 rounded border"
                 />
                 <input
                   type="date"
@@ -2380,7 +2393,7 @@ export default function PlayerProfile() {
                     newHistory[index] = { ...contract, from: e.target.value };
                     setEditFormData(prev => ({ ...prev, contract_history: newHistory }));
                   }}
-                  className="p-1 border rounded"
+                  className="p-1 rounded border"
                 />
                 <input
                   type="date"
@@ -2391,7 +2404,7 @@ export default function PlayerProfile() {
                     newHistory[index] = { ...contract, to: e.target.value };
                     setEditFormData(prev => ({ ...prev, contract_history: newHistory }));
                   }}
-                  className="p-1 border rounded"
+                  className="p-1 rounded border"
                 />
                 <input
                   type="text"
@@ -2402,7 +2415,7 @@ export default function PlayerProfile() {
                     newHistory[index] = { ...contract, role: e.target.value };
                     setEditFormData(prev => ({ ...prev, contract_history: newHistory }));
                   }}
-                  className="p-1 border rounded"
+                  className="p-1 rounded border"
                 />
                 <button
                   type="button"
@@ -2410,7 +2423,7 @@ export default function PlayerProfile() {
                     const newHistory = (editFormData.contract_history || []).filter((_, i) => i !== index);
                     setEditFormData(prev => ({ ...prev, contract_history: newHistory }));
                   }}
-                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                  className="p-1 text-red-600 rounded hover:bg-red-100"
                 >
                   <Trash className="w-4 h-4" />
                 </button>
@@ -2422,7 +2435,7 @@ export default function PlayerProfile() {
                 const newHistory = [...(editFormData.contract_history || []), { club: '', from: '', to: '', role: '' }];
                 setEditFormData(prev => ({ ...prev, contract_history: newHistory }));
               }}
-              className="flex items-center gap-2 p-2 text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
+              className="flex gap-2 items-center p-2 text-blue-600 rounded border border-blue-300 hover:bg-blue-50"
             >
               <Plus className="w-4 h-4" />
               إضافة عقد
@@ -2463,7 +2476,7 @@ export default function PlayerProfile() {
                     newHistory[index] = { ...agent, agent: e.target.value };
                     setEditFormData(prev => ({ ...prev, agent_history: newHistory }));
                   }}
-                  className="flex-1 p-1 border rounded"
+                  className="flex-1 p-1 rounded border"
                 />
                 <input
                   type="date"
@@ -2474,7 +2487,7 @@ export default function PlayerProfile() {
                     newHistory[index] = { ...agent, from: e.target.value };
                     setEditFormData(prev => ({ ...prev, agent_history: newHistory }));
                   }}
-                  className="p-1 border rounded"
+                  className="p-1 rounded border"
                 />
                 <input
                   type="date"
@@ -2485,7 +2498,7 @@ export default function PlayerProfile() {
                     newHistory[index] = { ...agent, to: e.target.value };
                     setEditFormData(prev => ({ ...prev, agent_history: newHistory }));
                   }}
-                  className="p-1 border rounded"
+                  className="p-1 rounded border"
                 />
                 <button
                   type="button"
@@ -2493,7 +2506,7 @@ export default function PlayerProfile() {
                     const newHistory = (editFormData.agent_history || []).filter((_, i) => i !== index);
                     setEditFormData(prev => ({ ...prev, agent_history: newHistory }));
                   }}
-                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                  className="p-1 text-red-600 rounded hover:bg-red-100"
                 >
                   <Trash className="w-4 h-4" />
                 </button>
@@ -2505,7 +2518,7 @@ export default function PlayerProfile() {
                 const newHistory = [...(editFormData.agent_history || []), { agent: '', from: '', to: '' }];
                 setEditFormData(prev => ({ ...prev, agent_history: newHistory }));
               }}
-              className="flex items-center gap-2 p-2 text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
+              className="flex gap-2 items-center p-2 text-blue-600 rounded border border-blue-300 hover:bg-blue-50"
             >
               <Plus className="w-4 h-4" />
               إضافة وكيل
@@ -2531,7 +2544,7 @@ export default function PlayerProfile() {
 
       {/* جهة الاتصال الرسمية */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">جهة الاتصال الرسمية</h3>
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">جهة الاتصال الرسمية</h3>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">الاسم</label>
@@ -2551,7 +2564,7 @@ export default function PlayerProfile() {
                     }
                   }));
                 }}
-                className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+                className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
                 placeholder="اسم جهة الاتصال"
               />
             ) : (
@@ -2579,7 +2592,7 @@ export default function PlayerProfile() {
                     }
                   }));
                 }}
-                className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+                className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
                 placeholder="منصب جهة الاتصال"
               />
             ) : (
@@ -2607,7 +2620,7 @@ export default function PlayerProfile() {
                     }
                   }));
                 }}
-                className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+                className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
                 placeholder="هاتف جهة الاتصال"
               />
             ) : (
@@ -2635,7 +2648,7 @@ export default function PlayerProfile() {
                     }
                   }));
                 }}
-                className="w-full p-2 mt-1 text-gray-900 bg-white border rounded-md"
+                className="p-2 mt-1 w-full text-gray-900 bg-white rounded-md border"
                 placeholder="بريد جهة الاتصال"
               />
             ) : (
@@ -2663,7 +2676,7 @@ export default function PlayerProfile() {
                     newAchievements[index] = { ...achievement, title: e.target.value };
                     setEditFormData(prev => ({ ...prev, achievements: newAchievements }));
                   }}
-                  className="flex-1 p-1 border rounded"
+                  className="flex-1 p-1 rounded border"
                 />
                 <input
                   type="date"
@@ -2673,7 +2686,7 @@ export default function PlayerProfile() {
                     newAchievements[index] = { ...achievement, date: e.target.value };
                     setEditFormData(prev => ({ ...prev, achievements: newAchievements }));
                   }}
-                  className="p-1 border rounded"
+                  className="p-1 rounded border"
                 />
                 <input
                   type="text"
@@ -2684,7 +2697,7 @@ export default function PlayerProfile() {
                     newAchievements[index] = { ...achievement, description: e.target.value };
                     setEditFormData(prev => ({ ...prev, achievements: newAchievements }));
                   }}
-                  className="flex-1 p-1 border rounded"
+                  className="flex-1 p-1 rounded border"
                 />
                 <button
                   type="button"
@@ -2692,7 +2705,7 @@ export default function PlayerProfile() {
                     const newAchievements = (editFormData.achievements || []).filter((_, i) => i !== index);
                     setEditFormData(prev => ({ ...prev, achievements: newAchievements }));
                   }}
-                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                  className="p-1 text-red-600 rounded hover:bg-red-100"
                 >
                   <Trash className="w-4 h-4" />
                 </button>
@@ -2704,7 +2717,7 @@ export default function PlayerProfile() {
                 const newAchievements = [...(editFormData.achievements || []), { title: '', date: '', description: '' }];
                 setEditFormData(prev => ({ ...prev, achievements: newAchievements }));
               }}
-              className="flex items-center gap-2 p-2 text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
+              className="flex gap-2 items-center p-2 text-blue-600 rounded border border-blue-300 hover:bg-blue-50"
             >
               <Plus className="w-4 h-4" />
               إضافة إنجاز
@@ -2718,7 +2731,7 @@ export default function PlayerProfile() {
                   <span className="font-medium">{achievement.title}</span>
                   {achievement.date && <span className="text-gray-600"> - {achievement.date}</span>}
                   {achievement.description && (
-                    <div className="text-sm text-gray-600 mt-1">{achievement.description}</div>
+                    <div className="mt-1 text-sm text-gray-600">{achievement.description}</div>
                   )}
                 </div>
               ))
@@ -2743,7 +2756,7 @@ export default function PlayerProfile() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen">
         <ErrorMessage message={error} />
       </div>
     );
@@ -2755,27 +2768,27 @@ export default function PlayerProfile() {
       
       {/* Registration Success Modal */}
       {showRegistrationSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-4 text-center">
+        <div className="flex fixed inset-0 z-50 justify-center items-center bg-black bg-opacity-50">
+          <div className="p-8 mx-4 max-w-md text-center bg-white rounded-2xl shadow-2xl">
             <div className="mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+              <div className="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full">
                 <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">🎉 تم تسجيل بياناتك بنجاح!</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="mb-2 text-xl font-bold text-gray-900">🎉 تم تسجيل بياناتك بنجاح!</h3>
+              <p className="mb-4 text-gray-600">
                 تم حفظ معلوماتك وهي الآن قيد المراجعة من قبل فريقنا المختص
               </p>
             </div>
             
             {!subscription || subscription.status !== 'active' ? (
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mb-6">
-                <div className="flex items-center justify-center mb-3">
+              <div className="p-4 mb-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                <div className="flex justify-center items-center mb-3">
                   <span className="text-2xl">🚀</span>
-                  <h4 className="text-lg font-semibold text-blue-800 mr-2">خطوة واحدة تفصلك عن النجاح!</h4>
+                  <h4 className="mr-2 text-lg font-semibold text-blue-800">خطوة واحدة تفصلك عن النجاح!</h4>
                 </div>
-                <p className="text-blue-700 text-sm mb-4">
+                <p className="mb-4 text-sm text-blue-700">
                   لنشر حسابك على كل الأندية والوكلاء، يتبقى فقط دفع الاشتراك
                 </p>
                 <div className="flex gap-3">
@@ -2784,19 +2797,19 @@ export default function PlayerProfile() {
                       setShowRegistrationSuccess(false);
                       window.open('/dashboard/payment', '_blank');
                     }}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all"
+                    className="flex-1 px-4 py-2 font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg transition-all hover:from-blue-700 hover:to-purple-700"
                   >
                     💳 دفع الاشتراك الآن
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="bg-green-50 p-4 rounded-lg mb-6">
-                <div className="flex items-center justify-center mb-2">
+              <div className="p-4 mb-6 bg-green-50 rounded-lg">
+                <div className="flex justify-center items-center mb-2">
                   <span className="text-2xl">✅</span>
-                  <h4 className="text-lg font-semibold text-green-800 mr-2">اشتراكك مفعل!</h4>
+                  <h4 className="mr-2 text-lg font-semibold text-green-800">اشتراكك مفعل!</h4>
                 </div>
-                <p className="text-green-700 text-sm">
+                <p className="text-sm text-green-700">
                   ملفك سيظهر للأندية والوكلاء بعد مراجعة البيانات
                 </p>
               </div>
@@ -2805,7 +2818,7 @@ export default function PlayerProfile() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowRegistrationSuccess(false)}
-                className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                className="flex-1 px-4 py-2 font-medium text-gray-700 bg-gray-100 rounded-lg transition-colors hover:bg-gray-200"
               >
                 متابعة
               </button>
@@ -2814,7 +2827,7 @@ export default function PlayerProfile() {
                   setShowRegistrationSuccess(false);
                   window.open('/dashboard/subscription', '_blank');
                 }}
-                className="flex-1 bg-blue-100 text-blue-700 py-2 px-4 rounded-lg font-medium hover:bg-blue-200 transition-colors"
+                className="flex-1 px-4 py-2 font-medium text-blue-700 bg-blue-100 rounded-lg transition-colors hover:bg-blue-200"
               >
                 📊 حالة الاشتراك
               </button>
@@ -2823,8 +2836,8 @@ export default function PlayerProfile() {
         </div>
       )}
       
-      <div className="min-h-screen bg-gray-50 py-8" dir="rtl">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="py-8 min-h-screen bg-gray-50" dir="rtl">
+        <div className="px-4 mx-auto max-w-4xl sm:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">الملف الشخصي</h1>
@@ -2834,7 +2847,7 @@ export default function PlayerProfile() {
           {/* Progress Steps */}
           {isEditing && (
             <div className="mb-8">
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between items-center">
                 {Object.entries(STEP_TITLES).map(([step, title]) => (
                   <div
                     key={step}
@@ -2851,7 +2864,7 @@ export default function PlayerProfile() {
                     >
                       {parseInt(step) + 1}
                     </div>
-                    <span className="mr-2 text-sm hidden md:inline">{title}</span>
+                    <span className="hidden mr-2 text-sm md:inline">{title}</span>
                   </div>
                 ))}
               </div>
@@ -2859,7 +2872,7 @@ export default function PlayerProfile() {
           )}
 
           {/* Content */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="p-6 bg-white rounded-lg shadow-lg">
                                      {!isEditing ? (
               <>
                 {renderPersonalInfo()}
@@ -2884,10 +2897,10 @@ export default function PlayerProfile() {
                 <div className="mt-8">
                   {renderContracts()}
                 </div>
-                <div className="mt-8 flex justify-end">
+                <div className="flex justify-end mt-8">
                   <Button
                     onClick={() => setIsEditing(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="text-white bg-blue-600 hover:bg-blue-700"
                   >
                     تعديل البيانات
                   </Button>
@@ -2905,13 +2918,13 @@ export default function PlayerProfile() {
                 {currentStep === STEPS.CONTRACTS && renderContracts()}
                 
                 {/* Navigation Buttons */}
-               <div className="mt-8 flex justify-between">
+               <div className="flex justify-between mt-8">
                  <div className="flex gap-4">
                    {currentStep > 0 && (
                      <Button
                        onClick={handlePrevious}
                        variant="outline"
-                       className="flex items-center gap-2"
+                       className="flex gap-2 items-center"
                      >
                        <ArrowRight className="w-4 h-4" />
                        السابق
@@ -2931,7 +2944,7 @@ export default function PlayerProfile() {
                    {currentStep < Object.keys(STEP_TITLES).length - 1 ? (
                      <Button
                        onClick={handleNext}
-                       className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                       className="flex gap-2 items-center text-white bg-blue-600 hover:bg-blue-700"
                      >
                        التالي
                        <ArrowLeft className="w-4 h-4" />
@@ -2939,7 +2952,7 @@ export default function PlayerProfile() {
                    ) : (
                      <Button
                        onClick={handleSave}
-                       className="bg-green-600 hover:bg-green-700 text-white"
+                       className="text-white bg-green-600 hover:bg-green-700"
                      >
                        حفظ البيانات
                      </Button>

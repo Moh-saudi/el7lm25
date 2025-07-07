@@ -329,8 +329,8 @@ export async function convertToEGP(amount: number, fromCurrencyCode: string): Pr
   // الحصول على أحدث أسعار الصرف
   const currentRates = await getRates();
   
-  // إذا كانت العملة غير مدعومة، استخدم SAR كافتراضي
-  const fromCurrency = CURRENCY_RATES[fromCurrencyCode] || CURRENCY_RATES['SAR'];
+  // إذا كانت العملة غير مدعومة، استخدم USD كافتراضي
+  const fromCurrency = CURRENCY_RATES[fromCurrencyCode] || CURRENCY_RATES['USD'];
   const toCurrency = CURRENCY_RATES['EGP'];
   
   // استخدام السعر المحدث إذا توفر، وإلا استخدم السعر الافتراضي
@@ -354,8 +354,8 @@ export async function convertToEGP(amount: number, fromCurrencyCode: string): Pr
  * تحويل مبلغ من أي عملة إلى الجنيه المصري (نسخة متزامنة للاستخدام الفوري)
  */
 export function convertToEGPSync(amount: number, fromCurrencyCode: string): ConversionResult {
-  // إذا كانت العملة غير مدعومة، استخدم SAR كافتراضي
-  const fromCurrency = CURRENCY_RATES[fromCurrencyCode] || CURRENCY_RATES['SAR'];
+  // إذا كانت العملة غير مدعومة، استخدم USD كافتراضي
+  const fromCurrency = CURRENCY_RATES[fromCurrencyCode] || CURRENCY_RATES['USD'];
   const toCurrency = CURRENCY_RATES['EGP'];
   
   // استخدام السعر من Cache أو الافتراضي
@@ -436,7 +436,7 @@ export function getCurrencyByCountry(countryCode: string): CurrencyRate {
   
   // إذا لم يوجد، استخدم الافتراضي
   if (!currencyCode) {
-    currencyCode = 'SAR'; // افتراضي للدول غير المدعومة
+    currencyCode = 'USD'; // افتراضي للدول غير المدعومة
   }
   
   return CURRENCY_RATES[currencyCode];
@@ -447,7 +447,7 @@ export function getCurrencyByCountry(countryCode: string): CurrencyRate {
  */
 export function convertFromEGP(amountInEGP: number, toCurrencyCode: string): ConversionResult {
   const fromCurrency = CURRENCY_RATES['EGP'];
-  const toCurrency = CURRENCY_RATES[toCurrencyCode] || CURRENCY_RATES['SAR'];
+  const toCurrency = CURRENCY_RATES[toCurrencyCode] || CURRENCY_RATES['USD'];
   
   // استخدام السعر من Cache أو الافتراضي
   const cachedRates = ratesCache?.rates || EXCHANGE_RATES_TO_EGP;

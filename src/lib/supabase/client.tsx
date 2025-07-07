@@ -1,89 +1,59 @@
-import { createClient } from '@supabase/supabase-js';
+'use client';
 
-const supabaseUrl = 'https://ekyerljzfokqimbabzxm.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVreWVybGp6Zm9rcWltYmFienhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2NTcyODMsImV4cCI6MjA2MjIzMzI4M30.Xd6Cg8QUISHyCG-qbgo9HtWUZz6tvqAqG6KKXzuetBY';
+import { createBrowserClient } from '@supabase/ssr';
+import { supabaseUrl, supabaseAnonKey } from './config';
 
-// Singleton pattern with global window storage to prevent multiple client instances
-let supabaseClient: any = null;
+// إنشاء عميل Supabase للمتصفح
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
-// تخزين العميل في النافذة لمنع التكرار عبر النماذج المختلفة
-if (typeof window !== 'undefined') {
-  if (!(window as any).__supabaseClient) {
-    (window as any).__supabaseClient = null;
-  }
-}
-
-const getSupabaseClient = () => {
-  // التحقق من وجود عميل في الذاكرة المحلية أولاً
-  if (supabaseClient) {
-    return supabaseClient;
-  }
-
-  // التحقق من وجود عميل في النافذة (للمتصفح)
-  if (typeof window !== 'undefined' && (window as any).__supabaseClient) {
-    supabaseClient = (window as any).__supabaseClient;
-    return supabaseClient;
-  }
-
-  // إنشاء عميل جديد فقط إذا لم يكن موجوداً
-  supabaseClient = createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false, // منع التحقق من URL لتجنب التحذيرات
-      flowType: 'pkce'
-    },
-    global: {
-      headers: {
-        'X-Client-Info': 'hagzz-go-app'
-      }
-    }
-  });
+// دالة مساعدة للحصول على URL آمن للصور من Supabase
+export const getSupabaseImageUrl = (imagePath: string | null | undefined): string => {
+  if (!imagePath) return '/images/default-avatar.png';
   
-  // حفظ العميل في النافذة للمشاركة عبر النماذج
-  if (typeof window !== 'undefined') {
-    (window as any).__supabaseClient = supabaseClient;
+  // إذا كان رابط كامل، اتركه كما هو
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  // إذا كان مسار محلي، أنشئ URL كامل من Supabase
+  try {
+    const { data } = supabase.storage
+      .from('profile-images')
+      .getPublicUrl(imagePath);
     
-    // رسالة تأكيد واحدة فقط
-    if (!((window as any).__supabaseClientInitialized)) {
-      console.log('🔌 Supabase client initialized (singleton pattern)');
-      (window as any).__supabaseClientInitialized = true;
-    }
-  }
-  
-  return supabaseClient;
-};
-
-// تصدير العميل الافتراضي
-export const supabase = getSupabaseClient();
-
-// Export the URL and key for other components that need them
-export { supabaseUrl, supabaseKey };
-
-// Export the factory function for cases where a new client is needed
-export { getSupabaseClient };
-
-// دالة لإعادة تعيين العميل (للاختبار أو إعادة التهيئة)
-export const resetSupabaseClient = () => {
-  supabaseClient = null;
-  if (typeof window !== 'undefined') {
-    (window as any).__supabaseClient = null;
-    (window as any).__supabaseClientInitialized = false;
+    return data?.publicUrl || '/images/default-avatar.png';
+  } catch (error) {
+    console.warn('Failed to get Supabase image URL:', error);
+    return '/images/default-avatar.png';
   }
 };
 
-// تحذير عند محاولة إنشاء عميل إضافي (للتطوير)
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  const originalCreateClient = createClient;
-  
-  // تتبع عدد المرات التي يتم فيها استدعاء createClient
-  let createClientCallCount = 0;
-  
-  (window as any).createClient = (...args: any[]) => {
-    createClientCallCount++;
-    if (createClientCallCount > 1) {
-      console.warn(`🚨 Multiple Supabase clients detected! This is call #${createClientCallCount}. Use getSupabaseClient() instead.`);
+// دالة رفع الصور إلى Supabase
+export const uploadImageToSupabase = async (
+  file: File, 
+  bucket: string = 'profile-images',
+  folder: string = 'uploads'
+): Promise<{ url?: string; error?: string }> => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${folder}/${Date.now()}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, file);
+    
+    if (error) {
+      return { error: error.message };
     }
-    return originalCreateClient(...(args as [string, string, any?]));
-  };
-}
+    
+    const { data: urlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+    
+    return { url: urlData?.publicUrl };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'خطأ في رفع الصورة' };
+  }
+};
+
+export default supabase;

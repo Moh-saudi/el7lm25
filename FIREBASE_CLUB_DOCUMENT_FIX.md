@@ -2,7 +2,7 @@
 
 ## ❌ **المشكلة الأساسية**
 ```
-FirebaseError: No document to update: projects/hagzzgo-87884/databases/(default)/documents/clubs/Nwr78w2YdYQhsKqHzPlCPGwGN2B3
+FirebaseError: No document to update: projects/el7hm-87884/databases/(default)/documents/clubs/Nwr78w2YdYQhsKqHzPlCPGwGN2B3
 ```
 
 ## 🔍 **تحليل المشكلة**

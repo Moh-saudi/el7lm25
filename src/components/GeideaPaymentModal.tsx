@@ -73,18 +73,82 @@ export default function GeideaPaymentModal({
     alert('تم إلغاء عملية الدفع');
   };
 
-  // إنشاء جلسة الدفع عند فتح المودال
+  // تحميل مكتبة Geidea وإنشاء جلسة الدفع عند فتح المودال
   useEffect(() => {
     if (visible) {
-      createPaymentSession();
+      loadGeideaScript()
+        .then(() => {
+          createPaymentSession();
+        })
+        .catch((error) => {
+          console.error('❌ Failed to load Geidea:', error);
+          setState({ 
+            loading: false, 
+            error: 'فشل في تحميل مكتبة الدفع. يرجى التحقق من الاتصال بالإنترنت وإعادة المحاولة.',
+            isTestMode: false 
+          });
+        });
     }
   }, [visible]);
+
+  // تحميل مكتبة Geidea ديناميكياً
+  const loadGeideaScript = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      // التحقق من وجود المكتبة مسبقاً
+      if (typeof window !== 'undefined' && window.GeideaCheckout) {
+        console.log('✅ Geidea script already loaded');
+        resolve();
+        return;
+      }
+
+      // التحقق من وجود script tag مسبقاً
+      const existingScript = document.querySelector('script[src*="geideaCheckout.min.js"]');
+      if (existingScript) {
+        console.log('✅ Geidea script tag exists, waiting for load...');
+        // إذا كان الـ script موجود ولكن المكتبة غير متاحة، انتظر قليلاً
+        const checkInterval = setInterval(() => {
+          if (window.GeideaCheckout) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 100);
+        
+        // timeout بعد 10 ثوانٍ
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          reject(new Error('Timeout waiting for Geidea script'));
+        }, 10000);
+        return;
+      }
+
+      // إنشاء script tag وتحميل المكتبة
+      console.log('📥 Loading Geidea script dynamically...');
+      const script = document.createElement('script');
+      script.src = 'https://www.merchant.geidea.net/hpp/geideaCheckout.min.js';
+      script.async = true;
+      script.id = 'geidea-checkout-dynamic';
+      
+      script.onload = () => {
+        console.log('✅ Geidea script loaded successfully');
+        resolve();
+      };
+      
+      script.onerror = (error) => {
+        console.error('❌ Failed to load Geidea script:', error);
+        // إزالة الـ script الفاشل
+        script.remove();
+        reject(new Error('Failed to load Geidea payment library'));
+      };
+
+      document.head.appendChild(script);
+    });
+  };
 
   const createPaymentSession = async () => {
     setState({ loading: true, error: null, isTestMode: false });
 
     try {
-      const orderId = merchantReferenceId || `HAGZZ_${Date.now()}`;
+      const orderId = merchantReferenceId || `EL7HM_${Date.now()}`;
       const payload = {
         amount: amount,
         currency: currency,
@@ -109,7 +173,7 @@ export default function GeideaPaymentModal({
         throw new Error(data.error || data.details || 'فشل في إنشاء جلسة الدفع');
       }
 
-      // التحقق من وضع الاختبار
+      // التحقق من وضع الاختبار (إذا كان مفعل)
       if (data.isTestMode) {
         setState({ loading: false, error: null, isTestMode: true });
         console.log('🧪 [Geidea] Test mode detected');
@@ -129,15 +193,21 @@ export default function GeideaPaymentModal({
         return;
       }
 
+      // ✅ وضع الإنتاج الحقيقي - توجيه لجيديا
+      console.log('💳 [Geidea] Live mode - redirecting to payment gateway');
+      setState({ loading: false, error: null, isTestMode: false });
+
       // إنشاء كائن GeideaCheckout وبدء عملية الدفع
       if (typeof window !== 'undefined' && window.GeideaCheckout) {
+        console.log('🚀 Initializing Geidea Checkout...');
         const payment = new window.GeideaCheckout(onSuccess, onError, onCancel);
         payment.startPayment(data.sessionId);
         
         // إغلاق المودال لأن Geidea ستفتح المودال الخاص بها
         onRequestClose();
       } else {
-        throw new Error('Geidea Checkout SDK not loaded');
+        console.error('❌ Geidea Checkout SDK not available');
+        throw new Error('مكتبة الدفع غير متاحة. يرجى إعادة المحاولة.');
       }
 
     } catch (error) {
@@ -214,8 +284,16 @@ export default function GeideaPaymentModal({
             </div>
           ) : (
             <div>
+              <div className="text-green-500 text-6xl mb-4">💳</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">🚀 جاري توجيهك للدفع</h3>
+              <p className="text-gray-600 mb-4 text-sm">سيتم فتح نافذة دفع جيديا الآمنة خلال لحظات...</p>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-green-800">
+                  🔒 <strong>دفع آمن:</strong> ستنتقل لبوابة جيديا الرسمية لإدخال بيانات البطاقة بأمان تام
+                </p>
+              </div>
               <div className="animate-pulse">
-                <div className="w-12 h-12 bg-blue-100 rounded-full mx-auto mb-4"></div>
+                <div className="w-12 h-12 bg-green-100 rounded-full mx-auto mb-4"></div>
               </div>
               <p className="text-gray-600">جاري تحضير صفحة الدفع...</p>
             </div>

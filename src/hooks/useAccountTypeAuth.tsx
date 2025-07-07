@@ -9,6 +9,8 @@ interface UseAccountTypeAuthOptions {
   redirectTo?: string;
 }
 
+const allowedAccountTypes = ['player', 'club', 'agent', 'academy', 'trainer', 'admin', 'marketer', 'parent'];
+
 export const useAccountTypeAuth = ({ allowedTypes, redirectTo = '/' }: UseAccountTypeAuthOptions) => {
   const { user, loading, userData } = useAuth();
   const router = useRouter();
@@ -52,7 +54,7 @@ export const useAccountTypeAuth = ({ allowedTypes, redirectTo = '/' }: UseAccoun
       case 'trainer':
         return '/dashboard/trainer';
       case 'marketer':
-        return '/dashboard';
+        return '/dashboard/marketer';
       default:
         return '/dashboard';
     }

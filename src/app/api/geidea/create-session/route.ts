@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { amount, currency = 'SAR', orderId, customerEmail, customerName } = body;
+    const { amount, currency = 'USD', orderId, customerEmail, customerName } = body;
 
     // التحقق من وجود البيانات المطلوبة
     if (!amount || !orderId || !customerEmail) {
@@ -44,30 +44,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // قراءة متغيرات البيئة مع fallback للمفاتيح الحقيقية
-      const merchantPublicKey = process.env.GEIDEA_MERCHANT_PUBLIC_KEY || '3448c010-87b1-41e7-9771-cac444268cfb';
-  const apiPassword = process.env.GEIDEA_API_PASSWORD || 'edfd5eee-fd1b-4932-9ee1-d6d9ba7599f0';
+    // قراءة متغيرات البيئة (بدون fallback للمفاتيح الحقيقية)
+    const merchantPublicKey = process.env.GEIDEA_MERCHANT_PUBLIC_KEY;
+    const apiPassword = process.env.GEIDEA_API_PASSWORD;
     const geideaApiUrl = process.env.GEIDEA_BASE_URL || 'https://api.merchant.geidea.net';
 
-    // Debug: طباعة المفاتيح للتحقق
-    console.log('🔍 [Geidea Debug] Environment check:', {
-      merchantPublicKey: merchantPublicKey ? `${merchantPublicKey.substring(0, 8)}...` : 'NOT SET',
-      apiPassword: apiPassword ? `${apiPassword.substring(0, 8)}...` : 'NOT SET',
-      hasRealKey: merchantPublicKey === '3448c010-87b1-41e7-9771-cac444268cfb',
-      hasRealPassword: apiPassword === 'edfd5eee-fd1b-4932-9ee1-d6d9ba7599f0'
-    });
-
-    // التحقق من وجود المفاتيح الحقيقية
-    const isUsingRealCredentials = merchantPublicKey === '3448c010-87b1-41e7-9771-cac444268cfb' && 
-        apiPassword === 'edfd5eee-fd1b-4932-9ee1-d6d9ba7599f0';
-        
-    console.log('🔑 [Geidea Debug] Credentials check:', {
-      isUsingRealCredentials,
-      willUseMockSession: !isUsingRealCredentials
-    });
-        
-    if (!isUsingRealCredentials) {
-      console.warn('⚠️ Geidea credentials missing - creating mock session for development');
+    // التحقق من وجود المفاتيح في متغيرات البيئة
+    if (!merchantPublicKey || !apiPassword) {
+      console.warn('⚠️ [Geidea API] Missing credentials in environment variables');
       
       // إنشاء mock session للتطوير بدلاً من الاتصال بـ Geidea مع credentials خاطئة
       const mockSessionId = `dev_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -79,11 +63,35 @@ export async function POST(request: NextRequest) {
         sessionId: mockSessionId,
         redirectUrl: `#mock-payment-${mockSessionId}`,
         merchantReferenceId: orderId,
-        message: 'Development mock session created successfully',
-        isTestMode: false,
+        message: 'Development mock session created successfully (missing credentials)',
+        isTestMode: true,
         isDevelopmentMode: true
       });
     }
+
+    // التحقق من أن المفاتيح ليست placeholder values
+    if (merchantPublicKey.includes('your_') || apiPassword.includes('your_')) {
+      console.warn('⚠️ [Geidea API] Placeholder credentials detected');
+      
+      const mockSessionId = `placeholder_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      return NextResponse.json({
+        success: true,
+        sessionId: mockSessionId,
+        redirectUrl: `#mock-payment-${mockSessionId}`,
+        merchantReferenceId: orderId,
+        message: 'Mock session created (placeholder credentials detected)',
+        isTestMode: true,
+        isDevelopmentMode: true
+      });
+    }
+
+    // Debug: طباعة معلومات المفاتيح (بدون كشف القيم الفعلية)
+    console.log('🔍 [Geidea Debug] Environment check:', {
+      merchantPublicKey: merchantPublicKey ? `${merchantPublicKey.substring(0, 8)}...` : 'NOT SET',
+      apiPassword: apiPassword ? `${apiPassword.substring(0, 8)}...` : 'NOT SET',
+      hasValidCredentials: !!(merchantPublicKey && apiPassword)
+    });
 
     // إنشاء timestamp حسب الوثائق الرسمية
     const timestamp = new Date().toISOString();
@@ -98,15 +106,19 @@ export async function POST(request: NextRequest) {
       timestamp
     );
 
-    // تحضير بيانات الجلسة حسب الوثائق الرسمية
+    // تحضير بيانات الجلسة حسب الوثائق الرسمية - للإنتاج الحقيقي
+    const isTestMode = false; // ✅ تم تفعيل الوضع الحقيقي - لا اختبار
+    
     const sessionData: any = {
       amount: parseFloat(amount),
       currency: currency,
-    isTestMode: false,
-    testMode: false,
-    sandbox: false,
-    environment: 'production',
-    mode: 'live',
+      // ✅ إعدادات الإنتاج الحقيقي
+      isTestMode: isTestMode,
+      testMode: isTestMode,
+      sandbox: isTestMode,
+      test: isTestMode,
+      environment: 'production', // ✅ وضع الإنتاج الحقيقي
+      mode: 'live', // ✅ وضع مباشر للدفعات الحقيقية
       merchantReferenceId: orderId,
       timestamp: timestamp,
       signature: signature,
@@ -114,9 +126,9 @@ export async function POST(request: NextRequest) {
     };
 
     // إضافة callbackUrl (مطلوب ويجب أن يكون HTTPS)
-    const appBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://dream-cyaco2n7l-mohamedsaudis-projects.vercel.app';
+    const appBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+                      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
     
-    // تأكد من استخدام الـ production URL
     let callbackUrl = `${appBaseUrl}/api/geidea/callback`;
     
     // للتطوير المحلي، استخدم webhook.site
@@ -128,23 +140,23 @@ export async function POST(request: NextRequest) {
     
     // إضافة domain whitelist لـ Geidea security
     sessionData.allowedDomains = [
-      'dream-o8xvlgsby-mohamedsaudis-projects.vercel.app',
-      'dream-cyaco2n7l-mohamedsaudis-projects.vercel.app',
+      process.env.VERCEL_URL,
       'localhost:3000'
-    ];
+    ].filter(Boolean);
 
-    console.log('🚀 Creating Geidea session with REAL credentials:', {
+    console.log('🚀 💳 Creating Geidea LIVE session with credentials:', {
       amount: sessionData.amount,
       currency: sessionData.currency,
       merchantReferenceId: sessionData.merchantReferenceId,
       callbackUrl: sessionData.callbackUrl,
+      environment: sessionData.environment,
+      isTestMode: sessionData.isTestMode,
+      testMode: sessionData.testMode,
+      mode: sessionData.mode,
       signature: signature.substring(0, 8) + '...'
     });
-    
-    console.log('📋 Full sessionData payload:', JSON.stringify(sessionData, null, 2));
-    console.log('🔗 Geidea API URL:', `${geideaApiUrl}/payment/api/v1/hpp/session`);
 
-    // إرسال طلب إنشاء الجلسة إلى Geidea مع المفاتيح الحقيقية فقط
+    // إرسال طلب إنشاء الجلسة إلى Geidea
     const response = await fetch(`${geideaApiUrl}/payment-intent/api/v2/direct/session`, {
       method: 'POST',
       headers: {
@@ -175,14 +187,16 @@ export async function POST(request: NextRequest) {
     }
 
     // إرجاع بيانات الجلسة الناجحة
-    console.log('✅ Payment session created successfully!');
+    console.log('✅ 💳 LIVE MODE: Payment session created successfully!');
     return NextResponse.json({
       success: true,
       sessionId: responseData.session?.id,
       redirectUrl: responseData.session?.redirectUrl,
       merchantReferenceId: orderId,
-      message: 'Payment session created successfully',
-      isTestMode: false
+      message: '💳 LIVE MODE: Payment session created successfully',
+      isTestMode: false, // وضع الإنتاج الحقيقي
+      testEnvironment: false,
+      environment: 'production'
     });
 
   } catch (error) {

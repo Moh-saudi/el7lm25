@@ -178,21 +178,23 @@ const filterConsole = () => {
   }
 };
 
-// تطبيق الفلتر
-filterConsole();
+// دالة للتهيئة اليدوية (لا يتم استدعاؤها تلقائياً)
+export const initializeConsoleFilter = () => {
+  filterConsole();
 
-// رسالة تأكيد (تظهر مرة واحدة فقط)
-if (typeof window !== 'undefined') {
-  // التأكد من عدم تكرار الرسالة
-  if (!(window as any).consoleFilterLoaded) {
-    console.log('🔇 Console Filter: Enhanced v3.2 activated');
-    console.log('✅ Firebase, Geidea, Auth Debug, Preload, Next.js, Smart Loader errors filtered');
-    console.log('🎯 Clean console + Intelligent script loading enabled');
-    console.log('🚀 Performance optimized - Scripts load only when needed');
-    console.log('🔧 Server/Client Component issues automatically handled');
-    console.log('🛡️ Error-resilient script loader with Firebase detection');
-    (window as any).consoleFilterLoaded = true;
+  // رسالة تأكيد (تظهر مرة واحدة فقط)
+  if (typeof window !== 'undefined') {
+    // التأكد من عدم تكرار الرسالة
+    if (!(window as any).consoleFilterLoaded) {
+      console.log('🔇 Console Filter: Enhanced v3.2 activated');
+      console.log('✅ Firebase, Geidea, Auth Debug, Preload, Next.js, Smart Loader errors filtered');
+      console.log('🎯 Clean console + Intelligent script loading enabled');
+      console.log('🚀 Performance optimized - Scripts load only when needed');
+      console.log('🔧 Server/Client Component issues automatically handled');
+      console.log('🛡️ Error-resilient script loader with Firebase detection');
+      (window as any).consoleFilterLoaded = true;
+    }
   }
-}
+};
 
 export default filterConsole; 

@@ -15,14 +15,16 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import EmailVerification from '@/components/auth/EmailVerification';
+import { EmailService } from '@/lib/emailjs/service';
 
 export default function LoginPage() {
-  const { loginUser, loginWithGoogle, user, userData, loading: authLoading } = useAuth();
+  const { login, user, userData, loading: authLoading } = useAuth();
   
   // إذا كان المستخدم مسجل دخوله مسبقاً، نخفي النموذج
   const shouldShowForm = !authLoading && !user;
   const [formData, setFormData] = useState({
-    phone: '',
+    email: '',
     password: '',
     rememberMe: false,
   });
@@ -31,33 +33,17 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
-  // توجيه تلقائي عند نجاح تسجيل الدخول أو إذا كان المستخدم مسجل دخوله مسبقاً
+  // عند تحميل الصفحة: تحقق من وجود بريد معلق في localStorage
   useEffect(() => {
-    if (user && userData && !authLoading) {
-      secureConsole.log('🎯 User authenticated successfully, redirecting to dashboard...');
-      secureConsole.sensitive('Account type:', userData.accountType);
-      
-      const dashboardRoute = getDashboardRoute(userData.accountType);
-      
-      // حفظ معلومات Remember Me إذا كان مطلوباً (للتسجيل العادي فقط)
-      if (formData.rememberMe && formData.phone) {
-        localStorage.setItem('rememberMe', 'true');
-        localStorage.setItem('userPhone', formData.phone);
-        localStorage.setItem('accountType', userData.accountType);
-      }
-      
-      setMessage('تم تسجيل الدخول بنجاح! جاري تحويلك...');
-      setLoading(false); // إيقاف حالة التحميل
-      
-      // توجيه فوري
-      const redirectTimer = setTimeout(() => {
-        router.replace(dashboardRoute); // استخدام replace بدلاً من push
-      }, 800); // تأخير قصير لإظهار رسالة النجاح
-      
-      return () => clearTimeout(redirectTimer);
+    const storedPendingEmail = localStorage.getItem('pendingEmailVerification');
+    if (storedPendingEmail) {
+      setPendingEmail(storedPendingEmail);
+      setShowEmailVerification(true);
     }
-  }, [user, userData, authLoading]);
+  }, []);
 
   // إيقاف التحميل إذا فشلت المصادقة أو انتهت
   useEffect(() => {
@@ -69,31 +55,21 @@ export default function LoginPage() {
   // تحميل بيانات Remember Me عند بدء التطبيق
   useEffect(() => {
     const rememberMe = localStorage.getItem('rememberMe');
-    const savedPhone = localStorage.getItem('userPhone');
+    const savedEmail = localStorage.getItem('userEmail');
     
-    if (rememberMe === 'true' && savedPhone) {
+    if (rememberMe === 'true' && savedEmail) {
       setFormData(prev => ({
         ...prev,
-        phone: savedPhone,
+        email: savedEmail,
         rememberMe: true
       }));
-      secureConsole.log('📱 Auto-filled phone from Remember Me');
+      secureConsole.log('📧 Auto-filled email from Remember Me');
     }
   }, []);
 
   const handleInputChange = (e: { target: { name: string; value: string; type: string; checked: boolean; }; }) => {
     const { name, value, type, checked } = e.target;
     
-    // إذا كان الحقل هو رقم الهاتف، نتأكد من أنه يحتوي فقط على أرقام
-    if (name === 'phone') {
-      const numbersOnly = value.replace(/[^0-9]/g, '');
-      setFormData((prev) => ({
-        ...prev,
-        [name]: numbersOnly,
-      }));
-      return;
-    }
-
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
@@ -112,12 +88,19 @@ export default function LoginPage() {
         return '/dashboard/academy';
       case 'trainer':
         return '/dashboard/trainer';
+      case 'admin':
+        return '/dashboard/admin';
       case 'marketer':
-        return '/dashboard';
+        return '/dashboard/marketer';
+      case 'parent':
+        return '/dashboard/player'; // توجيه أولياء الأمور للوحة اللاعبين
       default:
-        return '/dashboard';
+        console.error('Invalid account type:', accountType);
+        return '/auth/login'; // إرجاع للتسجيل إذا كان النوع غير صالح
     }
   };
+
+
 
   const handleLogin = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
@@ -125,27 +108,131 @@ export default function LoginPage() {
     setError('');
     setMessage('');
 
-    // التحقق من صحة رقم الهاتف
-    if (!/^[0-9]{10}$/.test(formData.phone)) {
-      setError('يرجى إدخال رقم هاتف صحيح مكون من 10 أرقام');
+    // التحقق من البريد الإلكتروني
+    if (!formData.email.trim()) {
+      setError('يرجى إدخال البريد الإلكتروني');
+      setLoading(false);
+      return;
+    }
+
+    if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.email)) {
+      setError('يرجى إدخال بريد إلكتروني صالح');
       setLoading(false);
       return;
     }
 
     try {
-      secureConsole.log('🔐 Attempting login...');
-      await loginUser(formData.phone, formData.password);
+      secureConsole.log('🔐 محاولة تسجيل الدخول...');
+      setMessage('جاري التحقق من البيانات...');
       
-      // AuthProvider سيتولى جلب البيانات وsetUserData تلقائياً
-      // useEffect أعلاه سيتولى التوجيه عند اكتمال البيانات
-      setMessage('تم تسجيل الدخول بنجاح! جاري تحميل البيانات...');
+      // محاولة تسجيل الدخول مباشرة
+      const result = await login(formData.email, formData.password);
+      
+      secureConsole.log('✅ تم تسجيل الدخول بنجاح');
+      
+      // حفظ معلومات Remember Me إذا كان مطلوباً
+      if (formData.rememberMe && formData.email) {
+        localStorage.setItem('rememberMe', 'true');
+        localStorage.setItem('userEmail', formData.email);
+        localStorage.setItem('accountType', result.userData.accountType);
+      }
+      
+      setMessage('تم تسجيل الدخول بنجاح! جاري تحويلك...');
+      
+      // توجيه مباشر للوحة التحكم المناسبة
+      const dashboardRoute = getDashboardRoute(result.userData.accountType);
+      
+      setTimeout(() => {
+        router.replace(dashboardRoute);
+      }, 1000);
       
     } catch (err: any) {
-      secureConsole.error('Login failed:', err);
-      setError(err.message || 'حدث خطأ أثناء تسجيل الدخول');
+      secureConsole.error('فشل تسجيل الدخول:', err);
+      console.log('Error code:', err.code); // للتأكد من نوع الخطأ
+      
+      // التحقق من نوع الخطأ
+      if (err.code === 'auth/user-not-found') {
+        const noAccountError = `البريد الإلكتروني غير مسجل في النظام
+
+الحلول المقترحة:
+• تحقق من صحة البريد الإلكتروني المدخل
+• قم بإنشاء حساب جديد إذا لم يكن لديك حساب
+• تواصل مع الدعم الفني إذا كنت متأكداً من صحة البريد`;
+        
+        setError(noAccountError);
+      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        const wrongPasswordError = `كلمة المرور غير صحيحة
+
+الحلول المقترحة:
+• تحقق من صحة كلمة المرور المدخلة
+• تأكد من حالة الأحرف (كبيرة/صغيرة)
+• استخدم "نسيت كلمة المرور" لإعادة تعيينها
+• تأكد من عدم تفعيل Caps Lock`;
+        
+        console.log('Setting error:', wrongPasswordError); // للتأكد من تعيين الخطأ
+        setError(wrongPasswordError);
+      } else if (err.code === 'auth/too-many-requests') {
+        const tooManyRequestsError = `تم تجاوز عدد المحاولات المسموح بها
+
+الحلول المقترحة:
+• انتظر قليلاً قبل المحاولة مرة أخرى
+• استخدم "نسيت كلمة المرور" لإعادة تعيينها
+• تواصل مع الدعم الفني إذا استمرت المشكلة`;
+        
+        setError(tooManyRequestsError);
+      } else if (err.code === 'auth/network-request-failed') {
+        const networkError = `خطأ في الاتصال
+
+الحلول المقترحة:
+• تحقق من اتصالك بالإنترنت
+• حاول إعادة تحميل الصفحة
+• تأكد من استقرار الاتصال`;
+        
+        setError(networkError);
+      } else if (err.code === 'auth/invalid-email') {
+        const invalidEmailError = `صيغة البريد الإلكتروني غير صحيحة
+
+الحلول المقترحة:
+• تحقق من صحة البريد الإلكتروني المدخل
+• تأكد من وجود @ و . في البريد
+• مثال: user@example.com`;
+        
+        setError(invalidEmailError);
+      } else {
+        // أخطاء أخرى
+        setError(`خطأ في تسجيل الدخول: ${err.message || 'حدث خطأ غير متوقع'}`);
+      }
+      
+      setMessage(''); 
       setLoading(false);
     }
-    // لا نضع setLoading(false) هنا لأن useEffect سيتولى ذلك عند اكتمال التوجيه
+  };
+
+  const handleEmailVerificationSuccess = () => {
+    setShowEmailVerification(false);
+    setPendingEmail(null);
+    localStorage.removeItem('pendingEmailVerification');
+    setMessage('✅ تم التحقق من البريد الإلكتروني بنجاح! سيتم تحويلك للوحة التحكم.');
+    setTimeout(() => {
+      if (userData) {
+        const dashboardRoute = getDashboardRoute(userData.accountType);
+        router.replace(dashboardRoute);
+      }
+    }, 1000);
+  };
+
+  const handleEmailVerificationFailed = (error: string) => {
+    setShowEmailVerification(false);
+    setPendingEmail(null);
+    localStorage.removeItem('pendingEmailVerification');
+    setError(error || 'فشل التحقق من البريد الإلكتروني.');
+  };
+
+  const handleEmailVerificationCancel = () => {
+    setShowEmailVerification(false);
+    setPendingEmail(null);
+    localStorage.removeItem('pendingEmailVerification');
+    setError('تم إلغاء التحقق من البريد الإلكتروني.');
   };
 
   // إذا كان المستخدم يحمل أو مسجل دخوله، نعرض شاشة تحميل
@@ -175,6 +262,77 @@ export default function LoginPage() {
     );
   }
 
+  // إذا كان المستخدم مسجل دخوله مسبقاً، نعرض خيار الذهاب للوحة التحكم
+  if (user && userData && !loading) {
+    const dashboardRoute = getDashboardRoute(userData.accountType);
+    
+    return (
+      <div
+        className="flex items-center justify-center min-h-screen p-2 bg-gradient-to-br from-blue-600 to-purple-700"
+        dir="rtl"
+      >
+        <div className="w-full max-w-xs overflow-hidden bg-white shadow-2xl rounded-xl">
+          <div className="p-3 text-center text-white bg-gradient-to-r from-green-500 to-blue-600">
+            <div className="flex justify-center mb-2">
+              <CheckCircle className="w-8 h-8" />
+            </div>
+            <h1 className="mb-1 text-xl font-bold">مرحباً بك!</h1>
+            <p className="text-xs text-green-100">أنت مسجل دخولك بالفعل</p>
+          </div>
+          
+          <div className="p-6 text-center space-y-4">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <Shield className="w-8 h-8 text-green-600" />
+              </div>
+            </div>
+            
+            <div>
+              <h2 className="text-lg font-bold text-gray-800 mb-1">
+                {userData.name || userData.displayName || 'مستخدم'}
+              </h2>
+              <p className="text-sm text-gray-600">
+                نوع الحساب: {userData.accountType === 'player' && 'لاعب'}
+                {userData.accountType === 'club' && 'نادي'}
+                {userData.accountType === 'agent' && 'وكيل'}
+                {userData.accountType === 'academy' && 'أكاديمية'}
+                {userData.accountType === 'trainer' && 'مدرب'}
+                {userData.accountType === 'admin' && 'أدمن'}
+                {userData.accountType === 'parent' && 'ولي أمر'}
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push(dashboardRoute)}
+                className="w-full py-3 text-sm font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              >
+                الذهاب إلى لوحة التحكم
+              </button>
+              
+              <button
+                onClick={() => {
+                  // تسجيل خروج والبقاء في صفحة الدخول
+                  import('@/lib/firebase/config').then(({ auth }) => {
+                    import('firebase/auth').then(({ signOut }) => {
+                      signOut(auth).then(() => {
+                        setMessage('تم تسجيل الخروج بنجاح');
+                        setError('');
+                      });
+                    });
+                  });
+                }}
+                className="w-full py-2 text-sm font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              >
+                تسجيل الخروج
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="flex items-center justify-center min-h-screen p-2 bg-gradient-to-br from-blue-600 to-purple-700"
@@ -193,9 +351,31 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="p-4 space-y-4">
           {/* Alert Messages */}
           {error && (
-            <div className="flex items-center gap-2 p-2 text-xs text-red-700 rounded-lg bg-red-50">
-              <AlertTriangle className="w-4 h-4" />
-              <p>{error}</p>
+            <div className="p-3 text-sm text-red-700 rounded-lg bg-red-50 border border-red-200">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="whitespace-pre-line">
+                    {error}
+                  </div>
+                  <div className="flex gap-2 mt-3 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => window.location.href = '/auth/forgot-password'}
+                      className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                    >
+                      نسيت كلمة المرور
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.location.href = '/auth/register'}
+                      className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                    >
+                      إنشاء حساب جديد
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
           {message && (
@@ -214,15 +394,15 @@ export default function LoginPage() {
           {/* Form Fields */}
           <div className="space-y-3">
             <div className="relative">
-              <label className="block mb-1 text-xs text-gray-700">رقم الهاتف</label>
+              <label className="block mb-1 text-xs text-gray-700">البريد الإلكتروني</label>
               <div className="relative">
                 <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
+                  type="email"
+                  name="email"
+                  value={formData.email}
                   onChange={handleInputChange}
                   className="w-full py-2 pl-3 pr-8 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="أدخل رقم الهاتف"
+                  placeholder="أدخل البريد الإلكتروني"
                   required
                 />
                 <Phone className="absolute w-4 h-4 text-gray-400 -translate-y-1/2 right-2 top-1/2" />
@@ -267,7 +447,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
-                onClick={() => alert('سيتم إرسال رابط إعادة تعيين كلمة المرور إلى هاتفك')}
+                onClick={() => (window.location.href = '/auth/forgot-password')}
               >
                 نسيت كلمة المرور؟
               </button>
@@ -290,26 +470,6 @@ export default function LoginPage() {
             ) : (
               'تسجيل الدخول'
             )}
-          </button>
-
-          {/* Google Login Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setLoading(true);
-              setError('');
-              setMessage('جاري تسجيل الدخول عبر Google...');
-              loginWithGoogle().catch((err) => {
-                secureConsole.error('Google login failed:', err);
-                setError(err.message || 'حدث خطأ أثناء تسجيل الدخول عبر Google');
-                setLoading(false);
-              });
-            }}
-            disabled={loading || authLoading}
-            className="flex items-center justify-center w-full gap-2 py-2 mt-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 48 48"><g><path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.7 33.1 30.1 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.5 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 19.5-7.6 19.5-21 0-1.4-.1-2.4-.3-3.5z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 17.1 19.2 14 24 14c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.5 5.1 29.6 3 24 3c-7.2 0-13.3 4.1-16.7 10.1z"/><path fill="#FBBC05" d="M24 44c5.1 0 9.8-1.7 13.4-4.7l-6.2-5.1C29.1 36.9 26.7 38 24 38c-6.1 0-11.2-4.1-13-9.6l-6.7 5.2C7.1 39.9 14.9 44 24 44z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-1.1 3.1-4.1 5.5-7.7 5.5-4.6 0-8.3-3.7-8.3-8.3s3.7-8.3 8.3-8.3c2.3 0 4.3.8 5.9 2.2l6.4-6.4C34.5 5.1 29.6 3 24 3c-7.2 0-13.3 4.1-16.7 10.1z"/></g></svg>
-            تسجيل الدخول عبر جوجل
           </button>
 
           {/* Register Link */}
@@ -337,6 +497,16 @@ export default function LoginPage() {
             </div>
           </div>
         </form>
+
+        {showEmailVerification && pendingEmail && (
+          <EmailVerification
+            email={pendingEmail}
+            name={userData?.name || 'مستخدم'}
+            onVerificationSuccess={handleEmailVerificationSuccess}
+            onVerificationFailed={handleEmailVerificationFailed}
+            onCancel={handleEmailVerificationCancel}
+          />
+        )}
       </div>
     </div>
   );

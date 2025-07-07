@@ -1,31 +1,51 @@
-import React from "react";
+"use client";
 
-interface SwitchProps {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
+import * as React from "react";
+
+interface SwitchProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
 }
 
-const Switch: React.FC<SwitchProps> = ({ checked, onChange }) => {
-  return (
-    <label className="inline-flex items-center cursor-pointer">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="hidden"
-      />
-      <span
-        className={`w-10 h-6 flex items-center bg-gray-300 rounded-full p-1 ${
-          checked ? "bg-green-500" : ""
-        }`}
-      >
-        <span
-          className={`bg-white w-4 h-4 rounded-full shadow transform ${
-            checked ? "translate-x-4" : ""
-          }`}
+const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
+  ({ className, checked, onCheckedChange, ...props }, ref) => {
+    return (
+      <label className="relative inline-flex items-center cursor-pointer">
+        <input
+          type="checkbox"
+          className="sr-only"
+          checked={checked}
+          onChange={(e) => onCheckedChange?.(e.target.checked)}
+          ref={ref}
+          {...props}
         />
-      </span>
-    </label>
-  );
-};
+        <div className={`
+          w-11 h-6 
+          bg-gray-200 
+          rounded-full 
+          peer 
+          peer-checked:after:translate-x-full 
+          peer-checked:after:border-white 
+          after:content-[''] 
+          after:absolute 
+          after:top-[2px] 
+          after:start-[2px] 
+          after:bg-white 
+          after:border-gray-300 
+          after:border 
+          after:rounded-full 
+          after:h-5 
+          after:w-5 
+          after:transition-all 
+          peer-checked:bg-blue-600
+          ${className}
+        `}></div>
+      </label>
+    );
+  }
+);
+
+Switch.displayName = "Switch";
+
+export { Switch };
 

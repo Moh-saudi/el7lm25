@@ -340,7 +340,7 @@ export default function AcademyProfilePage() {
       }
       
       setAcademyData(updatedData);
-      toast.success('تم رفع الصورة بنجاح - اضغط "حفظ التغييرات" لحفظها نهائياً');
+              toast.success('✅ تم رفع الصورة بنجاح');
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error('حدث خطأ أثناء رفع الصورة');

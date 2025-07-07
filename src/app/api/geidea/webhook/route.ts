@@ -9,25 +9,43 @@ const GEIDEA_CONFIG = {
   baseUrl: process.env.GEIDEA_BASE_URL || 'https://api.merchant.geidea.net'
 };
 
-// التحقق من صحة التوقيع
+// التحقق من صحة التوقيع - محسن وآمن
 function verifySignature(payload: string, signature: string): boolean {
   if (!GEIDEA_CONFIG.webhookSecret) {
-    console.warn('GEIDEA_WEBHOOK_SECRET غير محدد');
+    console.error('🚨 SECURITY: GEIDEA_WEBHOOK_SECRET غير محدد - رفض الطلب');
+    return false;
+  }
+
+  if (!signature || typeof signature !== 'string') {
+    console.error('🚨 SECURITY: توقيع غير صالح');
     return false;
   }
 
   try {
+    // إنشاء التوقيع المتوقع
     const expectedSignature = crypto
       .createHmac('sha256', GEIDEA_CONFIG.webhookSecret)
       .update(payload, 'utf8')
       .digest('hex');
 
-    return crypto.timingSafeEqual(
-      Buffer.from(signature, 'hex'),
+    // تنظيف التوقيع من البريفكس إذا كان موجوداً
+    const cleanSignature = signature.replace(/^sha256=/, '');
+    
+    // مقارنة آمنة للتوقيعات
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(cleanSignature, 'hex'),
       Buffer.from(expectedSignature, 'hex')
     );
+
+    if (!isValid) {
+      console.error('🚨 SECURITY: فشل التحقق من التوقيع - طلب مرفوض');
+      console.error('Expected signature length:', expectedSignature.length);
+      console.error('Received signature length:', cleanSignature.length);
+    }
+
+    return isValid;
   } catch (error) {
-    console.error('خطأ في التحقق من التوقيع:', error);
+    console.error('🚨 SECURITY: خطأ في التحقق من التوقيع:', error);
     return false;
   }
 }

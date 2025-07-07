@@ -5,25 +5,25 @@ import { twMerge } from "tailwind-merge";
 // export { uploadFileToAzure } from "./upload";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export const formatPrice = (price: number) => {
   return new Intl.NumberFormat("ar-EG", {
     style: "currency",
     currency: "EGP",
-  }).format(price)
-}
+  }).format(price);
+};
 
 export const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat("ar-EG", {
     day: "numeric",
     month: "long",
     year: "numeric",
-  }).format(date)
-}
+  }).format(date);
+};
 
 // إضافة دالة رفع الملفات باستخدام Supabase
 export const uploadFileToStorage = async () => {
-  throw new Error('رفع الملفات معطل حالياً');
+  throw new Error('File upload is currently disabled');
 };

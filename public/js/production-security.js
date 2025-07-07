@@ -84,12 +84,29 @@
     // تنظيف البيانات الحساسة كل 5 ثوان
     setInterval(cleanSensitiveData, 5000);
     
-    // حماية من console commands الخطيرة
+    // حماية محسنة من console commands الخطيرة
     const originalEval = window.eval;
-    window.eval = function() {
-      console.warn('🚫 eval() محظور في الإنتاج');
-      return null;
-    };
+    const originalFunction = window.Function;
+    
+    // منع eval بطريقة آمنة
+    Object.defineProperty(window, 'eval', {
+      value: function() {
+        console.error('🚨 SECURITY: eval() محظور في الإنتاج لأسباب أمنية');
+        throw new Error('eval() is not allowed for security reasons');
+      },
+      writable: false,
+      configurable: false
+    });
+    
+    // منع Function constructor أيضاً
+    Object.defineProperty(window, 'Function', {
+      value: function() {
+        console.error('🚨 SECURITY: Function constructor محظور في الإنتاج');
+        throw new Error('Function constructor is not allowed for security reasons');
+      },
+      writable: false,
+      configurable: false
+    });
     
     // حماية localStorage من الوصول غير المصرح به
     const originalSetItem = localStorage.setItem;
@@ -117,7 +134,7 @@
         pointer-events: none;
         user-select: none;
       `;
-      watermark.textContent = '© HAGZZ GO 2024';
+      watermark.textContent = '© El7hm 2024';
       document.body.appendChild(watermark);
     }
     

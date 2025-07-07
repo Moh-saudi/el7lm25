@@ -13,21 +13,39 @@ export function imageErrorHandler(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const imageUrl = searchParams.get('url');
   
-  // إذا لم يكن هناك URL للصورة
+  // If no image URL provided
   if (!imageUrl) {
-    return NextResponse.redirect(new URL('/images/default-avatar.png', request.url));
+    return NextResponse.redirect(new URL('/default-avatar.png', request.url));
   }
   
-  // فحص الروابط المحظورة
-  const blockedDomains = ['test-url.com', 'example.com', 'placeholder.com'];
+  // Check blocked domains
+  const blockedDomains = [
+    'test-url.com',
+    'example.com',
+    'placeholder.com',
+    'undefined',
+    'null',
+    '[object Object]',
+    '/avatars/undefined/',
+    '/avatars/null/',
+    '/avatars//',
+  ];
+  
+  // Prevent redirect loops by allowing default images
+  if (imageUrl.includes('default-avatar.png') || 
+      imageUrl.includes('club-avatar.png') || 
+      imageUrl.includes('agent-avatar.png')) {
+    return NextResponse.next();
+  }
+  
   const isBlocked = blockedDomains.some(domain => imageUrl.includes(domain));
   
   if (isBlocked) {
-    console.warn(`تم حظر رابط الصورة: ${imageUrl}`);
-    return NextResponse.redirect(new URL('/images/default-avatar.png', request.url));
+    console.warn(`Blocked image URL: ${imageUrl}`);
+    return NextResponse.redirect(new URL('/default-avatar.png', request.url));
   }
   
-  // السماح للصور الصحيحة بالمرور
+  // Allow valid images to pass through
   return NextResponse.next();
 }
 
@@ -36,14 +54,21 @@ export function imageErrorHandler(request: NextRequest) {
  */
 export async function validateImageResponse(imageUrl: string): Promise<boolean> {
   try {
+    // Skip validation for default images
+    if (imageUrl.includes('default-avatar.png') || 
+        imageUrl.includes('club-avatar.png') || 
+        imageUrl.includes('agent-avatar.png')) {
+      return true;
+    }
+
     const response = await fetch(imageUrl, { 
       method: 'HEAD',
-      signal: AbortSignal.timeout(5000) // timeout بعد 5 ثواني
+      signal: AbortSignal.timeout(5000) // timeout after 5 seconds
     });
     
     return response.ok && (response.headers.get('content-type')?.startsWith('image/') ?? false);
   } catch (error) {
-    console.warn(`فشل فحص الصورة: ${imageUrl}`, error);
+    console.warn(`Image validation failed: ${imageUrl}`, error);
     return false;
   }
 }
@@ -73,6 +98,7 @@ export function sanitizeImageHeaders(headers: Headers): Headers {
   
   // إضافة headers للأمان
   cleanHeaders.set('x-content-type-options', 'nosniff');
+  cleanHeaders.set('cache-control', 'public, max-age=31536000, immutable');
   
   return cleanHeaders;
 } 

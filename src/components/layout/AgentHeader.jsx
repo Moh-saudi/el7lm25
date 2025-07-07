@@ -5,6 +5,7 @@ import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '@/lib/firebase/auth-provider';
 import { db } from '@/lib/firebase/config';
 import { supabase } from '@/lib/supabase/client';
+import NotificationsButton from '@/components/shared/NotificationsButton';
 
 const getSupabaseImageUrl = (path) => {
   if (!path) return '/images/agent-avatar.png';
@@ -89,22 +90,25 @@ export default function AgentHeader() {
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow flex items-center h-16 px-6 justify-between" style={{ direction: dir }}>
-      <div className="flex items-center gap-3">
-        <img src={logo} alt="صورة الوكيل" className="w-10 h-10 rounded-full border-2 border-purple-400 shadow" />
-        <span className="text-xl font-bold tracking-tight text-purple-700 dark:text-purple-300">منصة الوكلاء</span>
-      </div>
-      <div className="flex items-center gap-4">
-        <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-          {darkMode ? <Sun className="w-6 h-6 text-yellow-400" /> : <Moon className="w-6 h-6 text-gray-600" />}
-        </button>
-        <Link href="/dashboard/agent/notifications" className="relative hover:text-purple-600 dark:hover:text-purple-300">
-          <Bell className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-        </Link>
-        <Link href="/dashboard/agent/profile" className="hover:text-purple-600 dark:hover:text-purple-300">
-          <User className="w-7 h-7" />
-        </Link>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b">
+      <div className="flex items-center justify-between h-16 px-4">
+        <div className="flex items-center gap-3">
+          <img src={logo} alt="صورة الوكيل" className="w-10 h-10 rounded-full border-2 border-purple-400 shadow" />
+          <span className="text-xl font-bold tracking-tight text-purple-700 dark:text-purple-300">منصة الوكلاء</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <NotificationsButton />
+          <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            {darkMode ? <Sun className="w-6 h-6 text-yellow-400" /> : <Moon className="w-6 h-6 text-gray-600" />}
+          </button>
+          <Link href="/dashboard/agent/notifications" className="relative hover:text-purple-600 dark:hover:text-purple-300">
+            <Bell className="w-6 h-6" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+          </Link>
+          <Link href="/dashboard/agent/profile" className="hover:text-purple-600 dark:hover:text-purple-300">
+            <User className="w-7 h-7" />
+          </Link>
+        </div>
       </div>
     </header>
   );

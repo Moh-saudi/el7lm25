@@ -1,4 +1,4 @@
-// HAGZZ GO Firebase Auth Debug Tool (v2)
+// El7hm Firebase Auth Debug Tool (v2)
 // Modernized for Firebase v9+ and React
 
 console.log('🔐 تحميل أداة تشخيص المصادقة المحدثة...');
@@ -166,7 +166,7 @@ console.log('   - authDebugger.clearAndReload()');
 
 // Usage information
 console.log(`
-=== HAGZZ GO Auth Debug Tool ===
+=== El7hm Auth Debug Tool ===
 Available commands:
 
 1. Check your current session:

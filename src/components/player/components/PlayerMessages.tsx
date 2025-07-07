@@ -134,7 +134,7 @@ const PlayerMessages = memo(({ userId, loading }: PlayerMessagesProps) => {
             {messages.filter(m => m.unread).length} جديد
           </span>
           <Link 
-            href="/dashboard/player/messages" 
+            href="/dashboard/messages" 
             className="text-blue-600 hover:underline transition-colors duration-200"
           >
             عرض الكل

@@ -30,9 +30,12 @@ export default function DashboardLayout({ children }) {
 
   // Check if the current path is a dashboard path
   const isDashboardPath = pathname.startsWith('/dashboard');
+  
+  // Check if it's an admin path (admin has its own layout)
+  const isAdminPath = pathname.startsWith('/dashboard/admin');
 
-  // If not a dashboard path, render only the children
-  if (!isDashboardPath) {
+  // If not a dashboard path or if it's admin path, render only the children
+  if (!isDashboardPath || isAdminPath) {
     return <>{children}</>;
   }
 

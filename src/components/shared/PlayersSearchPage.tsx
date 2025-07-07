@@ -13,10 +13,32 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Eye, MessageSquare, Users, Sword, Shield, Building, Trophy, User, Briefcase } from 'lucide-react';
 import Image from 'next/image';
 import { Player } from '@/types/player';
+import SendMessageButton from '@/components/messaging/SendMessageButton';
 
 interface PlayersSearchPageProps {
   accountType: 'club' | 'academy' | 'trainer' | 'agent';
 }
+
+// دالة لتنظيف روابط الصور
+const getValidImageUrl = (url: string | null | undefined): string => {
+  // تحقق من وجود الرابط وصحته
+  if (!url || 
+      url === 'undefined' || 
+      url === 'null' || 
+      url === '' ||
+      url.includes('test-url.com') ||
+      url.includes('placeholder.com') ||
+      url.includes('example.com')) {
+    return '/images/default-avatar.png';
+  }
+  
+  // تحقق من صحة روابط Supabase المكسورة
+  if (url.includes('supabase.co') && url.includes('avatars/yf0b8T8xuuMfP8QAfvS9TLOJjVt2')) {
+    return '/images/default-avatar.png';
+  }
+  
+  return url;
+};
 
 export default function PlayersSearchPage({ accountType }: PlayersSearchPageProps) {
   secureConsole.log('🎯 PlayersSearchPage initialized with accountType:', accountType);
@@ -264,14 +286,19 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
                         <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shadow-xl">
                           {player.profile_image || player.profile_image_url ? (
                             <Image
-                              src={player.profile_image_url || player.profile_image || '/images/default-avatar.png'}
+                              src={getValidImageUrl(player.profile_image_url || player.profile_image)}
                               alt={player.full_name || 'لاعب'}
                               width={96}
                               height={96}
                               className="w-full h-full object-cover"
+                              loading="eager"
+                              priority={true}
                               onError={(e) => {
-                                secureConsole.warn('خطأ في تحميل صورة اللاعب:', e.currentTarget.src);
-                                e.currentTarget.src = '/images/default-avatar.png';
+                                if (!e.currentTarget.dataset.errorHandled) {
+                                  secureConsole.warn('خطأ في تحميل صورة اللاعب:', e.currentTarget.src);
+                                  e.currentTarget.dataset.errorHandled = 'true';
+                                  e.currentTarget.src = '/images/default-avatar.png';
+                                }
                               }}
                             />
                           ) : (
@@ -313,14 +340,18 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
                         <Eye className="w-4 h-4 mr-1" />
                         عرض
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="flex-1 border-white/30 text-white hover:bg-white/10"
-                      >
-                        <MessageSquare className="w-4 h-4 mr-1" />
-                        راسل
-                      </Button>
+                      {player.id && (
+                        <SendMessageButton
+                          targetUserId={player.id}
+                          targetUserName={player.full_name || 'لاعب'}
+                          targetUserType="player"
+                          buttonText="راسل"
+                          buttonVariant="outline"
+                          buttonSize="sm"
+                          className="flex-1 border-white/30 text-white hover:bg-white/10"
+                          redirectToMessages={true}
+                        />
+                      )}
                     </div>
                   </div>
                 </Card>

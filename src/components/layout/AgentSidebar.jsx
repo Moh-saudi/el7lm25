@@ -69,9 +69,10 @@ const agentMenuItems = [
 
 export default function AgentSidebar({ collapsed, setCollapsed }) {
   const router = useRouter();
-  const { signOut, user } = useAuth();
+  const { logout, user, userData } = useAuth();
   const [lang, setLang] = useState('ar');
   const [logo, setLogo] = useState('/images/agent-avatar.png');
+  const [agentName, setAgentName] = useState('');
 
   useEffect(() => {
     const htmlLang = document.documentElement.lang;
@@ -88,20 +89,39 @@ export default function AgentSidebar({ collapsed, setCollapsed }) {
         const data = doc.data();
         const logoUrl = getSupabaseImageUrl(data.profile_photo);
         setLogo(logoUrl);
+        
+        // تحديد اسم الوكيل من عدة مصادر
+        const name = data.full_name || data.name || userData?.full_name || userData?.name || 'وكيل لاعبين';
+        setAgentName(name);
+      } else {
+        // إذا لم توجد بيانات في مجموعة agents، استخدم userData
+        const name = userData?.full_name || userData?.name || 'وكيل لاعبين';
+        setAgentName(name);
       }
     }, (error) => {
       console.log('خطأ في جلب صورة الوكيل:', error);
+      // في حالة الخطأ، استخدم userData
+      const name = userData?.full_name || userData?.name || 'وكيل لاعبين';
+      setAgentName(name);
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, userData]);
+
+  // تحديث اسم الوكيل عند تغيير userData
+  useEffect(() => {
+    if (userData && !agentName) {
+      const name = userData.full_name || userData.name || 'وكيل لاعبين';
+      setAgentName(name);
+    }
+  }, [userData, agentName]);
 
   const sidebarDir = lang === 'ar' ? 'rtl' : 'ltr';
   const borderDir = lang === 'ar' ? 'border-l' : 'border-r';
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      await logout();
       router.push('/auth/login');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -126,6 +146,7 @@ export default function AgentSidebar({ collapsed, setCollapsed }) {
           <img src={logo} alt="صورة الوكيل" className="w-32 h-32 rounded-full border-4 border-purple-400 shadow" />
           <div className="mt-2 text-center">
             <div className="text-sm font-medium text-purple-600 dark:text-purple-400">وكيل اللاعبين</div>
+            <div className="text-lg font-bold text-gray-800 dark:text-gray-200 mt-1">{agentName}</div>
           </div>
         </div>
       )}

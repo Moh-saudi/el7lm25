@@ -241,9 +241,11 @@ export const interceptBadRequests = (): void => {
   }
 };
 
-// تشغيل التنظيف تلقائياً
-if (typeof window !== 'undefined') {
-  cleanConsoleUrls();
-  interceptBadRequests();
-  console.debug('✅ تم تفعيل URL validator وتنظيف console ومنع طلبات خاطئة');
-} 
+// دالة للتهيئة اليدوية (لا يتم استدعاؤها تلقائياً)
+export const initializeUrlValidation = () => {
+  if (typeof window !== 'undefined') {
+    cleanConsoleUrls();
+    interceptBadRequests();
+    console.debug('✅ تم تفعيل URL validator وتنظيف console ومنع طلبات خاطئة');
+  }
+}; 

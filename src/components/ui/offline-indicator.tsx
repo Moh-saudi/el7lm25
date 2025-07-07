@@ -1,53 +1,97 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { AlertContent, AlertDescription } from './alert';
-import { Wifi, WifiOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
 
 export default function OfflineIndicator() {
   const [isOnline, setIsOnline] = useState(true);
-  const [showAlert, setShowAlert] = useState(false);
+  const [showIndicator, setShowIndicator] = useState(false);
 
   useEffect(() => {
+    // تحديد الحالة الأولية
+    setIsOnline(navigator.onLine);
+
+    // مراقبة تغيرات الاتصال
     const handleOnline = () => {
       setIsOnline(true);
-      setShowAlert(true);
-      setTimeout(() => setShowAlert(false), 3000);
+      setShowIndicator(true);
+      
+      // إخفاء المؤشر بعد 3 ثوان عند العودة للاتصال
+      setTimeout(() => setShowIndicator(false), 3000);
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      setShowAlert(true);
+      setShowIndicator(true);
     };
 
-    // التحقق من الحالة الأولية
-    setIsOnline(navigator.onLine);
-
+    // إضافة مستمعي الأحداث
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // تنظيف المستمعين عند إلغاء التثبيت
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
-  if (!showAlert && isOnline) return null;
+  // إظهار المؤشر فقط عند عدم الاتصال أو عند العودة مؤقتاً
+  if (!showIndicator && isOnline) return null;
+
+  const handleRetry = () => {
+    window.location.reload();
+  };
 
   return (
-    <div className="fixed top-4 right-4 z-50">
-      <AlertContent className={`${isOnline ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-        <div className="flex items-center gap-2">
-          {isOnline ? (
-            <Wifi className="h-4 w-4 text-green-600" />
-          ) : (
-            <WifiOff className="h-4 w-4 text-red-600" />
-          )}
-          <AlertDescription className={isOnline ? 'text-green-800' : 'text-red-800'}>
-            {isOnline ? 'تم استعادة الاتصال بالإنترنت' : 'لا يوجد اتصال بالإنترنت'}
-          </AlertDescription>
-        </div>
-      </AlertContent>
+    <div className={`
+      fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999]
+      px-4 py-3 rounded-lg shadow-lg
+      flex items-center gap-3
+      transition-all duration-300 ease-in-out
+      ${isOnline 
+        ? 'bg-green-500 text-white animate-bounce' 
+        : 'bg-red-500 text-white'
+      }
+      ${showIndicator ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}
+    `}>
+      {/* أيقونة الحالة */}
+      <div className="flex-shrink-0">
+        {isOnline ? (
+          <Wifi className="w-5 h-5" />
+        ) : (
+          <WifiOff className="w-5 h-5" />
+        )}
+      </div>
+
+      {/* النص */}
+      <div className="flex-1 text-sm font-medium">
+        {isOnline ? (
+          'تم استعادة الاتصال بالإنترنت'
+        ) : (
+          'لا يوجد اتصال بالإنترنت'
+        )}
+      </div>
+
+      {/* زر إعادة المحاولة (فقط عند عدم الاتصال) */}
+      {!isOnline && (
+        <button
+          onClick={handleRetry}
+          className="flex-shrink-0 p-1 rounded hover:bg-red-600 transition-colors"
+          title="إعادة المحاولة"
+        >
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      )}
+
+      {/* زر الإغلاق */}
+      <button
+        onClick={() => setShowIndicator(false)}
+        className="flex-shrink-0 p-1 rounded hover:bg-opacity-80 transition-colors"
+        title="إخفاء"
+      >
+        ×
+      </button>
     </div>
   );
 } 

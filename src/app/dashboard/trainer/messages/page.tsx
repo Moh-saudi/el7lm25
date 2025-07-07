@@ -1,24 +1,18 @@
 'use client';
+import MessageCenter from '@/components/messaging/MessageCenter';
+import ClientOnlyToaster from '@/components/ClientOnlyToaster';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Send, Users } from 'lucide-react';
-
-export default function TrainerMessages() {
+export default function TrainerMessagesPage() {
   return (
-    <div className="p-6">
-      <h1 className="mb-6 text-2xl font-bold text-blue-700">الرسائل</h1>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
-            مركز الرسائل
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600">صفحة إدارة الرسائل والتواصل مع اللاعبين والإدارة</p>
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <ClientOnlyToaster position="top-center" />
+      <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-blue-700">مركز الرسائل</h1>
+          <p className="text-gray-600 mt-2">تواصل مع اللاعبين والأندية والأكاديميات</p>
+        </div>
+        <MessageCenter />
+      </div>
+    </>
   );
 } 

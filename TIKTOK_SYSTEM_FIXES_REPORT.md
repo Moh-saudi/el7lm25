@@ -3,7 +3,7 @@
 ## 📋 **ملخص المشاكل المحلولة**
 
 ### 1. **🔥 خطأ Firebase - مستند النادي المفقود**
-**المشكلة**: `FirebaseError: No document to update: projects/hagzzgo-87884/databases/(default)/documents/clubs/[ID]`
+**المشكلة**: `FirebaseError: No document to update: projects/el7hm-87884/databases/(default)/documents/clubs/[ID]`
 
 **السبب**: محاولة تحديث مستند نادي غير موجود في قاعدة البيانات
 

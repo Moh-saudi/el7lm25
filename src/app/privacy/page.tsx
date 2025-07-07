@@ -2,8 +2,17 @@
 
 import PublicLayout from "@/components/layout/PublicLayout.jsx";
 import React from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function PrivacyPage() {
+  const router = useRouter();
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      window.history.back();
+    } else {
+      router.push('/');
+    }
+  };
   return (
     <PublicLayout>
       <div className="min-h-screen bg-gray-50 py-12">
@@ -11,6 +20,12 @@ export default function PrivacyPage() {
           <div className="bg-white rounded-lg shadow-lg p-8">
             {/* Header */}
             <div className="text-center mb-12">
+              <button
+                onClick={handleBack}
+                className="mb-6 px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 text-gray-700 font-medium"
+              >
+                العودة
+              </button>
               <h1 className="text-4xl font-bold text-gray-900 mb-4">سياسة الخصوصية</h1>
               <p className="text-lg text-gray-600">
                 آخر تحديث: {new Date().toLocaleDateString('ar-SA')}
@@ -22,7 +37,7 @@ export default function PrivacyPage() {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">مقدمة</h2>
                 <p className="text-gray-600 leading-relaxed">
-                  نحن في منصة حجز قو ملتزمون بحماية خصوصيتك وحماية بياناتك الشخصية. 
+                  نحن في منصة الحلم (el7lm) تحت مِيسك القابضة ملتزمون بحماية خصوصيتك وحماية بياناتك الشخصية. 
                   تشرح هذه السياسة كيفية جمعنا واستخدامنا وحماية معلوماتك عند استخدام خدماتنا.
                 </p>
               </section>
@@ -156,8 +171,9 @@ export default function PrivacyPage() {
                 </p>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <ul className="text-gray-600 space-y-2">
-                    <li><strong>البريد الإلكتروني:</strong> privacy@hagzzgo.com</li>
-                    <li><strong>الهاتف:</strong> +974 1234 5678</li>
+                    <li><strong>البريد الإلكتروني:</strong> info@el7lm.com</li>
+                    <li><strong>الهاتف (قطر):</strong> 97472053188</li>
+                    <li><strong>الهاتف (مصر):</strong> 01017799580</li>
                     <li><strong>العنوان:</strong> الدوحة، قطر</li>
                   </ul>
                 </div>
@@ -165,7 +181,7 @@ export default function PrivacyPage() {
 
               <div className="border-t pt-6 mt-8">
                 <p className="text-sm text-gray-500 text-center">
-                  © {new Date().getFullYear()} حجز قو. جميع الحقوق محفوظة.
+                  © {new Date().getFullYear()} الحلم (el7lm) تحت مِيسك القابضة. جميع الحقوق محفوظة.
                 </p>
               </div>
             </div>

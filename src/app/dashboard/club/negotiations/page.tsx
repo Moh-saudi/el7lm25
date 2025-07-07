@@ -79,6 +79,17 @@ export default function NegotiationsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string[]>([]);
 
+  if (userData && userData.accountType === 'club' && !userData.clubId) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 font-bold text-lg mb-2">لا يمكن تحميل المفاوضات: لم يتم العثور على معرف النادي.</p>
+          <p className="text-gray-500">يرجى التأكد من بيانات الحساب أو التواصل مع الدعم الفني.</p>
+        </div>
+      </div>
+    );
+  }
+
   useEffect(() => {
     if (!user) {
       router.push('/auth/login');

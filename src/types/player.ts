@@ -1,6 +1,6 @@
 export interface PlayerFormData {
   full_name: string;
-  birth_date?: Date;
+  birth_date?: Date | undefined;
   age?: number;
   nationality: string;
   city: string;

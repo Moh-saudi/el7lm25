@@ -1,4 +1,4 @@
-# ملخص حل المشاكل - HAGZZ GO 🎯
+# ملخص حل المشاكل - El7hm 🎯
 
 ## ✅ المشاكل التي تم حلها
 
@@ -61,7 +61,7 @@ export function checkCommonIssues() {
 ```bash
 # .env.local
 NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDCQQxUbeQQrlty5HnF65-7TK0TB2zB7R4
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=hagzzgo-87884.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=el7hm-87884.firebaseapp.com
 # ... باقي المتغيرات
 ```
 

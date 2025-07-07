@@ -29,10 +29,11 @@ const clubMenuItems = [
 
 export default function ClubSidebar({ collapsed, setCollapsed }) {
   const router = useRouter();
-  const { signOut, user } = useAuth();
+  const { logout, user, userData } = useAuth();
   // اللغة من localStorage أو الافتراضي 'ar'
   const [lang, setLang] = useState('ar');
   const [logo, setLogo] = useState('/club-avatar.png');
+  const [clubName, setClubName] = useState('');
 
   useEffect(() => {
     // جلب اللغة من localStorage أو html tag
@@ -74,17 +75,28 @@ export default function ClubSidebar({ collapsed, setCollapsed }) {
             console.log('🎨 ClubSidebar: لا يوجد لوجو، استخدام الافتراضي');
             setLogo('/club-avatar.png');
           }
+          
+          // تحديد اسم النادي من عدة مصادر
+          const name = data.club_name || data.name || data.full_name || userData?.full_name || userData?.name || 'نادي رياضي';
+          setClubName(name);
         } else {
           console.log('🎨 ClubSidebar: وثيقة النادي غير موجودة');
           setLogo('/club-avatar.png');
+          // استخدم userData في حالة عدم وجود بيانات النادي
+          const name = userData?.full_name || userData?.name || 'نادي رياضي';
+          setClubName(name);
         }
       } catch (error) {
         console.error('❌ ClubSidebar: خطأ في معالجة بيانات النادي:', error);
         setLogo('/club-avatar.png');
+        const name = userData?.full_name || userData?.name || 'نادي رياضي';
+        setClubName(name);
       }
     }, (error) => {
       console.error('❌ ClubSidebar: خطأ في الاستماع لتحديثات النادي:', error);
       setLogo('/club-avatar.png');
+      const name = userData?.full_name || userData?.name || 'نادي رياضي';
+      setClubName(name);
     });
 
     // تنظيف المستمع عند إلغاء التثبيت
@@ -92,7 +104,15 @@ export default function ClubSidebar({ collapsed, setCollapsed }) {
       console.log('🎨 ClubSidebar: إيقاف الاستماع لتحديثات اللوجو');
       unsubscribe();
     };
-  }, [user?.uid]);
+  }, [user?.uid, userData]);
+
+  // تحديث اسم النادي عند تغيير userData
+  useEffect(() => {
+    if (userData && !clubName) {
+      const name = userData.full_name || userData.name || 'نادي رياضي';
+      setClubName(name);
+    }
+  }, [userData, clubName]);
 
   // اتجاه القائمة حسب اللغة
   const sidebarDir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -100,8 +120,8 @@ export default function ClubSidebar({ collapsed, setCollapsed }) {
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      router.push('/auth/login');
+      await logout();
+      // The logout function already redirects to '/' so we don't need to navigate
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -130,6 +150,10 @@ export default function ClubSidebar({ collapsed, setCollapsed }) {
               e.target.src = "/club-avatar.png";
             }}
           />
+          <div className="mt-2 text-center">
+            <div className="text-sm font-medium text-green-600 dark:text-green-400">النادي الرياضي</div>
+            <div className="text-lg font-bold text-gray-800 dark:text-gray-200 mt-1">{clubName}</div>
+          </div>
         </div>
       )}
       {/* عناصر القائمة */}
