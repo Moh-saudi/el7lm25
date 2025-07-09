@@ -1,0 +1,326 @@
+/* ==============================================
+   HAGZZ GO - Main Styles (Optimized & Clean)
+   ============================================== */
+
+/* Cairo Font System */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==============================================
+   1. BASE STYLES & FONT SYSTEM
+   ============================================== */
+
+@layer base {
+  html {
+    font-family: var(--font-cairo), 'Cairo', ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: 'kern' 1, 'liga' 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    direction: rtl;
+  }
+  
+  body {
+    font-family: var(--font-cairo), 'Cairo', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+    direction: rtl;
+  }
+  
+  * {
+    font-family: var(--font-cairo), 'Cairo', sans-serif;
+  }
+}
+
+/* ==============================================
+   2. CSS VARIABLES & THEME
+   ============================================== */
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 255, 255, 255;
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #6d28d9;
+  --secondary: #db2777;
+  --accent: #14b8a6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --font-cairo: 'Cairo', sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --primary: #8b5cf6;
+    --secondary: #ec4899;
+    --accent: #2dd4bf;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* ==============================================
+   3. ESSENTIAL ANIMATIONS
+   ============================================== */
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-fade-in { animation: fade-in 0.6s ease-out forwards; }
+.animate-loading-bar { animation: loading-bar 2s ease-in-out infinite; }
+.animate-spin { animation: spin 1s linear infinite; }
+.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* ==============================================
+   4. COMPONENT UTILITIES
+   ============================================== */
+
+@layer utilities {
+  .btn-primary {
+    @apply px-6 py-3 text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all transform hover:scale-[1.02];
+  }
+  
+  .btn-secondary {
+    @apply px-6 py-3 text-blue-600 bg-white border-2 border-blue-600 rounded-xl hover:bg-blue-50 transition-all;
+  }
+  
+  .card {
+    @apply p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+  
+  .input {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  }
+  
+  .gradient-text {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800;
+  }
+  
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+/* ==============================================
+   5. SCROLLBAR & ACCESSIBILITY
+   ============================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ==============================================
+   6. VIDEO PLAYER OPTIMIZATIONS
+   ============================================== */
+
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+}
+
+.video-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    transparent 100%
+  );
+}
+
+.react-player {
+  pointer-events: none;
+}
+
+.react-player__youtube iframe,
+.react-player__vimeo iframe,
+.react-player__dailymotion iframe {
+  pointer-events: none !important;
+}
+
+/* Hide YouTube/Vimeo/Dailymotion overlays and controls */
+.ytp-endscreen-content,
+.ytp-ce-element,
+.ytp-cards-teaser,
+.ytp-chrome-bottom,
+.vp-overlay,
+.dmp-ui-controlbar {
+  display: none !important;
+}
+
+/* ==============================================
+   7. RESPONSIVE DESIGN
+   ============================================== */
+
+@media (max-width: 768px) {
+  .mobile-hidden { display: none; }
+  .mobile-full { width: 100%; }
+  
+  .card {
+    @apply p-4;
+  }
+  
+  .btn-primary, .btn-secondary {
+    @apply px-4 py-2 text-sm;
+  }
+}
+
+@media print {
+  .no-print { display: none; }
+  body { color: black; background: white; }
+}
+
+/* ==============================================
+   8. PERFORMANCE OPTIMIZATIONS
+   ============================================== */
+
+img {
+  content-visibility: auto;
+  loading: lazy;
+  decoding: async;
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* ==============================================
+   9. APPLE PAY SPECIFIC STYLES
+   ============================================== */
+
+.apple-pay-button {
+  background: black;
+  color: white;
+  border-radius: 8px;
+  padding: 12px 24px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.apple-pay-button:hover {
+  background: #333;
+}
+
+html:not(.apple-pay-supported) .apple-pay-only {
+  display: none;
+}
+
+html.apple-pay-supported .apple-pay-fallback {
+  display: none;
+}
+
+/* ==============================================
+   10. ERROR HANDLING & FALLBACKS
+   ============================================== */
+
+.development-error {
+  background: #fee;
+  color: #c00;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.loading-spinner {
+  @apply w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin;
+}
+
+/* ==============================================
+   11. LAYOUT COMPONENTS
+   ============================================== */
+
+.sidebar {
+  transition: width 0.3s ease;
+}
+
+.dashboard-card {
+  @apply bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow;
+}
+
+.profile-picture {
+  @apply w-16 h-16 rounded-full object-cover border-2 border-gray-200;
+}
+
+/* ==============================================
+   12. ERROR BOUNDARY STYLES
+   ============================================== */
+
+.error-boundary {
+  @apply min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-pink-50 to-red-50;
+}
+
+.error-content {
+  @apply max-w-md w-full text-center p-8;
+}
+
+.error-icon {
+  @apply w-24 h-24 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce;
+}
+
+.error-title {
+  @apply text-2xl font-bold text-gray-800 mb-3;
+}
+
+.error-message {
+  @apply text-gray-600 mb-6 leading-relaxed;
+}
+
+.error-actions {
+  @apply space-y-3;
+}
+
+/* ==============================================
+   END OF OPTIMIZED STYLES
+   ============================================== */
