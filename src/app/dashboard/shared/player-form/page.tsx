@@ -693,15 +693,39 @@ export default function SharedPlayerForm({
       console.log('[player-form] البيانات المرسلة إلى الحفظ:', updateData);
 
       if (mode === 'add') {
-        // إضافة لاعب جديد
-        await addDoc(collection(db, 'players'), {
+        // إضافة لاعب جديد مع الحقول المناسبة حسب نوع الحساب
+        const playerData = {
           ...updateData,
           created_at: new Date(),
           created_by: user.uid,
-          created_by_type: accountType,
-          club_id: user.uid,
-          clubId: user.uid
-        });
+          created_by_type: accountType
+        };
+
+        // إضافة الحقول المناسبة حسب نوع الحساب
+        switch (accountType) {
+          case 'club':
+            playerData.club_id = user.uid;
+            playerData.clubId = user.uid;
+            break;
+          case 'academy':
+            playerData.academy_id = user.uid;
+            playerData.academyId = user.uid;
+            break;
+          case 'trainer':
+            playerData.trainer_id = user.uid;
+            playerData.trainerId = user.uid;
+            break;
+          case 'agent':
+            playerData.agent_id = user.uid;
+            playerData.agentId = user.uid;
+            break;
+          default:
+            // للحالات الأخرى، استخدم club_id كافتراضي
+            playerData.club_id = user.uid;
+            playerData.clubId = user.uid;
+        }
+
+        await addDoc(collection(db, 'players'), playerData);
         setSuccessMessage('تمت إضافة اللاعب بنجاح');
       } else if (mode === 'edit' && playerId) {
         // تعديل لاعب موجود
