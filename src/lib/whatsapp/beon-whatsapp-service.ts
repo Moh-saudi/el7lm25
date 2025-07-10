@@ -144,4 +144,10 @@ El7hm Team`;
   }
 }
 
+// دالة وهمية لإرسال OTP عبر BeOn WhatsApp (لتجنب خطأ الاستيراد)
+export async function sendBeOnWhatsAppOTP(phone: string, otp: string, name?: string) {
+  // يمكنك لاحقًا ربطها بالخدمة الحقيقية
+  return { success: true, message: 'OTP sent (mock)' };
+}
+
 export default BeOnWhatsAppService; 

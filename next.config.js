@@ -45,7 +45,7 @@ const nextConfig = {
     compress: true,
     poweredByHeader: false,
     // إصلاح تكوين external packages
-    serverExternalPackages: ['@firebase/admin'],
+    // serverExternalPackages: ['@firebase/admin'],
     // إضافة إعدادات إضافية للاستقرار
     experimental: {
         optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],

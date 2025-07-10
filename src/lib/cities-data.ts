@@ -140,6 +140,161 @@ export const CITIES_BY_COUNTRY: Record<string, string[]> = {
   ]
 };
 
+export const COUNTRIES_DATA = [
+  {
+    id: 'sa',
+    name: 'المملكة العربية السعودية',
+    nameEn: 'Saudi Arabia',
+    code: 'SA',
+    flag: '🇸🇦',
+    currency: 'SAR',
+    dialCode: '+966',
+    isActive: true,
+    cities: [
+      { id: 'sa_01', name: 'الرياض', nameEn: 'Riyadh', isCapital: true, isActive: true },
+      { id: 'sa_02', name: 'جدة', nameEn: 'Jeddah', isCapital: false, isActive: true },
+      { id: 'sa_03', name: 'مكة المكرمة', nameEn: 'Makkah', isCapital: false, isActive: true },
+      { id: 'sa_04', name: 'المدينة المنورة', nameEn: 'Madinah', isCapital: false, isActive: true },
+      { id: 'sa_05', name: 'الدمام', nameEn: 'Dammam', isCapital: false, isActive: true },
+      { id: 'sa_06', name: 'الخبر', nameEn: 'Khobar', isCapital: false, isActive: true },
+      { id: 'sa_07', name: 'الظهران', nameEn: 'Dhahran', isCapital: false, isActive: true },
+      { id: 'sa_08', name: 'الأحساء', nameEn: 'Al-Ahsa', isCapital: false, isActive: true },
+      { id: 'sa_09', name: 'الطائف', nameEn: 'Taif', isCapital: false, isActive: true },
+      { id: 'sa_10', name: 'تبوك', nameEn: 'Tabuk', isCapital: false, isActive: true },
+      { id: 'sa_11', name: 'بريدة', nameEn: 'Buraidah', isCapital: false, isActive: true },
+      { id: 'sa_12', name: 'خميس مشيط', nameEn: 'Khamis Mushait', isCapital: false, isActive: true }
+    ]
+  },
+  {
+    id: 'ae',
+    name: 'الإمارات العربية المتحدة',
+    nameEn: 'United Arab Emirates',
+    code: 'AE',
+    flag: '🇦🇪',
+    currency: 'AED',
+    dialCode: '+971',
+    isActive: true,
+    cities: [
+      { id: 'ae_01', name: 'أبوظبي', nameEn: 'Abu Dhabi', isCapital: true, isActive: true },
+      { id: 'ae_02', name: 'دبي', nameEn: 'Dubai', isCapital: false, isActive: true },
+      { id: 'ae_03', name: 'الشارقة', nameEn: 'Sharjah', isCapital: false, isActive: true },
+      { id: 'ae_04', name: 'العين', nameEn: 'Al Ain', isCapital: false, isActive: true },
+      { id: 'ae_05', name: 'عجمان', nameEn: 'Ajman', isCapital: false, isActive: true },
+      { id: 'ae_06', name: 'رأس الخيمة', nameEn: 'Ras Al Khaimah', isCapital: false, isActive: true },
+      { id: 'ae_07', name: 'الفجيرة', nameEn: 'Fujairah', isCapital: false, isActive: true },
+      { id: 'ae_08', name: 'أم القيوين', nameEn: 'Umm Al Quwain', isCapital: false, isActive: true }
+    ]
+  },
+  {
+    id: 'qa',
+    name: 'قطر',
+    nameEn: 'Qatar',
+    code: 'QA',
+    flag: '🇶🇦',
+    currency: 'QAR',
+    dialCode: '+974',
+    isActive: true,
+    cities: [
+      { id: 'qa_01', name: 'الدوحة', nameEn: 'Doha', isCapital: true, isActive: true },
+      { id: 'qa_02', name: 'الوكرة', nameEn: 'Al Wakrah', isCapital: false, isActive: true },
+      { id: 'qa_03', name: 'الخور', nameEn: 'Al Khor', isCapital: false, isActive: true },
+      { id: 'qa_04', name: 'الريان', nameEn: 'Al Rayyan', isCapital: false, isActive: true },
+      { id: 'qa_05', name: 'أم صلال', nameEn: 'Umm Salal', isCapital: false, isActive: true }
+    ]
+  },
+  {
+    id: 'kw',
+    name: 'الكويت',
+    nameEn: 'Kuwait',
+    code: 'KW',
+    flag: '🇰🇼',
+    currency: 'KWD',
+    dialCode: '+965',
+    isActive: true,
+    cities: [
+      { id: 'kw_01', name: 'مدينة الكويت', nameEn: 'Kuwait City', isCapital: true, isActive: true },
+      { id: 'kw_02', name: 'حولي', nameEn: 'Hawalli', isCapital: false, isActive: true },
+      { id: 'kw_03', name: 'الجهراء', nameEn: 'Al Jahra', isCapital: false, isActive: true },
+      { id: 'kw_04', name: 'الفروانية', nameEn: 'Al Farwaniyah', isCapital: false, isActive: true },
+      { id: 'kw_05', name: 'مبارك الكبير', nameEn: 'Mubarak Al-Kabeer', isCapital: false, isActive: true },
+      { id: 'kw_06', name: 'الأحمدي', nameEn: 'Al Ahmadi', isCapital: false, isActive: true }
+    ]
+  },
+  {
+    id: 'bh',
+    name: 'البحرين',
+    nameEn: 'Bahrain',
+    code: 'BH',
+    flag: '🇧🇭',
+    currency: 'BHD',
+    dialCode: '+973',
+    isActive: true,
+    cities: [
+      { id: 'bh_01', name: 'المنامة', nameEn: 'Manama', isCapital: true, isActive: true },
+      { id: 'bh_02', name: 'المحرق', nameEn: 'Muharraq', isCapital: false, isActive: true },
+      { id: 'bh_03', name: 'الرفاع', nameEn: 'Riffa', isCapital: false, isActive: true },
+      { id: 'bh_04', name: 'مدينة عيسى', nameEn: 'Isa Town', isCapital: false, isActive: true },
+      { id: 'bh_05', name: 'مدينة حمد', nameEn: 'Hamad Town', isCapital: false, isActive: true }
+    ]
+  },
+  {
+    id: 'om',
+    name: 'عمان',
+    nameEn: 'Oman',
+    code: 'OM',
+    flag: '🇴🇲',
+    currency: 'OMR',
+    dialCode: '+968',
+    isActive: true,
+    cities: [
+      { id: 'om_01', name: 'مسقط', nameEn: 'Muscat', isCapital: true, isActive: true },
+      { id: 'om_02', name: 'صلالة', nameEn: 'Salalah', isCapital: false, isActive: true },
+      { id: 'om_03', name: 'صحار', nameEn: 'Sohar', isCapital: false, isActive: true },
+      { id: 'om_04', name: 'نزوى', nameEn: 'Nizwa', isCapital: false, isActive: true },
+      { id: 'om_05', name: 'صور', nameEn: 'Sur', isCapital: false, isActive: true }
+    ]
+  },
+  {
+    id: 'eg',
+    name: 'مصر',
+    nameEn: 'Egypt',
+    code: 'EG',
+    flag: '🇪🇬',
+    currency: 'EGP',
+    dialCode: '+20',
+    isActive: true,
+    cities: [
+      { id: 'eg_01', name: 'القاهرة', nameEn: 'Cairo', isCapital: true, isActive: true },
+      { id: 'eg_02', name: 'الجيزة', nameEn: 'Giza', isCapital: false, isActive: true },
+      { id: 'eg_03', name: 'الإسكندرية', nameEn: 'Alexandria', isCapital: false, isActive: true },
+      { id: 'eg_04', name: 'الدقهلية', nameEn: 'Dakahlia', isCapital: false, isActive: true },
+      { id: 'eg_05', name: 'البحر الأحمر', nameEn: 'Red Sea', isCapital: false, isActive: true },
+      { id: 'eg_06', name: 'البحيرة', nameEn: 'Beheira', isCapital: false, isActive: true },
+      { id: 'eg_07', name: 'الفيوم', nameEn: 'Fayoum', isCapital: false, isActive: true },
+      { id: 'eg_08', name: 'الغربية', nameEn: 'Gharbia', isCapital: false, isActive: true },
+      { id: 'eg_09', name: 'الإسماعيلية', nameEn: 'Ismailia', isCapital: false, isActive: true },
+      { id: 'eg_10', name: 'المنوفية', nameEn: 'Menofia', isCapital: false, isActive: true },
+      { id: 'eg_11', name: 'المنيا', nameEn: 'Minya', isCapital: false, isActive: true },
+      { id: 'eg_12', name: 'القليوبية', nameEn: 'Qalyubia', isCapital: false, isActive: true },
+      { id: 'eg_13', name: 'الوادي الجديد', nameEn: 'New Valley', isCapital: false, isActive: true },
+      { id: 'eg_14', name: 'السويس', nameEn: 'Suez', isCapital: false, isActive: true },
+      { id: 'eg_15', name: 'اسوان', nameEn: 'Aswan', isCapital: false, isActive: true },
+      { id: 'eg_16', name: 'اسيوط', nameEn: 'Assiut', isCapital: false, isActive: true },
+      { id: 'eg_17', name: 'بني سويف', nameEn: 'Beni Suef', isCapital: false, isActive: true },
+      { id: 'eg_18', name: 'بورسعيد', nameEn: 'Port Said', isCapital: false, isActive: true },
+      { id: 'eg_19', name: 'دمياط', nameEn: 'Damietta', isCapital: false, isActive: true },
+      { id: 'eg_20', name: 'الشرقية', nameEn: 'Sharqia', isCapital: false, isActive: true },
+      { id: 'eg_21', name: 'جنوب سيناء', nameEn: 'South Sinai', isCapital: false, isActive: true },
+      { id: 'eg_22', name: 'كفر الشيخ', nameEn: 'Kafr El Sheikh', isCapital: false, isActive: true },
+      { id: 'eg_23', name: 'مطروح', nameEn: 'Matrouh', isCapital: false, isActive: true },
+      { id: 'eg_24', name: 'الأقصر', nameEn: 'Luxor', isCapital: false, isActive: true },
+      { id: 'eg_25', name: 'قنا', nameEn: 'Qena', isCapital: false, isActive: true },
+      { id: 'eg_26', name: 'شمال سيناء', nameEn: 'North Sinai', isCapital: false, isActive: true },
+      { id: 'eg_27', name: 'سوهاج', nameEn: 'Sohag', isCapital: false, isActive: true }
+    ]
+  }
+];
+
 // دالة للحصول على الدولة من المدينة
 export function getCountryFromCity(city: string): string | null {
   if (!city) return null;

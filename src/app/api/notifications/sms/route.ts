@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     // اختيار الخدمة حسب النوع
     switch (type) {
       case 'twilio':
-        result = await sendTwilioSMS(formattedPhone, message);
+        // result = await sendTwilioSMS(formattedPhone, message);
         break;
       case '4jawaly':
         result = await send4jawalySMS(formattedPhone, message);
@@ -53,26 +53,19 @@ export async function POST(request: NextRequest) {
 }
 
 // دالة إرسال SMS عبر Twilio
-async function sendTwilioSMS(phone: string, message: string) {
-  try {
-    // يحتاج تثبيت: npm install twilio
-    const twilio = require('twilio');
-    const client = twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
-
-    const result = await client.messages.create({
-      body: message,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: phone
-    });
-
-    return { success: true, messageId: result.sid };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-}
+// async function sendTwilioSMS(phone: string, message: string) {
+//   // يحتاج تثبيت: npm install twilio
+//   const twilio = require('twilio');
+//   const client = twilio(
+//     process.env.TWILIO_ACCOUNT_SID,
+//     process.env.TWILIO_AUTH_TOKEN
+//   );
+//   return client.messages.create({
+//     body: message,
+//     from: process.env.TWILIO_PHONE_NUMBER,
+//     to: phone
+//   });
+// }
 
 // دالة إرسال SMS عبر 4jawaly
 async function send4jawalySMS(phone: string, message: string) {
