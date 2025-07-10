@@ -56,6 +56,8 @@ export class OTPManager {
   }
 
   static validateOTP(inputOTP: string): boolean {
+    if (typeof window === 'undefined') return false;
+    
     const storedOTP = localStorage.getItem(OTP_STORAGE_KEYS.PENDING_OTP);
     const expiryTime = localStorage.getItem(OTP_STORAGE_KEYS.OTP_EXPIRY);
     
@@ -73,21 +75,29 @@ export class OTPManager {
   }
 
   static storeOTP(otp: string, expiry: number): void {
+    if (typeof window === 'undefined') return;
+    
     localStorage.setItem(OTP_STORAGE_KEYS.PENDING_OTP, otp);
     localStorage.setItem(OTP_STORAGE_KEYS.OTP_EXPIRY, expiry.toString());
   }
 
   static clearOTP(): void {
+    if (typeof window === 'undefined') return;
+    
     localStorage.removeItem(OTP_STORAGE_KEYS.PENDING_OTP);
     localStorage.removeItem(OTP_STORAGE_KEYS.OTP_EXPIRY);
     localStorage.removeItem(OTP_STORAGE_KEYS.VERIFICATION_EMAIL);
   }
 
   static getStoredEmail(): string | null {
+    if (typeof window === 'undefined') return null;
+    
     return localStorage.getItem(OTP_STORAGE_KEYS.VERIFICATION_EMAIL);
   }
 
   static storeEmail(email: string): void {
+    if (typeof window === 'undefined') return;
+    
     localStorage.setItem(OTP_STORAGE_KEYS.VERIFICATION_EMAIL, email);
   }
 } 

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { EmailService } from '@/lib/emailjs/service';
-import { CheckCircle, AlertTriangle, Mail, Send, RefreshCw } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Mail, Send, RefreshCw, Settings } from 'lucide-react';
 
 export default function TestEmailPage() {
   const [email, setEmail] = useState('');
