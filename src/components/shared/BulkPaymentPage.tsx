@@ -795,7 +795,9 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
     }
 
     // حفظ المبلغ المحول للاستخدام في المودال
-    window.convertedAmountForGeidea = convertedAmountEGP;
+    if (typeof window !== 'undefined') {
+      window.convertedAmountForGeidea = convertedAmountEGP;
+    }
     
     // فتح مودال الدفع
     setShowGeideaModal(true);
@@ -2077,7 +2079,7 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
           onRequestClose={() => setShowGeideaModal(false)}
           onPaymentSuccess={handlePaymentSuccess}
           onPaymentFailure={handlePaymentFailure}
-          amount={window.convertedAmountForGeidea || Math.round(finalPrice)} // استخدام المبلغ المحول الصحيح
+          amount={typeof window !== 'undefined' && window.convertedAmountForGeidea ? window.convertedAmountForGeidea : Math.round(finalPrice)} // استخدام المبلغ المحول الصحيح
                   currency="EGP"
           title="اشتراكات اللاعبين"
           description={`تجديد اشتراكات ${selectedCount} لاعب بإجمالي ${finalPrice.toLocaleString()} ${currency.symbol}`}

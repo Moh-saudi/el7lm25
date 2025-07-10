@@ -121,7 +121,7 @@ export default function TestDashboardRedirectPage() {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // فحص التوجيه
-      const currentPath = window.location.pathname;
+      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
       addLog(`📍 المسار الحالي: ${currentPath}`);
 
       const testResult = {
@@ -243,7 +243,7 @@ export default function TestDashboardRedirectPage() {
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">المسار الحالي</p>
-                <p className="font-medium">{window.location.pathname}</p>
+                <p className="font-medium">{typeof window !== 'undefined' ? window.location.pathname : ''}</p>
               </div>
             </div>
           </div>

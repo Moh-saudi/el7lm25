@@ -39,7 +39,7 @@ export default function ImageWrapper({
     return url.includes('supabase.co') || 
            url.includes('firebasestorage.googleapis.com') || 
            url.includes('cloudinary.com') ||
-           (url.startsWith('http') && !url.includes(window.location.hostname));
+           (url.startsWith('http') && !url.includes(typeof window !== 'undefined' ? window.location.hostname : ''));
   };
 
   // التحقق من الروابط المكسورة

@@ -26,21 +26,25 @@ export default function OfflineIndicator() {
     };
 
     // إضافة مستمعي الأحداث
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
 
-    // تنظيف المستمعين عند إلغاء التثبيت
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+      // تنظيف المستمعين عند إلغاء التثبيت
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }
   }, []);
 
   // إظهار المؤشر فقط عند عدم الاتصال أو عند العودة مؤقتاً
   if (!showIndicator && isOnline) return null;
 
   const handleRetry = () => {
-    window.location.reload();
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   };
 
   return (
@@ -94,4 +98,4 @@ export default function OfflineIndicator() {
       </button>
     </div>
   );
-} 
+}

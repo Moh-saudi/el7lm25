@@ -14,13 +14,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Check for mobile screen
   React.useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      setIsSidebarOpen(window.innerWidth >= 768);
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth < 768);
+        setIsSidebarOpen(window.innerWidth >= 768);
+      }
     };
     
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }
   }, []);
 
   // Check user permissions with detailed logging
@@ -30,7 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       hasUserData: !!userData,
       userEmail: user?.email,
       accountType: userData?.accountType,
-      pathname: window.location.pathname,
+      pathname: typeof window !== 'undefined' ? window.location.pathname : '',
       timestamp: new Date().toISOString()
     });
 

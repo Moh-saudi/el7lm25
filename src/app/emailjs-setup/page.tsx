@@ -63,7 +63,9 @@ export default function EmailJSSetupPage() {
       
       // إعادة تحميل الصفحة بعد ثانيتين
       setTimeout(() => {
-        window.location.reload();
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
       }, 2000);
     } catch (error: any) {
       setError(`❌ خطأ في حفظ الإعدادات: ${error.message}`);

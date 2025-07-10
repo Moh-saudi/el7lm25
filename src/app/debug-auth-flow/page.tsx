@@ -130,7 +130,7 @@ export default function DebugAuthFlowPage() {
       // 4. فحص المسار الحالي والمسار المتوقع
       addLog('4️⃣ فحص المسارات...', 'info');
       
-      const currentPath = window.location.pathname;
+      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
       const expectedPath = userData ? getDashboardRoute(userData.accountType) : 'غير محدد';
       
       addLog(`   - المسار الحالي: ${currentPath}`, 'info');

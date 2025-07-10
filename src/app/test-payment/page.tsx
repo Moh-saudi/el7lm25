@@ -59,7 +59,9 @@ export default function TestPaymentPage() {
 
         // توجيه المستخدم لصفحة الدفع بعد ثانيتين
         setTimeout(() => {
-          window.location.href = response.redirectUrl!;
+          if (typeof window !== 'undefined') {
+            window.location.href = response.redirectUrl!;
+          }
         }, 2000);
 
       } else {

@@ -410,7 +410,7 @@ export default function PlayerVideosPage({ accountType }: PlayerVideosPageProps)
       if (!video) return;
       
       const shareText = `شاهد فيديو ${video.playerName} - ${video.description}`;
-      const shareUrl = `${window.location.origin}/videos/${videoId}`;
+      const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/videos/${videoId}`;
       
       if (navigator.share) {
         await navigator.share({
@@ -514,7 +514,7 @@ export default function PlayerVideosPage({ accountType }: PlayerVideosPageProps)
     
     if (newIndex !== currentVideoIndex) {
       containerRef.current.scrollTo({
-        top: newIndex * window.innerHeight,
+        top: newIndex * (typeof window !== 'undefined' ? window.innerHeight : 1000),
         behavior: 'smooth'
       });
     }
@@ -675,8 +675,8 @@ export default function PlayerVideosPage({ accountType }: PlayerVideosPageProps)
                           enablejsapi: 1,
                           end: 99999,
                           start: 0,
-                          widget_referrer: window.location.origin,
-                          origin: window.location.origin,
+                          widget_referrer: typeof window !== 'undefined' ? window.location.origin : '',
+                          origin: typeof window !== 'undefined' ? window.location.origin : '',
                           autohide: 1,
                           wmode: 'transparent',
                           html5: 1,
@@ -726,7 +726,7 @@ export default function PlayerVideosPage({ accountType }: PlayerVideosPageProps)
                     onEnded={() => {
                       if (index < filteredVideos.length - 1) {
                         containerRef.current?.scrollTo({
-                          top: (index + 1) * window.innerHeight,
+                          top: (index + 1) * (typeof window !== 'undefined' ? window.innerHeight : 1000),
                           behavior: 'smooth'
                         });
                       }

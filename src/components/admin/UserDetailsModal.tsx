@@ -394,7 +394,9 @@ export default function UserDetailsModal({ userId, isOpen, onClose, onUserUpdate
   const openUserProfile = () => {
     if (!user) return;
     const profileUrl = `/dashboard/${user.accountType}/profile`;
-    window.open(profileUrl, '_blank');
+    if (typeof window !== 'undefined') {
+      window.open(profileUrl, '_blank');
+    }
   };
 
   const handleClose = () => {

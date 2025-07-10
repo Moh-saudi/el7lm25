@@ -18,28 +18,36 @@ export default function OfflinePage() {
     checkOnlineStatus();
 
     // مراقبة تغييرات الاتصال
-    window.addEventListener('online', checkOnlineStatus);
-    window.addEventListener('offline', checkOnlineStatus);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', checkOnlineStatus);
+      window.addEventListener('offline', checkOnlineStatus);
 
-    return () => {
-      window.removeEventListener('online', checkOnlineStatus);
-      window.removeEventListener('offline', checkOnlineStatus);
-    };
+      return () => {
+        window.removeEventListener('online', checkOnlineStatus);
+        window.removeEventListener('offline', checkOnlineStatus);
+      };
+    }
   }, []);
 
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
-    window.location.reload();
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   };
 
   const handleGoHome = () => {
-    window.location.href = '/';
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
   // إذا عاد الاتصال، إعادة التوجيه
   useEffect(() => {
     if (isOnline && retryCount > 0) {
-      window.location.reload();
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
     }
   }, [isOnline, retryCount]);
 

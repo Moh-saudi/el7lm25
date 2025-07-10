@@ -54,8 +54,10 @@ function useElementWidth<T extends HTMLElement>(ref: React.RefObject<T | null>):
       }
     }
     updateWidth();
-    window.addEventListener("resize", updateWidth);
-    return () => window.removeEventListener("resize", updateWidth);
+    if (typeof window !== 'undefined') {
+      window.addEventListener("resize", updateWidth);
+      return () => window.removeEventListener("resize", updateWidth);
+    }
   }, [ref]);
 
   return width;

@@ -54,7 +54,7 @@ export default function CustomPasswordReset({
     try {
       // إنشاء رمز إعادة تعيين مؤقت
       const resetToken = generateResetToken();
-      const resetLink = `${window.location.origin}/auth/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+      const resetLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
       
       // إرسال البريد الإلكتروني المخصص
       const templateParams = {

@@ -52,7 +52,7 @@ export default function ApplePayButton({
 
   // بدء جلسة Apple Pay
   const startApplePaySession = () => {
-    if (!window.ApplePaySession) {
+    if (typeof window === 'undefined' || !window.ApplePaySession) {
       onPaymentError({ message: 'Apple Pay غير متاح على هذا الجهاز' });
       return;
     }
@@ -106,7 +106,7 @@ export default function ApplePayButton({
         // لكن في حالة Geidea، هذا يتم تلقائياً
         session.completeMerchantValidation({
           merchantIdentifier: process.env.APPLE_PAY_MERCHANT_ID,
-          domainName: process.env.APPLE_PAY_DOMAIN || window.location.hostname,
+          domainName: process.env.APPLE_PAY_DOMAIN || (typeof window !== 'undefined' ? window.location.hostname : ''),
           displayName: process.env.APPLE_PAY_MERCHANT_NAME || 'PayTech'
         });
       } catch (error) {

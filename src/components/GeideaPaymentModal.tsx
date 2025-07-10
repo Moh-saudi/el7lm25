@@ -107,7 +107,7 @@ export default function GeideaPaymentModal({
         console.log('✅ Geidea script tag exists, waiting for load...');
         // إذا كان الـ script موجود ولكن المكتبة غير متاحة، انتظر قليلاً
         const checkInterval = setInterval(() => {
-          if (window.GeideaCheckout) {
+          if (typeof window !== 'undefined' && window.GeideaCheckout) {
             clearInterval(checkInterval);
             resolve();
           }

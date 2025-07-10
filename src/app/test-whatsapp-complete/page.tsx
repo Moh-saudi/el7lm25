@@ -147,7 +147,7 @@ export default function TestWhatsAppComplete() {
           <ul className="text-yellow-600 text-sm space-y-1">
             <li>• Current time: {new Date().toLocaleString()}</li>
             <li>• User agent: {navigator.userAgent}</li>
-            <li>• Window location: {window.location.href}</li>
+            <li>• Window location: {typeof window !== 'undefined' ? window.location.href : 'N/A'}</li>
             <li>• API endpoint: /api/notifications/whatsapp/beon</li>
             <li>• Environment endpoint: /api/test-env</li>
           </ul>

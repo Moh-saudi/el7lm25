@@ -403,7 +403,9 @@ export default function NotificationCenter({ adminId, isOpen, onClose }: Notific
                               className="text-xs h-6 px-2"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                window.open(notification.action!.url, '_blank');
+                                if (typeof window !== 'undefined') {
+                                  window.open(notification.action!.url, '_blank');
+                                }
                               }}
                             >
                               {notification.action.label}

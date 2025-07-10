@@ -134,7 +134,7 @@ export default function VideosPage() {
 
   const handleShare = async (videoId: string) => {
     try {
-      const videoUrl = `${window.location.origin}/videos/${videoId}`;
+      const videoUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/videos/${videoId}`;
       await navigator.clipboard.writeText(videoUrl);
       
       // استخراج معرف اللاعب من معرف الفيديو

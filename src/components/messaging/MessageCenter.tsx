@@ -319,13 +319,15 @@ const MessageCenter: React.FC = () => {
       }
     };
 
-    window.addEventListener('online', handleConnectionChange);
-    window.addEventListener('offline', handleConnectionChange);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', handleConnectionChange);
+      window.addEventListener('offline', handleConnectionChange);
 
-    return () => {
-      window.removeEventListener('online', handleConnectionChange);
-      window.removeEventListener('offline', handleConnectionChange);
-    };
+      return () => {
+        window.removeEventListener('online', handleConnectionChange);
+        window.removeEventListener('offline', handleConnectionChange);
+      };
+    }
   }, [selectedConversation]);
 
   // تحسين جلب المحادثات
