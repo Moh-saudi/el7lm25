@@ -1,8 +1,13 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// إعداد Firebase Admin SDK
-if (!getApps().length) {
+let isInitialized = false;
+
+export function initializeFirebaseAdmin() {
+  if (isInitialized || getApps().length > 0) {
+    return;
+  }
+
   try {
     console.log('🔧 Initializing Firebase Admin SDK...');
     
@@ -48,6 +53,8 @@ if (!getApps().length) {
       console.log('✅ Firebase Admin initialized with default credentials');
     }
     
+    isInitialized = true;
+    
   } catch (error: any) {
     console.error('❌ Failed to initialize Firebase Admin:');
     console.error('Error code:', error.code);
@@ -60,7 +67,18 @@ if (!getApps().length) {
     console.log('3. Ensure FIREBASE_CLIENT_EMAIL is correct');
     console.log('4. Download service account key from Firebase Console');
     console.log('5. Make sure .env.local file exists and is loaded');
+    
+    // لا نرمي الخطأ، فقط نتركه للتعامل معه لاحقاً
   }
 }
 
+export function getAdminDb() {
+  initializeFirebaseAdmin();
+  return getFirestore();
+}
+
+// تهيئة تلقائية للتوافق مع الكود القديم
+if (typeof window === 'undefined') {
+  initializeFirebaseAdmin();
+} 
 export const adminDb = getFirestore(); 

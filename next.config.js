@@ -7,6 +7,9 @@ const nextConfig = {
     typescript: {
         ignoreBuildErrors: true,
     },
+    // إعدادات إضافية للتوافق مع Coolify
+    trailingSlash: false,
+    generateEtags: false,
     images: {
         domains: [
             'firebasestorage.googleapis.com',

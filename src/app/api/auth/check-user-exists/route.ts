@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import '@/lib/firebase/admin'; // فقط لتشغيل التهيئة
+import { initializeFirebaseAdmin, getAdminDb } from '@/lib/firebase/admin';
+
+// تهيئة Firebase Admin فقط عند الحاجة
+let firebaseInitialized = false;
+
+function initializeFirebase() {
+  if (!firebaseInitialized) {
+    try {
+      initializeFirebaseAdmin();
+      firebaseInitialized = true;
+    } catch (error) {
+      console.error('Failed to initialize Firebase Admin:', error);
+    }
+  }
+}
 
 function normalizePhone(countryCode: string, phone: string) {
   let local = phone.replace(/^0+/, '');
@@ -16,6 +30,9 @@ export async function POST(request: NextRequest) {
     let phoneExists = false;
     
     console.log('🔍 Checking user exists:', { email, phone });
+    
+    // تهيئة Firebase فقط عند الحاجة
+    initializeFirebase();
     
     // Email validation disabled temporarily - focusing on phone-only registration
     // التحقق من البريد الإلكتروني في Firebase Auth
@@ -40,7 +57,7 @@ export async function POST(request: NextRequest) {
         console.log('🔧 Using Firebase Admin SDK for Firestore access');
         
         // استخدام Firebase Admin للوصول إلى Firestore
-        const db = getFirestore();
+        const db = getAdminDb();
         console.log('✅ Firestore instance created successfully');
         
         const usersRef = db.collection('users');
