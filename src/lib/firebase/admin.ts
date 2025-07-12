@@ -30,7 +30,20 @@ export function initializeFirebaseAdmin() {
       console.log('🔐 Using service account credentials');
       
       // تنظيف private key (إزالة الاقتباسات إذا وجدت)
-      const cleanPrivateKey = privateKey.replace(/\\n/g, '\n');
+      let cleanPrivateKey = privateKey;
+      
+      // إذا كان المفتاح يحتوي على \n، استبدله بسطور جديدة
+      if (privateKey.includes('\\n')) {
+        cleanPrivateKey = privateKey.replace(/\\n/g, '\n');
+      }
+      
+      // إذا كان المفتاح بدون \n، أضف سطور جديدة
+      if (!cleanPrivateKey.includes('\n')) {
+        cleanPrivateKey = cleanPrivateKey.replace(
+          /(-----BEGIN PRIVATE KEY-----)(.*?)(-----END PRIVATE KEY-----)/s,
+          '$1\n$2\n$3'
+        );
+      }
       
       initializeApp({
         credential: cert({
