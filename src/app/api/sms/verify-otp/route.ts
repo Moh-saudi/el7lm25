@@ -4,12 +4,14 @@ import { getOTP, clearOTP, getOTPStatus, incrementAttempts } from '../otp-storag
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { phoneNumber, otpCode } = body;
+    // دعم otpCode أو otp
+    const { phoneNumber, otpCode, otp } = body;
+    const code = otpCode || otp;
 
-    console.log('🔍 OTP Verification Request:', { phoneNumber, otpCode });
+    console.log('🔍 OTP Verification Request:', { phoneNumber, otpCode, otp });
 
     // التحقق من البيانات المطلوبة
-    if (!phoneNumber || !otpCode) {
+    if (!phoneNumber || !code) {
       return NextResponse.json(
         { success: false, error: 'رقم الهاتف ورمز التحقق مطلوبان' },
         { status: 400 }
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
     incrementAttempts(formattedPhone);
 
     // التحقق من تطابق OTP
-    if (storedOTP.otp === otpCode) {
+    if (storedOTP.otp === code) {
       console.log('✅ OTP verified successfully for:', formattedPhone);
       
       // مسح OTP بعد التحقق الناجح
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
       });
     } else {
       console.log('❌ OTP mismatch for phone:', formattedPhone);
-      console.log('Expected:', storedOTP.otp, 'Received:', otpCode);
+      console.log('Expected:', storedOTP.otp, 'Received:', code);
       
       return NextResponse.json(
         { 

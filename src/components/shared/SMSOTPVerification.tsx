@@ -229,6 +229,7 @@ export default function SMSOTPVerification({
   }, [isOpen]);
 
   const resetComponent = () => {
+    console.log('🔄 [SMSOTP] resetComponent called');
     setOtp(['', '', '', '', '', '']);
     setLoading(false);
     setResendLoading(false);
@@ -236,9 +237,15 @@ export default function SMSOTPVerification({
     setMessage('');
     setTimeRemaining(0);
     setAttempts(0);
+    sentRef.current = false;
+    isInitializedRef.current = false;
+    lastPhoneNumberRef.current = '';
+    isSendingRef.current = false;
+    if (abortControllerRef.current) abortControllerRef.current.abort();
   };
 
   const handleOtpChange = (index: number, value: string) => {
+    console.log('⌨️ [SMSOTP] handleOtpChange:', { index, value });
     if (value.length > 1) return; // منع إدخال أكثر من رقم واحد
     
     const newOtp = [...otp];
@@ -269,6 +276,7 @@ export default function SMSOTPVerification({
   };
 
   const verifyOTP = async (otpCode: string) => {
+    console.log('🔑 [SMSOTP] verifyOTP called with:', otpCode);
     if (loading) return;
     
     setLoading(true);
@@ -309,6 +317,7 @@ export default function SMSOTPVerification({
       });
 
       const verifyResult = await verifyResponse.json();
+      console.log('🔑 [SMSOTP] verifyOTP response:', verifyResult);
       
       if (!verifyResponse.ok || !verifyResult.success) {
         console.error('❌ OTP verification failed:', verifyResult.error);
@@ -343,7 +352,7 @@ export default function SMSOTPVerification({
   };
 
   const handleResendOTP = async () => {
-    console.log('🔄 Manual resend requested');
+    console.log('🔄 [SMSOTP] handleResendOTP called');
     
     // منع التكرار إذا كان الإرسال جارياً
     if (loading || resendLoading || isSendingRef.current) {
