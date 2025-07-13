@@ -3,16 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node server.js",
+    "start:standalone": "node .next/standalone/server.js",
     "lint": "next lint",
     "analyze": "cross-env ANALYZE=true next build",
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
     "clean": "rm -rf .next out dist",
-    "clean:all": "rm -rf .next out dist node_modules package-lock.json && npm install"
+    "clean:all": "rm -rf .next out dist node_modules package-lock.json && npm install",
+    "build:check": "npm run build && ls -la .next/standalone/"
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.9.1",
