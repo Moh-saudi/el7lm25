@@ -2,10 +2,24 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
 let isInitialized = false;
+let isDisabled = false;
 
 export function initializeFirebaseAdmin() {
   if (isInitialized || getApps().length > 0) {
     return;
+  }
+
+  // تعطيل Firebase أثناء البناء إذا لم تكن المتغيرات موجودة
+  if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build') {
+    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    
+    if (!projectId || !privateKey || !clientEmail) {
+      console.log('⚠️ Firebase Admin disabled during build - missing environment variables');
+      isDisabled = true;
+      return;
+    }
   }
 
   try {
@@ -86,6 +100,9 @@ export function initializeFirebaseAdmin() {
 }
 
 export function getAdminDb() {
+  if (isDisabled) {
+    throw new Error('Firebase Admin is disabled - missing environment variables');
+  }
   initializeFirebaseAdmin();
   return getFirestore();
 }
@@ -93,5 +110,14 @@ export function getAdminDb() {
 // تهيئة تلقائية للتوافق مع الكود القديم
 if (typeof window === 'undefined') {
   initializeFirebaseAdmin();
-} 
-export const adminDb = getFirestore(); 
+}
+
+// تصدير آمن للـ adminDb
+export const adminDb = (() => {
+  try {
+    return getFirestore();
+  } catch (error) {
+    console.warn('⚠️ Firebase Admin not available:', error.message);
+    return null;
+  }
+})(); 

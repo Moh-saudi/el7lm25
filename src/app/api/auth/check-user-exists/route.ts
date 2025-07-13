@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ User existence check completed:', { emailExists, phoneExists });
     
-    return NextResponse.json({
+    return NextResponse.json({ 
       emailExists,
       phoneExists,
       message: 'User existence check completed successfully'
