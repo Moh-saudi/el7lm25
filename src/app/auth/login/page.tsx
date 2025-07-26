@@ -20,10 +20,12 @@ import { useState, useEffect } from 'react';
 import EmailVerification from '@/components/auth/EmailVerification';
 import { EmailService } from '@/lib/emailjs/service';
 import { getInvalidAccountMessage, getContactInfo } from '@/lib/support-contact';
-
+import { useTranslation } from '@/lib/translations/simple-context';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 export default function LoginPage() {
   const { login, logout, user, userData, loading: authLoading } = useAuth();
+  const { t, direction } = useTranslation();
   
   // إذا كان المستخدم مسجل دخوله مسبقاً، نخفي النموذج
   const shouldShowForm = !authLoading && !user;
@@ -197,7 +199,13 @@ export default function LoginPage() {
   function normalizePhone(countryCode: string, phone: string) {
     let local = phone.replace(/^0+/, '');
     local = local.replace(/\D/g, '');
-    return `${countryCode.replace(/\D/g, '')}${local}`;
+    
+    // إضافة + إذا لم يكن موجوداً في كود الدولة
+    const cleanCountryCode = countryCode.replace(/\D/g, '');
+    const formattedPhone = `+${cleanCountryCode}${local}`;
+    
+    console.log('🔍 normalizePhone:', { countryCode, phone, cleanCountryCode, local, formattedPhone });
+    return formattedPhone;
   }
 
   const handleLogin = async (e: { preventDefault: () => void; }) => {
@@ -407,14 +415,14 @@ export default function LoginPage() {
             <div className="flex justify-center mb-2">
               <Shield className="w-8 h-8" />
             </div>
-            <h1 className="mb-1 text-xl font-bold">جاري التحقق...</h1>
+            <h1 className="mb-1 text-xl font-bold">{t('login.messages.verifying')}</h1>
           </div>
           <div className="p-8 text-center">
             <div className="flex justify-center mb-4">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
             </div>
             <p className="text-gray-600">
-              {authLoading ? 'جاري التحقق من بيانات المصادقة...' : 'جاري تحميل بيانات المستخدم...'}
+              {authLoading ? t('login.messages.loading') : t('login.messages.loadingUserData')}
             </p>
           </div>
         </div>
@@ -557,18 +565,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      className="flex items-center justify-center min-h-screen p-2 bg-gradient-to-br from-blue-600 to-purple-700"
-      dir="rtl"
-    >
+      <div
+        className={`flex items-center justify-center min-h-screen p-2 bg-gradient-to-br from-blue-600 to-purple-700 ${direction === 'rtl' ? 'dir-rtl' : 'dir-ltr'}`}
+      >
       <div className="w-full max-w-xs overflow-hidden transition-all duration-500 transform bg-white shadow-2xl rounded-xl hover:scale-102">
         {/* Header */}
         <div className="p-3 text-center text-white bg-gradient-to-r from-blue-500 to-purple-600">
           <div className="flex justify-center mb-2">
             <Shield className="w-8 h-8" />
           </div>
-          <h1 className="mb-1 text-xl font-bold">مرحباً بعودتك</h1>
-          <p className="text-xs text-blue-100">قم بتسجيل الدخول للوصول إلى حسابك</p>
+          <h1 className="mb-1 text-xl font-bold">{t('login.title')}</h1>
+          <p className="text-xs text-blue-100">{t('login.subtitle')}</p>
+          
+          {/* Language Switcher */}
+          <div className="flex justify-center mt-2">
+            <LanguageSwitcher variant="simple" />
+          </div>
         </div>
 
         <form onSubmit={handleLogin} className="p-4 space-y-4">
@@ -611,7 +623,7 @@ export default function LoginPage() {
           {/* Security Notice */}
           <div className="flex items-center gap-2 p-2 text-xs text-blue-700 rounded-lg bg-blue-50">
             <KeyRound className="flex-shrink-0 w-4 h-4" />
-            <p>جميع البيانات مشفرة ومحمية باستخدام أحدث تقنيات التشفير والحماية</p>
+            <p>{t('login.security.notice')}</p>
           </div>
 
           {/* Login Method Toggle */}
@@ -626,7 +638,7 @@ export default function LoginPage() {
               }`}
             >
               <Phone className="w-3 h-3" />
-              رقم الهاتف
+              {t('login.methods.phone')}
             </button>
             <button
               type="button"
@@ -638,7 +650,7 @@ export default function LoginPage() {
               }`}
             >
               <Mail className="w-3 h-3" />
-              البريد الإلكتروني
+              {t('login.methods.email')}
             </button>
           </div>
 
@@ -648,7 +660,7 @@ export default function LoginPage() {
               <div className="space-y-3">
                 {/* Country Selection */}
                 <div>
-                  <label className="block mb-1 text-xs text-gray-700">الدولة</label>
+                  <label className="block mb-1 text-xs text-gray-700">{t('login.form.country')}</label>
                   <div className="relative">
                     <select
                       value={selectedCountry.code}
@@ -657,7 +669,7 @@ export default function LoginPage() {
                     >
                       {countries.map((country) => (
                         <option key={country.code} value={country.code}>
-                          {country.name} ({country.code}) - {country.phoneLength} أرقام
+                        {country.name} ({country.code}) - {country.phoneLength} أرقام
                         </option>
                       ))}
                     </select>
@@ -667,9 +679,9 @@ export default function LoginPage() {
                 {/* Phone Input */}
                 <div>
                   <label className="block mb-1 text-xs text-gray-700">
-                    رقم الهاتف
+                    {t('login.form.phone')}
                     <span className="text-xs text-gray-500 mr-1">
-                      ({selectedCountry.phoneLength} أرقام)
+                      ({selectedCountry.phoneLength} {t('login.form.digits')})
                     </span>
                   </label>
                   <div className="relative">
@@ -683,7 +695,7 @@ export default function LoginPage() {
                         value={formData.phone}
                         onChange={handleInputChange}
                         className="w-full py-2 pl-3 pr-8 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder={`${selectedCountry.phoneLength} أرقام`}
+                      placeholder={`${selectedCountry.phoneLength} ${t('login.form.digits')}`}
                         pattern={selectedCountry.phonePattern}
                         maxLength={selectedCountry.phoneLength}
                         required
@@ -691,7 +703,7 @@ export default function LoginPage() {
                       <Phone className="absolute w-4 h-4 text-gray-400 -translate-y-1/2 right-2 top-1/2" />
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      مثال: {selectedCountry.name === 'مصر' ? '1234567890' : 
+                    {t('login.form.example')}: {selectedCountry.name === 'مصر' ? '1234567890' : 
                              selectedCountry.name === 'قطر' ? '12345678' : 
                              selectedCountry.name === 'السعودية' ? '123456789' : 
                              '123456789'}
@@ -701,7 +713,7 @@ export default function LoginPage() {
               </div>
             ) : (
               <div className="relative">
-                <label className="block mb-1 text-xs text-gray-700">البريد الإلكتروني</label>
+                <label className="block mb-1 text-xs text-gray-700">{t('login.form.email')}</label>
                 <div className="relative">
                   <input
                     type="email"
@@ -709,7 +721,7 @@ export default function LoginPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     className="w-full py-2 pl-3 pr-8 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="أدخل البريد الإلكتروني"
+                    placeholder={t('login.form.enterEmail')}
                     required
                   />
                   <Mail className="absolute w-4 h-4 text-gray-400 -translate-y-1/2 right-2 top-1/2" />
@@ -718,7 +730,7 @@ export default function LoginPage() {
             )}
 
             <div className="relative">
-              <label className="block mb-1 text-xs text-gray-700">كلمة المرور</label>
+              <label className="block mb-1 text-xs text-gray-700">{t('login.form.password')}</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -726,7 +738,7 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   className="w-full py-2 pl-10 pr-8 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="أدخل كلمة المرور"
+                  placeholder={t('login.form.enterPassword')}
                   required
                 />
                 <Lock className="absolute w-4 h-4 text-gray-400 -translate-y-1/2 right-2 top-1/2" />
@@ -750,14 +762,14 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   className="w-3 h-3 text-blue-600 rounded"
                 />
-                <label className="text-xs text-gray-600">تذكرني</label>
+                <label className="text-xs text-gray-600">{t('login.form.rememberMe')}</label>
               </div>
               <button
                 type="button"
                 className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
                 onClick={() => (window.location.href = '/auth/forgot-password')}
               >
-                نسيت كلمة المرور؟
+                {t('login.form.forgotPassword')}
               </button>
             </div>
           </div>
@@ -772,40 +784,41 @@ export default function LoginPage() {
               <div className="flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>
-                  {authLoading ? 'جاري التحقق من البيانات...' : 'جاري تسجيل الدخول...'}
+                {authLoading ? 'جاري التحقق من البيانات...' : 'جاري تسجيل الدخول...'}
                 </span>
               </div>
             ) : (
-              'تسجيل الدخول'
+              t('login.form.login')
             )}
           </button>
 
           {/* Register Link */}
           <div className="text-xs text-center text-gray-600">
-            ليس لديك حساب؟{' '}
+          {t('login.messages.noAccount')}{' '}
             <button
               type="button"
               onClick={() => (window.location.href = '/auth/register')}
               className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
             >
-              إنشاء حساب
+            {t('login.messages.createAccount')}
             </button>
           </div>
 
           {/* Account Types Info */}
           <div className="pt-3 text-xs text-center text-gray-500 border-t">
-            <p className="mb-2">أنواع الحسابات المتاحة:</p>
+          <p className="mb-2">{t('login.messages.accountTypes')}</p>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <span className="text-blue-600">• لاعب</span>
-              <span className="text-green-600">• نادي</span>
-              <span className="text-purple-600">• وكيل لاعبين</span>
-              <span className="text-orange-600">• أكاديمية</span>
-              <span className="text-cyan-600">• مدرب</span>
-              <span className="text-red-600">• مسوق لاعبين</span>
+            <span className="text-blue-600">• لاعب</span>
+            <span className="text-green-600">• نادي</span>
+            <span className="text-purple-600">• وكيل</span>
+            <span className="text-orange-600">• أكاديمية</span>
+            <span className="text-cyan-600">• مدرب</span>
+            <span className="text-red-600">• مسوق</span>
             </div>
           </div>
         </form>
 
+      {/* Email Verification Modal */}
         {showEmailVerification && pendingEmail && (
           <EmailVerification
             email={pendingEmail}
@@ -816,6 +829,6 @@ export default function LoginPage() {
           />
         )}
       </div>
-    </div>
+      </div>
   );
 }

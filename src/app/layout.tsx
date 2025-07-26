@@ -1,13 +1,22 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Cairo } from 'next/font/google';
+import { Cairo, Inter } from 'next/font/google';
 import ClientLayout from './client-layout';
+import { TranslationProvider } from '@/lib/translations/simple-context';
 
-// Cairo font for Arabic and Latin text
+// Cairo font for Arabic text
 const cairo = Cairo({ 
   subsets: ['arabic', 'latin'],
   weight: ['300', '400', '500', '600', '700', '800', '900'],
   variable: '--font-cairo',
+  display: 'swap'
+});
+
+// Inter font for English text
+const inter = Inter({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  variable: '--font-inter',
   display: 'swap'
 });
 
@@ -75,11 +84,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* PWA Meta Tags */}
         <meta name="application-name" content="El7hm" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="El7hm" />
         <meta name="format-detection" content="telephone=no" />
-        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
         <meta name="msapplication-TileColor" content="#6d28d9" />
         <meta name="msapplication-tap-highlight" content="no" />
@@ -104,8 +113,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script src="/js/advanced-image-fix.js" defer></script>
         <script src="/js/image-loading-optimizer.js" defer></script>
       </head>
-      <body className={`${cairo.variable} font-cairo`}>
-        <ClientLayout>{children}</ClientLayout>
+      <body className={`${cairo.variable} ${inter.variable} font-cairo`}>
+        <TranslationProvider>
+          <ClientLayout>{children}</ClientLayout>
+        </TranslationProvider>
       </body>
     </html>
   );

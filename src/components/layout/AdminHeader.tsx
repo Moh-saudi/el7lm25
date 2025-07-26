@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useAuth } from '@/lib/firebase/auth-provider';
+import { useTranslation } from '@/lib/translations/simple-context';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell, Settings, User, LogOut } from 'lucide-react';
 import {
@@ -18,6 +20,7 @@ import Link from 'next/link';
 
 export default function AdminHeader() {
   const { user, userData } = useAuth();
+  const { t, direction } = useTranslation();
 
   const handleSignOut = async () => {
     try {
@@ -28,7 +31,7 @@ export default function AdminHeader() {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200">
+    <header className="bg-white border-b border-gray-200" dir={direction}>
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/dashboard/admin" className="flex items-center gap-2">
@@ -39,14 +42,17 @@ export default function AdminHeader() {
         {/* User Menu */}
         <div className="flex items-center gap-4">
           {/* Notifications */}
-          <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full">
+          <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full" title={t('header.notifications')}>
             <Bell className="w-5 h-5" />
           </button>
 
           {/* Settings */}
-          <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full">
+          <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full" title={t('header.settings')}>
             <Settings className="w-5 h-5" />
           </button>
+
+          {/* Language Switcher */}
+          <LanguageSwitcher variant="simple" />
 
           {/* User Dropdown */}
           <DropdownMenu>
@@ -69,12 +75,12 @@ export default function AdminHeader() {
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/admin/profile" className="flex items-center gap-2 cursor-pointer">
                   <User className="w-4 h-4" />
-                  <span>الملف الشخصي</span>
+                  <span>{t('header.settings')}</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">
                 <LogOut className="w-4 h-4 ml-2" />
-                <span>تسجيل الخروج</span>
+                <span>{t('header.signOut')}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

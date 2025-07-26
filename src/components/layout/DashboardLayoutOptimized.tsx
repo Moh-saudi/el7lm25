@@ -35,14 +35,7 @@ const Footer = dynamic(() => import('./Footer'), {
   ssr: true
 });
 
-// استيراد SidebarProvider مع تحسين
-const SidebarProvider = dynamic(
-  () => import('@/lib/context/SidebarContext').then(mod => ({ default: mod.SidebarProvider })),
-  {
-    loading: () => <div className="min-h-screen bg-gray-50"></div>,
-    ssr: true
-  }
-);
+import { SidebarProvider } from '@/lib/context/SidebarContext';
 
 // مكون شاشة التحميل محسن
 const LoadingSpinner = memo(() => (

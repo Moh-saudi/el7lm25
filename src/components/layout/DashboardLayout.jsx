@@ -20,10 +20,7 @@ const Footer = dynamic(() => import('./Footer'), {
   ssr: false
 });
 
-const SidebarProvider = dynamic(() => import('@/lib/context/SidebarContext').then(mod => mod.SidebarProvider), {
-  loading: () => <div>جاري تحميل القائمة الجانبية...</div>,
-  ssr: false
-});
+import { SidebarProvider } from '@/lib/context/SidebarContext';
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();

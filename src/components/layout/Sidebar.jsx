@@ -28,385 +28,383 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuthState } from 'react-firebase-hooks/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '@/lib/context/SidebarContext';
-
-const menuItems = [
-  {
-    title: 'الرئيسية',
-    icon: <Home className="w-5 h-5" />,
-    path: '/dashboard/player'
-  },
-  {
-    title: 'الملف الشخصي',
-    icon: <User className="w-5 h-5" />,
-    path: '/dashboard/player/profile'
-  },
-  {
-    title: 'التقارير',
-    icon: <FileText className="w-5 h-5" />,
-    path: '/dashboard/player/reports'
-  },
-  {
-    title: 'إدارة الفيديوهات',
-    icon: <VideoIcon className="w-5 h-5" />,
-    path: '/dashboard/player/videos'
-  },
-  {
-    title: 'فيديوهات اللاعبين',
-    icon: <Play className="w-5 h-5" />,
-    path: '/dashboard/player/player-videos'
-  },
-  {
-    title: 'البحث عن الفرص والأندية',
-    icon: <Search className="w-5 h-5" />,
-    path: '/dashboard/player/search'
-  },
-  {
-    title: 'الإحصائيات',
-    icon: <BarChart className="w-5 h-5" />,
-    path: '/dashboard/player/stats'
-  },
-  {
-    title: 'الرسائل',
-    icon: <MessageSquare className="w-5 h-5" />,
-    path: '/dashboard/messages'
-  },
-  {
-    title: 'إدارة الاشتراكات',
-    icon: <CreditCard className="w-5 h-5" />,
-    path: '/dashboard/player/bulk-payment'
-  },
-  {
-    title: 'حالة الاشتراك',
-    icon: <Clock className="w-5 h-5" />,
-    path: '/dashboard/subscription'
-  }
-];
-
-// قائمة النادي
-const clubMenuItems = [
-  {
-    title: 'الرئيسية',
-    icon: <Home className="w-5 h-5" />, path: '/dashboard/club'
-  },
-  {
-    title: 'الملف الشخصي',
-    icon: <User className="w-5 h-5" />, path: '/dashboard/club/profile'
-  },
-  {
-    title: 'البحث عن اللاعبين',
-    icon: <Users className="w-5 h-5" />, path: '/dashboard/club/players'
-  },
-  {
-    title: 'فيديوهات اللاعبين',
-    icon: <VideoIcon className="w-5 h-5" />, path: '/dashboard/club/player-videos'
-  },
-  {
-    title: 'إدارة العقود',
-    icon: <FileText className="w-5 h-5" />, path: '/dashboard/club/contracts'
-  },
-  {
-    title: 'تسويق اللاعبين',
-    icon: <Megaphone className="w-5 h-5" />, path: '/dashboard/club/marketing'
-  },
-  {
-    title: 'تحليل الأداء',
-    icon: <BarChart3 className="w-5 h-5" />, path: '/dashboard/club/ai-analysis'
-  },
-  {
-    title: 'حركة أسعار اللاعبين',
-    icon: <DollarSign className="w-5 h-5" />, path: '/dashboard/club/market-values'
-  },
-  {
-    title: 'خدمات التفاوض',
-    icon: <Handshake className="w-5 h-5" />, path: '/dashboard/club/negotiations'
-  },
-  {
-    title: 'تقييم اللاعبين',
-    icon: <Star className="w-5 h-5" />, path: '/dashboard/club/player-evaluation'
-  },
-  {
-    title: 'الإشعارات',
-    icon: <Bell className="w-5 h-5" />, path: '/dashboard/club/notifications'
-  },
-  {
-    title: 'الرسائل',
-    icon: <MessageSquare className="w-5 h-5" />, path: '/dashboard/messages'
-  },
-  {
-    title: 'دفع جماعي للاعبين',
-    icon: <Users className="w-5 h-5" />, path: '/dashboard/club/bulk-payment'
-  },
-  {
-    title: 'الفواتير',
-    icon: <FileText className="w-5 h-5" />, path: '/dashboard/club/billing'
-  },
-  {
-    title: 'تغيير كلمة السر',
-    icon: <KeyRound className="w-5 h-5" />, path: '/dashboard/club/change-password'
-  },
-];
-
-// قائمة الوكيل
-const agentMenuItems = [
-  {
-    title: 'الرئيسية',
-    icon: <Home className="w-5 h-5" />, path: '/dashboard/agent'
-  },
-  {
-    title: 'الملف الشخصي',
-    icon: <User className="w-5 h-5" />, path: '/dashboard/agent/profile'
-  },
-  {
-    title: 'إدارة اللاعبين',
-    icon: <Users className="w-5 h-5" />, path: '/dashboard/agent/players'
-  },
-  {
-    title: 'التفاوضات',
-    icon: <Handshake className="w-5 h-5" />, path: '/dashboard/agent/negotiations'
-  },
-  {
-    title: 'التقارير',
-    icon: <FileText className="w-5 h-5" />, path: '/dashboard/agent/reports'
-  },
-  {
-    title: 'الرسائل',
-    icon: <MessageSquare className="w-5 h-5" />, path: '/dashboard/messages'
-  },
-  {
-    title: 'الإشعارات',
-    icon: <Bell className="w-5 h-5" />, path: '/dashboard/agent/notifications'
-  },
-  {
-    title: 'تغيير كلمة السر',
-    icon: <KeyRound className="w-5 h-5" />, path: '/dashboard/agent/change-password'
-  },
-];
+import { useTranslation } from '@/lib/translations/simple-context';
+import { useAuth } from '@/lib/firebase/auth-provider';
 
 const Sidebar = () => {
+  const { user, userData } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-  const [user] = useAuthState(auth);
-  const { isCollapsed, isMobileOpen, toggleSidebar, closeMobileSidebar } = useSidebar();
+  const { isOpen, toggleSidebar } = useSidebar();
+  const { t, direction } = useTranslation();
 
-  // تحديد نوع القائمة حسب نوع الحساب
-  let items = menuItems;
-  let sidebarTitle = 'منصة اللاعب';
-  let messagesPath = '/dashboard/player/messages';
-  if (user?.accountType === 'club') {
-    items = clubMenuItems;
-    sidebarTitle = 'منصة النادي';
-    messagesPath = '/dashboard/club/messages';
-  } else if (user?.accountType === 'agent') {
-    items = agentMenuItems;
-    sidebarTitle = 'منصة الوكيل';
-    messagesPath = '/dashboard/agent/messages';
-  } else if (user?.accountType === 'academy') {
-    sidebarTitle = 'منصة الأكاديمية';
-    messagesPath = '/dashboard/academy/messages';
-  } else if (user?.accountType === 'trainer') {
-    sidebarTitle = 'منصة المدرب';
-    messagesPath = '/dashboard/trainer/messages';
-  } else if (user?.accountType === 'admin') {
-    sidebarTitle = 'منصة الإدارة';
-    messagesPath = '/dashboard/admin/messages';
-  }
+  // قائمة اللاعب مع الترجمة
+  const playerMenuItems = [
+    {
+      title: t('sidebar.player.home'),
+      icon: <Home className="w-5 h-5" />,
+      path: '/dashboard/player'
+    },
+    {
+      title: t('sidebar.player.profile'),
+      icon: <User className="w-5 h-5" />,
+      path: '/dashboard/player/profile'
+    },
+    {
+      title: t('sidebar.player.reports'),
+      icon: <FileText className="w-5 h-5" />,
+      path: '/dashboard/player/reports'
+    },
+    {
+      title: t('sidebar.player.videos'),
+      icon: <VideoIcon className="w-5 h-5" />,
+      path: '/dashboard/player/videos'
+    },
+    {
+      title: t('sidebar.player.playerVideos'),
+      icon: <Play className="w-5 h-5" />,
+      path: '/dashboard/player/player-videos'
+    },
+    {
+      title: t('sidebar.player.search'),
+      icon: <Search className="w-5 h-5" />,
+      path: '/dashboard/player/search'
+    },
+    {
+      title: t('sidebar.player.stats'),
+      icon: <BarChart className="w-5 h-5" />,
+      path: '/dashboard/player/stats'
+    },
+    {
+      title: t('sidebar.common.messages'),
+      icon: <MessageSquare className="w-5 h-5" />,
+      path: '/dashboard/messages'
+    },
+    {
+      title: t('sidebar.player.subscriptions'),
+      icon: <CreditCard className="w-5 h-5" />,
+      path: '/dashboard/player/bulk-payment'
+    },
+    {
+      title: t('sidebar.player.subscriptionStatus'),
+      icon: <Clock className="w-5 h-5" />,
+      path: '/dashboard/subscription'
+    }
+  ];
+
+  // قائمة النادي مع الترجمة
+  const clubMenuItems = [
+      {
+        title: t('sidebar.club.home'),
+        icon: <Home className="w-5 h-5" />,
+        path: '/dashboard/club'
+      },
+      {
+        title: t('sidebar.club.profile'),
+        icon: <User className="w-5 h-5" />,
+        path: '/dashboard/club/profile'
+      },
+    {
+      title: t('sidebar.club.searchPlayers'),
+      icon: <Search className="w-5 h-5" />, 
+      path: '/dashboard/club/search'
+      },
+      {
+        title: t('sidebar.club.players'),
+        icon: <Users className="w-5 h-5" />,
+        path: '/dashboard/club/players'
+      },
+    {
+      title: t('sidebar.club.videos'),
+      icon: <VideoIcon className="w-5 h-5" />, 
+      path: '/dashboard/club/videos'
+      },
+      {
+        title: t('sidebar.club.playerVideos'),
+      icon: <Play className="w-5 h-5" />, 
+        path: '/dashboard/club/player-videos'
+      },
+      {
+      title: t('sidebar.club.stats'),
+        icon: <BarChart3 className="w-5 h-5" />,
+      path: '/dashboard/club/stats'
+      },
+      {
+      title: t('sidebar.club.finances'),
+        icon: <DollarSign className="w-5 h-5" />,
+      path: '/dashboard/club/finances'
+      },
+      {
+        title: t('sidebar.common.messages'),
+        icon: <MessageSquare className="w-5 h-5" />,
+        path: '/dashboard/messages'
+    }
+  ];
+
+  // قائمة الوكيل مع الترجمة
+  const agentMenuItems = [
+      {
+        title: t('sidebar.agent.home'),
+        icon: <Home className="w-5 h-5" />,
+        path: '/dashboard/agent'
+      },
+      {
+        title: t('sidebar.agent.profile'),
+        icon: <User className="w-5 h-5" />,
+        path: '/dashboard/agent/profile'
+      },
+      {
+        title: t('sidebar.agent.players'),
+        icon: <Users className="w-5 h-5" />,
+        path: '/dashboard/agent/players'
+      },
+    {
+      title: t('sidebar.agent.clubs'),
+      icon: <Handshake className="w-5 h-5" />, 
+      path: '/dashboard/agent/clubs'
+      },
+      {
+        title: t('sidebar.agent.negotiations'),
+      icon: <MessageSquare className="w-5 h-5" />, 
+        path: '/dashboard/agent/negotiations'
+      },
+      {
+      title: t('sidebar.agent.contracts'),
+      icon: <FileText className="w-5 h-5" />, 
+      path: '/dashboard/agent/contracts'
+    },
+    {
+      title: t('sidebar.agent.commissions'),
+      icon: <DollarSign className="w-5 h-5" />, 
+      path: '/dashboard/agent/commissions'
+    },
+    {
+      title: t('sidebar.agent.stats'),
+      icon: <BarChart3 className="w-5 h-5" />, 
+      path: '/dashboard/agent/stats'
+    }
+  ];
+
+  // قائمة الأكاديمية مع الترجمة
+  const academyMenuItems = [
+    {
+      title: t('sidebar.academy.home'),
+      icon: <Home className="w-5 h-5" />, 
+      path: '/dashboard/academy'
+    },
+    {
+      title: t('sidebar.academy.profile'),
+      icon: <User className="w-5 h-5" />, 
+      path: '/dashboard/academy/profile'
+    },
+    {
+      title: t('sidebar.academy.students'),
+      icon: <Users className="w-5 h-5" />, 
+      path: '/dashboard/academy/students'
+    },
+    {
+      title: t('sidebar.academy.courses'),
+        icon: <FileText className="w-5 h-5" />,
+      path: '/dashboard/academy/courses'
+    },
+    {
+      title: t('sidebar.academy.videos'),
+      icon: <VideoIcon className="w-5 h-5" />, 
+      path: '/dashboard/academy/videos'
+    },
+    {
+      title: t('sidebar.academy.trainers'),
+      icon: <Users className="w-5 h-5" />, 
+      path: '/dashboard/academy/trainers'
+    },
+    {
+      title: t('sidebar.academy.stats'),
+      icon: <BarChart3 className="w-5 h-5" />, 
+      path: '/dashboard/academy/stats'
+    },
+    {
+      title: t('sidebar.academy.finances'),
+      icon: <DollarSign className="w-5 h-5" />, 
+      path: '/dashboard/academy/finances'
+    }
+  ];
+
+  // قائمة المدرب مع الترجمة
+  const trainerMenuItems = [
+    {
+      title: t('sidebar.trainer.home'),
+      icon: <Home className="w-5 h-5" />, 
+      path: '/dashboard/trainer'
+    },
+    {
+      title: t('sidebar.trainer.profile'),
+      icon: <User className="w-5 h-5" />, 
+      path: '/dashboard/trainer/profile'
+    },
+    {
+      title: t('sidebar.trainer.sessions'),
+      icon: <Clock className="w-5 h-5" />, 
+      path: '/dashboard/trainer/sessions'
+    },
+    {
+      title: t('sidebar.trainer.players'),
+      icon: <Users className="w-5 h-5" />, 
+      path: '/dashboard/trainer/players'
+    },
+    {
+      title: t('sidebar.trainer.videos'),
+      icon: <VideoIcon className="w-5 h-5" />, 
+      path: '/dashboard/trainer/videos'
+    },
+    {
+      title: t('sidebar.trainer.programs'),
+      icon: <FileText className="w-5 h-5" />, 
+      path: '/dashboard/trainer/programs'
+    },
+    {
+      title: t('sidebar.trainer.stats'),
+      icon: <BarChart3 className="w-5 h-5" />, 
+      path: '/dashboard/trainer/stats'
+    }
+  ];
+
+  // تحديد القائمة المناسبة حسب نوع الحساب
+  const getMenuItems = () => {
+    if (!user) return playerMenuItems;
+    
+    // استخدام userData إذا كان متاحاً
+    const accountType = userData?.accountType || 'player';
+    
+    switch (accountType) {
+      case 'club':
+        return clubMenuItems;
+      case 'agent':
+        return agentMenuItems;
+      case 'academy':
+        return academyMenuItems;
+      case 'trainer':
+        return trainerMenuItems;
+      case 'marketer':
+        return playerMenuItems; // استخدام قائمة اللاعب للمسوق مؤقتاً
+      default:
+        return playerMenuItems;
+    }
+  };
+
+  const menuItems = getMenuItems();
 
   const handleLogout = async () => {
     try {
       await auth.signOut();
       router.push('/auth/login');
     } catch (error) {
-      console.error('خطأ في تسجيل الخروج:', error);
+      console.error('Error signing out:', error);
     }
   };
 
   const handleLinkClick = () => {
-    closeMobileSidebar();
+    if (window.innerWidth < 768) {
+      toggleSidebar();
+    }
   };
 
   return (
     <>
       {/* Mobile Overlay */}
       <AnimatePresence>
-        {isMobileOpen && (
+        {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-            onClick={closeMobileSidebar}
+            className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+            onClick={toggleSidebar}
           />
         )}
       </AnimatePresence>
 
       {/* Sidebar */}
-      <motion.aside 
+      <motion.div
+        initial={false}
         animate={{ 
-          width: isCollapsed ? '80px' : '256px'
+          x: isOpen ? 0 : '-100%',
+          rtl: { x: isOpen ? 0 : '100%' }
         }}
-        transition={{ 
-          duration: 0.3, 
-          ease: 'easeInOut' 
-        }}
-        className={`h-full flex flex-col bg-gradient-to-b from-[#2563eb] to-[#1e3a8a] text-white shadow-xl sticky top-16 self-start relative order-first
-          ${isMobileOpen ? 'fixed top-16 left-0 z-50' : 'hidden lg:flex'}
-          `}
-        style={{
-          direction: 'ltr', // Force LTR for sidebar to maintain left positioning
-        }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className={`fixed inset-y-0 right-0 rtl:left-0 w-64 bg-gradient-to-b from-[#2563eb] to-[#1e3a8a] z-40 shadow-xl`}
+        dir={direction}
       >
-        {/* Mobile Close Button */}
-        <button
-          onClick={closeMobileSidebar}
-          className="absolute top-4 left-4 p-2 text-white hover:bg-blue-700 rounded-lg lg:hidden"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Desktop Toggle Button */}
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-blue-400">
+            <div className="flex items-center space-x-3 rtl:space-x-reverse">
+              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-bold text-sm">E</span>
+              </div>
+              <span className="text-white font-bold text-lg">El7hm</span>
+            </div>
         <button
           onClick={toggleSidebar}
-          className="absolute -right-3 top-6 z-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-1.5 shadow-lg transition-colors duration-200 hidden lg:block"
-        >
-          {isCollapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
+              className="text-white hover:text-blue-200 transition-colors md:hidden"
+            >
+              <X className="w-6 h-6" />
         </button>
-
-        {/* Logo Section */}
-        <div className="p-6 text-center border-b border-blue-700">
-          <AnimatePresence mode="wait">
-            {isCollapsed ? (
-              <motion.div
-                key="collapsed"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="hidden lg:block"
-              >
-                <Menu className="w-6 h-6 mx-auto text-white" />
-              </motion.div>
-            ) : (
-              <motion.h1
-                key="expanded"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="text-xl font-bold text-white"
-                style={{ direction: 'rtl' }} // Keep Arabic text RTL
-              >
-                {sidebarTitle}
-              </motion.h1>
-            )}
-          </AnimatePresence>
         </div>
 
-        {/* Navigation Menu */}
-        <nav className="flex-1 min-h-0 p-2 pt-0 mt-0 space-y-2 overflow-y-auto">
-          {items.map((item) => {
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto py-4">
+            <ul className="space-y-2 px-4">
+              {menuItems.map((item, index) => {
             const isActive = pathname === item.path;
             return (
-              <div key={item.path} className="relative group">
+                  <motion.li
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
                 <Link
                   href={item.path}
                   onClick={handleLinkClick}
-                  className={`flex items-center justify-between p-3 rounded-lg transition-all duration-200 group
-                    ${isActive
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'text-white hover:bg-blue-700 hover:text-white'
-                    }`}
-                  style={{ direction: 'rtl' }} // Keep Arabic text RTL
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`transition-transform duration-200 group-hover:scale-110 ${isCollapsed ? 'mx-auto' : ''}
-                      ${isActive ? 'text-white' : 'text-blue-200'}`}>
+                      className={`flex items-center space-x-3 rtl:space-x-reverse px-4 py-3 rounded-lg transition-all duration-200 group ${
+                        isActive
+                          ? 'bg-white text-blue-600 shadow-lg'
+                          : 'text-white hover:bg-blue-600 hover:bg-opacity-20'
+                      }`}
+                    >
+                      <div className={`transition-colors ${
+                        isActive ? 'text-blue-600' : 'text-blue-200 group-hover:text-white'
+                      }`}>
                       {item.icon}
-                    </span>
-                    <AnimatePresence>
-                      {(!isCollapsed || isMobileOpen) && (
-                        <motion.span
-                          initial={{ opacity: 0, width: 0 }}
-                          animate={{ opacity: 1, width: 'auto' }}
-                          exit={{ opacity: 0, width: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="font-medium whitespace-nowrap"
-                        >
-                          {item.title}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
                   </div>
-                  <AnimatePresence>
-                    {(!isCollapsed || isMobileOpen) && (
+                      <span className="font-medium">{item.title}</span>
+                      {isActive && (
                       <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <ChevronLeft className={`w-4 h-4 transition-transform duration-200
-                          ${isActive ? 'rotate-90' : 'group-hover:-translate-x-1'}`}
+                          layoutId="activeIndicator"
+                          className="absolute left-0 rtl:right-0 w-1 h-8 bg-white rounded-r-full rtl:rounded-l-full"
                         />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      )}
                 </Link>
-                
-                {/* Tooltip for collapsed state on desktop */}
-                {isCollapsed && !isMobileOpen && (
-                  <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 hidden lg:block"
-                    style={{ direction: 'rtl' }}
-                  >
-                    {item.title}
-                  </div>
-                )}
-              </div>
+                  </motion.li>
             );
           })}
+            </ul>
         </nav>
 
-        {/* Logout Button */}
-        <div className="p-4 mt-auto mb-6 border-t border-blue-300">
-          <div className="relative group">
+          {/* Footer */}
+          <div className="p-4 border-t border-blue-400">
             <button
               onClick={handleLogout}
-              className={`flex items-center w-full gap-2 p-3 text-white transition-colors duration-200 bg-red-600 rounded-lg hover:bg-red-700 ${isCollapsed && !isMobileOpen ? 'justify-center' : 'justify-center'}`}
-              style={{ direction: 'rtl' }} // Keep Arabic text RTL
+              className="flex items-center space-x-3 rtl:space-x-reverse w-full px-4 py-3 text-white hover:bg-red-600 hover:bg-opacity-20 rounded-lg transition-all duration-200 group"
             >
-              <LogOut className="w-5 h-5" />
-              <AnimatePresence>
-                {(!isCollapsed || isMobileOpen) && (
-                  <motion.span
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: 'auto' }}
-                    exit={{ opacity: 0, width: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="whitespace-nowrap"
-                  >
-                    تسجيل الخروج
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              <LogOut className="w-5 h-5 text-red-300 group-hover:text-red-200" />
+              <span className="font-medium">{t('sidebar.common.logout')}</span>
             </button>
-            
-            {/* Tooltip for logout button in collapsed state */}
-            {isCollapsed && !isMobileOpen && (
-              <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 hidden lg:block"
-                style={{ direction: 'rtl' }}
-              >
-                تسجيل الخروج
-              </div>
-            )}
           </div>
         </div>
-      </motion.aside>
+      </motion.div>
     </>
   );
 };

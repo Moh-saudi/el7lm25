@@ -1,85 +1,68 @@
 'use client';
 
-import React, { useState } from 'react';
-import AdminSidebar from '@/components/layout/AdminSidebar';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/auth-provider';
 import { useRouter } from 'next/navigation';
+import UnifiedHeader from '@/components/layout/UnifiedHeader';
+import AdminSidebar from '@/components/layout/AdminSidebar';
+import DashboardFontWrapper from '@/components/layout/DashboardFontWrapper';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, userData } = useAuth();
+  const { user, userData, loading } = useAuth();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Check for mobile screen
-  React.useEffect(() => {
-    const checkMobile = () => {
-      if (typeof window !== 'undefined') {
-        setIsMobile(window.innerWidth < 768);
-        setIsSidebarOpen(window.innerWidth >= 768);
+  // التحقق من حجم الشاشة
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth < 768) {
+        setIsSidebarOpen(false);
       }
     };
-    
-    checkMobile();
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', checkMobile);
-      return () => window.removeEventListener('resize', checkMobile);
-    }
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Check user permissions with detailed logging
-  React.useEffect(() => {
-    console.log('🔍 Admin Layout - Permission Check:', {
-      hasUser: !!user,
-      hasUserData: !!userData,
-      userEmail: user?.email,
-      accountType: userData?.accountType,
-      pathname: typeof window !== 'undefined' ? window.location.pathname : '',
-      timestamp: new Date().toISOString()
-    });
-
-    if (!user) {
-      console.log('❌ Admin Layout - No user, redirecting to login');
+  // التحقق من الصلاحيات
+  useEffect(() => {
+    if (!loading && (!user || userData?.accountType !== 'admin')) {
       router.push('/auth/login');
-      return;
     }
+  }, [user, userData, loading, router]);
 
-    if (!userData) {
-      console.log('❌ Admin Layout - No userData, redirecting to login');
-      router.push('/auth/login');
-      return;
-    }
-    
-    if (userData.accountType !== 'admin') {
-      console.log('❌ Admin Layout - User is not admin:', {
-        accountType: userData.accountType,
-        email: user.email,
-        redirectingToLogin: true
-      });
-      router.push('/auth/login');
-      return;
-    }
-
-    console.log('✅ Admin Layout - Access granted for admin user');
-  }, [user, userData, router]);
-
-  if (!user) {
-    console.log('🚫 Admin Layout Render - No user');
-    return null;
+  // عرض شاشة تحميل
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 rounded-full border-t-blue-600 animate-spin"></div>
+          <p className="text-gray-600">جاري تحميل لوحة التحكم...</p>
+        </div>
+      </div>
+    );
   }
 
-  if (!userData) {
-    console.log('🚫 Admin Layout Render - No userData');
-    return null;
-  }
-
-  if (userData.accountType !== 'admin') {
-    console.log('🚫 Admin Layout Render - Not admin:', userData.accountType);
+  // التحقق من الصلاحيات
+  if (!user || userData?.accountType !== 'admin') {
     return null;
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <DashboardFontWrapper className="bg-gray-50">
+      {/* Header */}
+      <UnifiedHeader 
+        variant="default"
+        showLanguageSwitcher={true}
+        showNotifications={true}
+        showUserMenu={true}
+        title="لوحة تحكم المدير"
+        logo="/admin-avatar.png"
+      />
+      
       {/* Sidebar */}
       <AdminSidebar 
         isOpen={isSidebarOpen}
@@ -89,7 +72,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       />
       
       {/* Main content */}
-      <div className={`flex-1 transition-all duration-300 ${
+      <div className={`flex-1 transition-all duration-300 pt-16 ${
         isSidebarOpen ? 'mr-64' : 'mr-20'
       }`}>
         {/* Content wrapper */}
@@ -97,6 +80,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </div>
       </div>
-    </div>
+    </DashboardFontWrapper>
   );
 } 

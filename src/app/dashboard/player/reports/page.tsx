@@ -99,119 +99,50 @@ const calculateAge = (birthDate: any) => {
   });
 
   if (!birthDate) {
-    console.log('❌ calculateAge: لا يوجد تاريخ ميلاد');
+    console.log('❌ [calculateAge] لا يوجد تاريخ ميلاد');
     return null;
   }
-  
-  try {
-    let d: Date;
-    
-    // التعامل مع Invalid Date أولاً
-    if (birthDate instanceof Date && isNaN(birthDate.getTime())) {
-      console.warn('⚠️ calculateAge: تم استقبال Invalid Date، محاولة إنشاء تاريخ افتراضي');
-      // إنشاء تاريخ افتراضي معقول (عمر 20 سنة)
-      const currentYear = new Date().getFullYear();
-      d = new Date(currentYear - 20, 4, 1); // أول مايو من السنة المناسبة
-      console.log('🔧 calculateAge: تاريخ افتراضي تم إنشاؤه:', d);
-    }
-    // التعامل مع Firebase Timestamp
-    else if (typeof birthDate === 'object' && birthDate !== null && (birthDate as any).toDate && typeof (birthDate as any).toDate === 'function') {
-      try {
-        d = (birthDate as any).toDate();
-        console.log('✅ calculateAge: تم تحويل Firebase Timestamp إلى Date:', d);
-      } catch (timestampError) {
-        console.error('❌ calculateAge: خطأ في تحويل Firestore Timestamp:', timestampError);
-        const currentYear = new Date().getFullYear();
-        d = new Date(currentYear - 20, 4, 1);
-      }
-    } 
-    // التعامل مع Firebase Timestamp مع seconds
-    else if (typeof birthDate === 'object' && birthDate !== null && ((birthDate as any).seconds || (birthDate as any)._seconds)) {
-      const seconds = (birthDate as any).seconds || (birthDate as any)._seconds;
-      d = new Date(seconds * 1000);
-      console.log('✅ calculateAge: تم تحويل Firebase Timestamp (seconds) إلى Date:', d);
-    }
-    // التعامل مع Date object صحيح
-    else if (birthDate instanceof Date && !isNaN(birthDate.getTime())) {
-      d = birthDate;
-      console.log('✅ calculateAge: التاريخ هو Date object صحيح:', d);
-    } 
-    // التعامل مع string أو number
-    else if (typeof birthDate === 'string' || typeof birthDate === 'number') {
-      d = new Date(birthDate);
-      console.log('✅ calculateAge: تم تحويل string/number إلى Date:', d);
-      
-      // التحقق من نجاح التحويل
-      if (isNaN(d.getTime())) {
-        console.warn('⚠️ calculateAge: فشل تحويل string/number، استخدام تاريخ افتراضي');
-        const currentYear = new Date().getFullYear();
-        d = new Date(currentYear - 20, 4, 1);
-      }
-    }
-    // محاولة أخيرة للتحويل
-    else {
-      console.log('⚠️ calculateAge: محاولة تحويل نوع غير معروف:', birthDate);
-      try {
-        d = new Date(birthDate);
-        if (isNaN(d.getTime())) {
-          throw new Error('Invalid date conversion');
-        }
-        console.log('✅ calculateAge: نجح التحويل النهائي:', d);
-      } catch (conversionError) {
-        console.warn('⚠️ calculateAge: فشل التحويل النهائي، استخدام تاريخ افتراضي');
-        const currentYear = new Date().getFullYear();
-        d = new Date(currentYear - 20, 4, 1);
-      }
-    }
-    
-    // التحقق من صحة التاريخ النهائي
-    if (isNaN(d.getTime())) {
-      console.error('❌ calculateAge: التاريخ لا يزال غير صالح بعد جميع المحاولات');
-      const currentYear = new Date().getFullYear();
-      d = new Date(currentYear - 20, 4, 1);
-      console.log('🔧 calculateAge: استخدام تاريخ افتراضي أخير:', d);
-    }
-    
-    const today = new Date();
-    
-    // إصلاح التواريخ المستقبلية - معالجة محسنة
-    if (d.getFullYear() >= 2024) {
-      console.warn('⚠️ calculateAge: تاريخ الميلاد يحتوي على سنة مستقبلية:', d.getFullYear());
-      
-      // تصحيح: إذا كان 2025 اجعله 2005، إذا كان 2024 اجعله 2004، إلخ
-      const originalYear = d.getFullYear();
-      const correctedYear = originalYear - 20;
-      d.setFullYear(correctedYear);
-      console.log('✅ calculateAge: تم تصحيح التاريخ من', originalYear, 'إلى', correctedYear);
-      console.log('📅 calculateAge: التاريخ المصحح النهائي:', d);
-    }
-    
-    // حساب العمر
-    let age = today.getFullYear() - d.getFullYear();
-    const monthDiff = today.getMonth() - d.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < d.getDate())) {
-      age--;
-    }
-    
-    // التحقق من منطقية العمر
-    if (age < 0) {
-      console.warn('⚠️ calculateAge: عمر سالب، تصحيح إلى موجب');
-      age = Math.abs(age);
-    }
-    
-    if (age > 100) {
-      console.warn('⚠️ calculateAge: عمر كبير جداً:', age, 'استخدام عمر افتراضي');
-      age = 20; // عمر افتراضي معقول
-    }
-    
-    console.log('✅ calculateAge: العمر المحسوب النهائي:', age, 'سنة للتاريخ:', d.toLocaleDateString());
-    return age;
-    
-  } catch (error) {
-    console.error('❌ calculateAge: خطأ في حساب العمر:', error, 'للتاريخ:', birthDate);
-    return null; // إرجاع null بدلاً من 20 لمعرفة المشكلة
+
+  let date: Date;
+
+  // معالجة Firestore Timestamp
+  if (birthDate && typeof birthDate === 'object' && birthDate.toDate) {
+    date = birthDate.toDate();
+    console.log('📅 [calculateAge] تم تحويل Firestore Timestamp:', date);
+  } else if (birthDate instanceof Date) {
+    date = birthDate;
+    console.log('📅 [calculateAge] تاريخ صالح:', date);
+  } else if (typeof birthDate === 'string') {
+    date = new Date(birthDate);
+    console.log('📅 [calculateAge] تم تحويل string إلى Date:', date);
+  } else {
+    console.log('❌ [calculateAge] نوع بيانات غير معروف:', typeof birthDate);
+    return null;
   }
+
+  // التحقق من صحة التاريخ
+  if (isNaN(date.getTime())) {
+    console.log('❌ [calculateAge] تاريخ غير صالح:', date);
+    return null;
+  }
+
+  // التحقق من أن التاريخ ليس في المستقبل
+  const now = new Date();
+  if (date > now) {
+    console.log('⚠️ [calculateAge] تاريخ في المستقبل، تم تعديله:', date);
+    date = new Date(now.getFullYear() - 18, now.getMonth(), now.getDate()); // تاريخ افتراضي
+  }
+
+  const age = now.getFullYear() - date.getFullYear();
+  const monthDiff = now.getMonth() - date.getMonth();
+  
+  let finalAge = age;
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < date.getDate())) {
+    finalAge--;
+  }
+
+  console.log('✅ [calculateAge] العمر المحسوب:', finalAge);
+  return finalAge;
 };
 
 // تعريف أنواع المنظمات مع الأيقونات
@@ -248,9 +179,10 @@ function PlayerReportPage() {
   const searchParams = useSearchParams();
   const [user, loading, authError] = useAuthState(auth);
   const [player, setPlayer] = useState<PlayerFormData | null>(null);
+  const [userData, setUserData] = useState<any>(null);
   
   // إضافة تشخيصات مفصلة
-  console.group('🔍 تشخيص صفحة تقارير اللاعب');
+  console.log('🔍 تشخيص صفحة تقارير اللاعب');
   console.log('معاملات URL:', {
     viewPlayerId: searchParams?.get('view'),
     fullParams: searchParams?.toString()
@@ -261,7 +193,6 @@ function PlayerReportPage() {
     isLoading: loading,
     authError: authError
   });
-  console.groupEnd();
   
   // إذا كان هناك معامل "view" فسنعرض اللاعب المحدد، وإلا نعرض اللاعب المسجل دخوله
   const viewPlayerId = searchParams?.get('view');
@@ -348,11 +279,10 @@ function PlayerReportPage() {
 
   // دالة جلب معلومات الحساب الحالي
   const fetchCurrentUserInfo = async () => {
-    console.group('👤 جلب معلومات المستخدم الحالي');
+    console.log('👤 جلب معلومات المستخدم الحالي');
     
     if (!user?.uid) {
       console.warn('⚠️ لا يوجد مستخدم مسجل');
-      console.groupEnd();
       return;
     }
 
@@ -376,14 +306,15 @@ function PlayerReportPage() {
             icon: orgType.icon,
             color: orgType.color
           });
+          
+          // تحديث userData state
+          setUserData(userData);
           break;
         }
       }
     } catch (error) {
       console.error('❌ خطأ في جلب معلومات المستخدم:', error);
     }
-    
-    console.groupEnd();
   };
 
   // دالة تحويل مسار Supabase إلى رابط كامل (للوجو) - محسنة لتدعم جميع أنواع البوكتات
@@ -622,15 +553,35 @@ function PlayerReportPage() {
       <div className="col-span-2 p-4 bg-pink-50 rounded-lg">
         <div className="mb-2 font-semibold text-pink-700">الأندية السابقة</div>
         <div className="space-y-2">
-          {player?.previous_clubs && player.previous_clubs.length > 0 ? (
-            player.previous_clubs.map((club: string, index: number) => (
+          {(() => {
+            // التأكد من أن previous_clubs هو array
+            const previousClubs = player?.previous_clubs;
+            if (!previousClubs) {
+              return <div className="p-2 text-gray-500 bg-white rounded">لا توجد أندية سابقة مسجلة</div>;
+            }
+            
+            // إذا كان string، نحوله إلى array
+            let clubsArray: string[] = [];
+            if (typeof previousClubs === 'string') {
+              // إذا كان string، نحاول تقسيمه بفاصلة أو نقطة
+              clubsArray = previousClubs.split(/[,،.]/).map(club => club.trim()).filter(club => club.length > 0);
+            } else if (Array.isArray(previousClubs)) {
+              clubsArray = previousClubs;
+            } else {
+              // إذا كان object أو أي نوع آخر، نحوله إلى string
+              clubsArray = [String(previousClubs)];
+            }
+            
+            if (clubsArray.length === 0) {
+              return <div className="p-2 text-gray-500 bg-white rounded">لا توجد أندية سابقة مسجلة</div>;
+            }
+            
+            return clubsArray.map((club: string, index: number) => (
               <div key={index} className="p-2 bg-white rounded">
                 {club}
               </div>
-            ))
-          ) : (
-            <div className="p-2 text-gray-500 bg-white rounded">لا توجد أندية سابقة مسجلة</div>
-          )}
+            ));
+          })()}
         </div>
       </div>
       <div className="col-span-2 p-4 bg-orange-50 rounded-lg">
@@ -687,15 +638,35 @@ function PlayerReportPage() {
       <div className="col-span-2 p-4 bg-indigo-50 rounded-lg">
         <div className="mb-2 font-semibold text-indigo-700">الدورات التدريبية</div>
         <div className="space-y-2">
-          {player?.training_courses && player.training_courses.length > 0 ? (
-            player.training_courses.map((course: string, index: number) => (
+          {(() => {
+            // التأكد من أن training_courses هو array
+            const trainingCourses = player?.training_courses;
+            if (!trainingCourses) {
+              return <div className="p-2 text-gray-500 bg-white rounded">لا توجد دورات تدريبية مسجلة</div>;
+            }
+            
+            // إذا كان string، نحوله إلى array
+            let coursesArray: string[] = [];
+            if (typeof trainingCourses === 'string') {
+              // إذا كان string، نحاول تقسيمه بفاصلة أو نقطة
+              coursesArray = trainingCourses.split(/[,،.]/).map(course => course.trim()).filter(course => course.length > 0);
+            } else if (Array.isArray(trainingCourses)) {
+              coursesArray = trainingCourses;
+            } else {
+              // إذا كان object أو أي نوع آخر، نحوله إلى string
+              coursesArray = [String(trainingCourses)];
+            }
+            
+            if (coursesArray.length === 0) {
+              return <div className="p-2 text-gray-500 bg-white rounded">لا توجد دورات تدريبية مسجلة</div>;
+            }
+            
+            return coursesArray.map((course: string, index: number) => (
               <div key={index} className="p-2 bg-white rounded">
                 {course}
               </div>
-            ))
-          ) : (
-            <div className="p-2 text-gray-500 bg-white rounded">لا توجد دورات تدريبية مسجلة</div>
-          )}
+            ));
+          })()}
         </div>
       </div>
     </div>
@@ -1470,9 +1441,19 @@ function PlayerReportPage() {
     let isMounted = true;
 
     const fetchPlayerData = async () => {
+      console.log('🔍 تشخيص صفحة تقارير اللاعب');
+      console.log('📋 معلومات الطلب:', {
+        viewPlayerId,
+        userId: user?.uid,
+        isCurrentUser: viewPlayerId === user?.uid,
+        hasUser: !!user,
+        hasViewPlayerId: !!viewPlayerId
+      });
+
       debugConsole.playerReport.start(viewPlayerId || user?.uid || '', !!viewPlayerId);
 
       if (!user && !viewPlayerId) {
+        console.error('❌ لا يوجد مستخدم أو معرف لاعب');
         debugConsole.playerReport.error('لا يوجد مستخدم أو معرف لاعب', 'التحقق من الصلاحيات');
         router.push('/auth/login');
         return;
@@ -1483,21 +1464,62 @@ function PlayerReportPage() {
         const playerId = viewPlayerId || user?.uid;
 
         if (!playerId) {
+          console.error('❌ معرف اللاعب غير محدد');
           debugConsole.playerReport.error('معرف اللاعب غير محدد', 'التحقق من المعرف');
           setError("لم يتم تحديد اللاعب المطلوب");
           setIsLoading(false);
           return;
         }
 
+        console.log('🔍 محاولة جلب بيانات اللاعب:', {
+          playerId,
+          viewPlayerId,
+          userId: user?.uid,
+          isCurrentUser: playerId === user?.uid
+        });
+
         const playerDoc = await getDoc(doc(db, 'players', playerId));
 
         if (!playerDoc.exists()) {
-          debugConsole.playerReport.error('لم يتم العثور على اللاعب', 'البحث في قاعدة البيانات');
-          setError(`لم يتم العثور على بيانات اللاعب`);
+          console.log('⚠️ لم يتم العثور على اللاعب في players collection، محاولة users collection');
+          // محاولة جلب البيانات من collection users
+          const userDoc = await getDoc(doc(db, 'users', playerId));
+          
+          if (!userDoc.exists()) {
+            console.error('❌ لم يتم العثور على اللاعب في أي collection');
+            debugConsole.playerReport.error('لم يتم العثور على اللاعب في أي collection', 'البحث في قاعدة البيانات');
+            setError(`لم يتم العثور على بيانات اللاعب في قاعدة البيانات`);
+            setIsLoading(false);
+            return;
+          }
+          
+          console.log('✅ تم العثور على اللاعب في users collection');
+          const userData = userDoc.data();
+          debugConsole.playerReport.playerData(userData);
+          debugConsole.playerReport.images(userData);
+          debugConsole.playerReport.organization(userData);
+
+          // معالجة البيانات من users collection
+          const processedData = {
+            ...userData,
+            id: playerId,
+            // التأكد من وجود الحقول المطلوبة
+            full_name: userData.full_name || userData.displayName || userData.name || 'لاعب',
+            email: userData.email || '',
+            phone: userData.phone || '',
+            birth_date: userData.birth_date || userData.birthDate || null,
+            nationality: userData.nationality || '',
+            position: userData.position || '',
+            // ... existing data processing ...
+          };
+
+          console.log('✅ تم معالجة البيانات من users collection:', processedData);
+          setPlayer(processedData);
           setIsLoading(false);
           return;
         }
 
+        console.log('✅ تم العثور على اللاعب في players collection');
         const data = playerDoc.data();
         debugConsole.playerReport.playerData(data);
         debugConsole.playerReport.images(data);
@@ -1506,15 +1528,38 @@ function PlayerReportPage() {
         // معالجة البيانات كما هو معتاد
         const processedData = {
           ...data,
+          id: playerId,
+          // التأكد من وجود الحقول المطلوبة
+          full_name: data.full_name || data.displayName || data.name || 'لاعب',
+          email: data.email || '',
+          phone: data.phone || '',
+          birth_date: data.birth_date || data.birthDate || null,
+          nationality: data.nationality || '',
+          position: data.position || '',
           // ... existing data processing ...
         };
 
+        console.log('✅ تم معالجة البيانات من players collection:', processedData);
         setPlayer(processedData);
         setIsLoading(false);
 
       } catch (error) {
+        console.error('❌ خطأ في جلب بيانات اللاعب:', error);
         debugConsole.playerReport.error(error, 'جلب البيانات');
-        setError("حدث خطأ أثناء جلب بيانات اللاعب");
+        
+        // رسائل خطأ أكثر تفصيلاً
+        let errorMessage = "حدث خطأ أثناء جلب بيانات اللاعب";
+        if (error instanceof Error) {
+          if (error.message.includes('permission')) {
+            errorMessage = "ليس لديك صلاحية لعرض هذا الملف الشخصي";
+          } else if (error.message.includes('network')) {
+            errorMessage = "خطأ في الاتصال بالشبكة، يرجى المحاولة مرة أخرى";
+          } else if (error.message.includes('not-found')) {
+            errorMessage = "لم يتم العثور على بيانات اللاعب";
+          }
+        }
+        
+        setError(errorMessage);
         setIsLoading(false);
       }
 
@@ -1590,9 +1635,64 @@ function PlayerReportPage() {
     }
   };
 
+  // إرسال إشعار مشاهدة الملف الشخصي
+  const sendProfileViewNotification = async () => {
+    if (!user || !userData || !player) return;
+    
+    // لا نرسل إشعار إذا كان المستخدم يشاهد ملفه الشخصي
+    if (user.uid === player.id) {
+      console.log('🚫 لا يتم إرسال إشعار - المستخدم يشاهد ملفه الشخصي');
+      return;
+    }
+
+    try {
+      console.log('📢 إرسال إشعار مشاهدة الملف الشخصي:', {
+        profileOwnerId: player.id,
+        viewerId: user.uid,
+        viewerName: userData.full_name || userData.displayName || userData.name || 'مستخدم',
+        viewerType: userData.accountType || 'player'
+      });
+
+      const response = await fetch('/api/notifications/smart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'profile_view',
+          profileOwnerId: player.id,
+          viewerId: user.uid,
+          viewerName: userData.full_name || userData.displayName || userData.name || 'مستخدم',
+          viewerType: userData.accountType || 'player'
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ تم إرسال إشعار مشاهدة الملف بنجاح:', result);
+      } else {
+        console.error('❌ فشل في إرسال إشعار مشاهدة الملف:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ خطأ في إرسال إشعار مشاهدة الملف:', error);
+    }
+  };
+
+  // إرسال الإشعار عند تحميل الصفحة
+  useEffect(() => {
+    if (player && user && userData && !isLoading && !error) {
+      // تأخير قليل لضمان تحميل البيانات
+      const timer = setTimeout(() => {
+        sendProfileViewNotification();
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [player, user, userData, isLoading, error]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
-      {/* Header مع معلومات الحساب */}
+      {/* Header بسيط */}
       <div className="sticky top-0 z-50 border-b border-gray-200 shadow-sm backdrop-blur-md bg-white/95">
         <div className="px-4 py-4 mx-auto max-w-7xl">
           <div className="flex justify-between items-center">
@@ -1605,36 +1705,16 @@ function PlayerReportPage() {
               <span className="font-medium">العودة</span>
             </button>
 
-            {/* معلومات الحساب المصادق - محسنة للوضوح */}
-            {currentUserInfo && (
-              <div className="flex gap-3 items-center">
-                {/* تسمية توضيحية */}
-                <div className="pl-3 text-sm font-medium text-gray-500 border-l border-gray-300">
-                  تتصفح بحساب:
-                </div>
-                
-                <div className="flex gap-3 items-center px-4 py-2 bg-gradient-to-r from-emerald-50 to-blue-50 rounded-lg border border-emerald-200 shadow-sm">
-                  <div className={`p-2 rounded-full ${currentUserInfo.color} text-white shadow-sm`}>
-                    {React.createElement(currentUserInfo.icon, { className: "w-5 h-5" })}
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-gray-800">
-                      {currentUserInfo.name || currentUserInfo.full_name}
-                    </div>
-                    <div className="text-xs font-medium text-gray-600">
-                      {currentUserInfo.type} • نشط
-                    </div>
-                  </div>
-                  
-                  {/* أيقونة التحقق */}
-                  <div className="flex justify-center items-center w-6 h-6 bg-green-500 rounded-full">
-                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* عنوان الصفحة */}
+            <div className="text-center">
+              <h1 className="text-xl font-bold text-gray-900">تقرير اللاعب</h1>
+              {player && (
+                <p className="text-sm text-gray-600">{player.full_name}</p>
+              )}
+            </div>
+
+            {/* مساحة فارغة للتوازن */}
+            <div className="w-24"></div>
           </div>
         </div>
       </div>
@@ -1657,186 +1737,64 @@ function PlayerReportPage() {
               <h2 className="mb-2 text-xl font-semibold text-red-600">⚠️ خطأ في تحميل البيانات</h2>
               <p className="mb-4 text-sm leading-relaxed text-gray-600">{error}</p>
               
-              {/* تفاصيل إضافية للمطورين */}
-              <div className="p-3 mb-4 text-xs text-left bg-gray-50 rounded-lg">
-                <div className="font-mono">
-                  <div>🔍 Player ID: {viewPlayerId || user?.uid || 'غير محدد'}</div>
-                  <div>👤 User ID: {user?.uid || 'غير مسجل'}</div>
-                  <div>🔗 View Mode: {viewPlayerId ? 'عرض لاعب آخر' : 'عرض الملف الشخصي'}</div>
-                </div>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                إعادة المحاولة
+              </button>
+            </div>
+          </div>
+        ) : !player ? (
+          <div className="flex justify-center items-center min-h-screen">
+            <div className="p-8 max-w-md text-center bg-white rounded-lg shadow-md">
+              <div className="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gray-100 rounded-full">
+                <User className="w-8 h-8 text-gray-400" />
               </div>
+              <h2 className="mb-2 text-xl font-semibold text-gray-600">لم يتم العثور على اللاعب</h2>
+              <p className="mb-4 text-sm leading-relaxed text-gray-500">
+                يبدو أن اللاعب المطلوب غير موجود أو تم حذفه
+              </p>
               
-              <div className="flex space-x-2 space-x-reverse">
-                <button
-                  onClick={() => router.back()}
-                  className="flex-1 px-4 py-2 text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700"
-                >
-                  🔙 العودة
-                </button>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="flex-1 px-4 py-2 text-white bg-gray-600 rounded-lg transition-colors hover:bg-gray-700"
-                >
-                  🔄 إعادة تحميل
-                </button>
-              </div>
+              <button
+                onClick={() => router.back()}
+                className="px-6 py-2 text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                العودة
+              </button>
             </div>
           </div>
         ) : (
           <>
-            {/* شريط توضيحي لبيانات اللاعب */}
-            <div className="p-4 mb-6 text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg">
-              <div className="flex gap-3 justify-between items-center">
-                <div className="flex gap-3 items-center">
-                  <div className="flex justify-center items-center w-8 h-8 rounded-full bg-white/20">
-                    <User className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold">ملف اللاعب التفصيلي</h2>
-                    <p className="text-sm text-blue-100">جميع البيانات التالية خاصة باللاعب المعروض</p>
-                  </div>
+            {/* معلومات اللاعب الأساسية */}
+            <div className="mb-8 p-6 bg-white rounded-xl shadow-md">
+              <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+                {/* صورة اللاعب */}
+                <div className="flex-shrink-0">
+                  <img
+                    src={getValidImageUrl(player.profile_image)}
+                    alt={player.full_name}
+                    className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                  />
                 </div>
                 
-
-              </div>
-            </div>
-
-            {/* Header اللاعب - محسن */}
-            <div className="overflow-hidden mb-8 bg-white rounded-xl border border-gray-200 shadow-lg">
-              <div className="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
-                <div className="absolute inset-0 bg-black/20"></div>
-                
-                {/* تسمية توضيحية لبيانات اللاعب */}
-                <div className="absolute top-4 left-4">
-                  <div className="px-3 py-1 text-xs font-medium text-gray-700 rounded-full shadow-sm backdrop-blur-sm bg-white/90">
-                    📋 بيانات اللاعب
-                  </div>
-                </div>
-                
-                <div className="absolute right-0 bottom-0 left-0 p-6">
-                  <div className="flex gap-6 items-end">
-                    {/* صورة اللاعب مع لوجو الجهة التابع لها */}
-                    <div className="relative">
-                      <div className="overflow-hidden w-32 h-32 bg-white rounded-full border-4 border-white shadow-lg">
-                        {(() => {
-                          const validImageUrl = getValidImageUrl(player?.profile_image_url);
-                          return validImageUrl !== '/images/default-avatar.png' ? (
-                            <img
-                              src={validImageUrl}
-                              alt={player?.full_name}
-                              className="object-cover w-full h-full"
-                              onError={(e) => {
-                                if (!e.currentTarget.dataset.errorHandled) {
-                                  e.currentTarget.dataset.errorHandled = 'true';
-                                  e.currentTarget.src = '/images/default-avatar.png';
-                                }
-                              }}
-                            />
-                          ) : (
-                            <div className="flex justify-center items-center w-full h-full bg-gradient-to-br from-blue-400 to-purple-500">
-                              <User className="w-16 h-16 text-white" />
-                            </div>
-                          );
-                        })()}
-                      </div>
-                      
-                      {/* لوجو الجهة التابع لها مع تحسينات */}
-                      {!organizationLoading && playerOrganization && (
-                        <button
-                          onClick={() => {
-                            const profileUrl = getOrganizationProfileUrl(playerOrganization);
-                            if (profileUrl) {
-                              router.push(profileUrl);
-                            }
-                          }}
-                          className="absolute -right-2 -bottom-2 w-12 h-12 bg-white rounded-full border-white shadow-lg transition-transform border-3 hover:scale-110 group"
-                          title={`انتقل إلى ملف ${playerOrganization.type}: ${playerOrganization.name || playerOrganization.full_name}`}
-                        >
-                          {playerOrganization.logoUrl ? (
-                            <img
-                              src={playerOrganization.logoUrl}
-                              alt={`لوجو ${playerOrganization.name || playerOrganization.full_name}`}
-                              className="object-cover w-full h-full rounded-full group-hover:shadow-md"
-                              onError={(e) => {
-                                console.log(`❌ فشل تحميل لوجو ${playerOrganization.type}، استخدام الأيقونة الافتراضية`);
-                                e.currentTarget.style.display = 'none';
-                                if (e.currentTarget.nextElementSibling) {
-                                  (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
-                                }
-                              }}
-                            />
-                          ) : null}
-                          <div 
-                            className={`w-full h-full rounded-full ${playerOrganization.color} flex items-center justify-center text-white group-hover:shadow-md ${
-                              playerOrganization.logoUrl ? 'hidden' : 'flex'
-                            }`}
-                          >
-                            {React.createElement(playerOrganization.icon, { className: "w-6 h-6" })}
-                          </div>
-                          
-                          {/* نص توضيحي صغير */}
-                          <div className="absolute -bottom-1 left-1/2 opacity-0 transition-opacity transform -translate-x-1/2 translate-y-full group-hover:opacity-100">
-                            <div className="px-2 py-1 text-xs text-white whitespace-nowrap rounded bg-black/80">
-                              {playerOrganization.type}
-                            </div>
-                          </div>
-                        </button>
-                      )}
-                      
-                      {/* شارة اللاعب المستقل - محسنة */}
-                      {!organizationLoading && !playerOrganization && (
-                        <div
-                          className="flex absolute -right-2 -bottom-2 justify-center items-center w-12 h-12 bg-gray-500 rounded-full border-white shadow-lg border-3 group"
-                          title="لاعب مستقل - غير تابع لأي جهة"
-                        >
-                          <User className="w-6 h-6 text-white" />
-                          
-                          {/* نص توضيحي */}
-                          <div className="absolute -bottom-1 left-1/2 opacity-0 transition-opacity transform -translate-x-1/2 translate-y-full group-hover:opacity-100">
-                            <div className="px-2 py-1 text-xs text-white whitespace-nowrap rounded bg-black/80">
-                              مستقل
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* مؤشر التحميل */}
-                      {organizationLoading && (
-                        <div className="flex absolute -right-2 -bottom-2 justify-center items-center w-12 h-12 bg-blue-500 rounded-full border-white shadow-lg border-3">
-                          <div className="w-4 h-4 rounded-full border-2 border-white animate-spin border-t-transparent"></div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* معلومات اللاعب */}
-                    <div className="flex-1 mb-4 text-white">
-                      <h1 className="mb-2 text-3xl font-bold">{player?.full_name}</h1>
-                      <div className="flex gap-4 items-center text-white/90">
-                        <span className="flex gap-1 items-center">
-                          <Target className="w-4 h-4" />
-                          {player?.primary_position || 'غير محدد'}
-                        </span>
-                        <span className="flex gap-1 items-center">
-                          <Calendar className="w-4 h-4" />
-                          {(() => {
-                            const age = calculateAge(player?.birth_date);
-                            return age ? `${age} سنة` : 'العمر غير محدد';
-                          })()}
-                        </span>
-                        <span className="flex gap-1 items-center">
-                          <MapPin className="w-4 h-4" />
-                          {player?.nationality || player?.country || 'غير محدد'}
-                        </span>
-                      </div>
-                    </div>
+                {/* معلومات أساسية */}
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                    {player.full_name}
+                  </h1>
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                    <span>العمر: {calculateAge(player.birth_date) || 'غير محدد'} سنة</span>
+                    <span>المركز: {player.position || 'غير محدد'}</span>
+                    <span>الجنسية: {player.nationality || 'غير محدد'}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* معلومات الجهة التابع لها والاتصال - محسنة */}
+            {/* معلومات الجهة التابع لها والاتصال */}
             <div className="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-2">
-              {/* الجهة التابع لها - محسنة للوضوح */}
+              {/* الجهة التابع لها */}
               <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-md">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="flex gap-2 items-center text-lg font-semibold">

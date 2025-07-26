@@ -1,98 +1,88 @@
-// تخزين OTP في الذاكرة - أكثر استقراراً
-const otpStorage = new Map<string, { otp: string; timestamp: number; attempts: number }>();
+import { getAdminDb } from '@/lib/firebase/admin';
 
 // دالة لتطبيع رقم الهاتف
 function normalizePhoneNumber(phone: string): string {
-  // إزالة المسافات والرموز
   let cleaned = phone.replace(/[\s\-\(\)]/g, '');
-  
-  // إضافة + إذا لم تكن موجودة
   if (!cleaned.startsWith('+')) {
     cleaned = '+' + cleaned;
   }
-  
   return cleaned;
 }
 
 // تخزين OTP جديد
-export function storeOTP(phone: string, otp: string): void {
+export async function storeOTP(phone: string, otp: string, source: 'whatsapp' | 'sms' = 'sms'): Promise<void> {
+  const db = getAdminDb();
   const normalizedPhone = normalizePhoneNumber(phone);
-  const timestamp = Date.now();
-  otpStorage.set(normalizedPhone, { otp, timestamp, attempts: 0 });
-  console.log('💾 OTP stored for phone:', normalizedPhone, 'OTP:', otp);
-  console.log('💾 Storage size:', otpStorage.size);
-  
-  // فحص فوري للتأكد من التخزين
-  const checkStored = otpStorage.get(normalizedPhone);
-  if (checkStored) {
-    console.log('✅ OTP confirmed stored:', normalizedPhone, checkStored.otp);
-  } else {
-    console.log('❌ OTP storage failed for:', normalizedPhone);
-  }
+  await db.collection('otps').doc(normalizedPhone).set({
+    otp,
+    timestamp: Date.now(),
+    attempts: 0,
+    expired: false,
+    source
+  });
 }
 
-// الحصول على OTP مخزن
-export function getOTP(phone: string): { otp: string; timestamp: number; attempts: number } | undefined {
+// الحصول على OTP مخزن (الأولوية للواتساب ثم SMS)
+export async function getOTP(phone: string): Promise<any | undefined> {
+  const db = getAdminDb();
   const normalizedPhone = normalizePhoneNumber(phone);
-  const stored = otpStorage.get(normalizedPhone);
-  
-  if (stored) {
-    console.log('🔍 Found OTP for phone:', normalizedPhone, 'OTP:', stored.otp);
-    
-    // التحقق من انتهاء الصلاحية (5 دقائق)
-    const age = Date.now() - stored.timestamp;
-    const maxAge = 5 * 60 * 1000; // 5 دقائق
-    
-    if (age > maxAge) {
-      console.log('⏰ OTP expired for phone:', normalizedPhone, 'Age:', age + 'ms');
-      otpStorage.delete(normalizedPhone);
-      return undefined;
-    }
-    
-    return stored;
-  } else {
-    console.log('🔍 No OTP found for phone:', normalizedPhone);
-    return undefined;
+  const docSnap = await db.collection('otps').doc(normalizedPhone).get();
+  if (!docSnap.exists) return undefined;
+  const data = docSnap.data();
+  // التحقق من انتهاء الصلاحية (5 دقائق)
+  const age = Date.now() - data.timestamp;
+  const maxAge = 5 * 60 * 1000;
+  if (age > maxAge) {
+    await db.collection('otps').doc(normalizedPhone).update({ expired: true });
+    data.expired = true;
   }
+  return data;
+}
+
+// الحصول على OTP حسب النوع
+export async function getOTPBySource(phone: string, source: 'whatsapp' | 'sms'): Promise<any | undefined> {
+  const db = getAdminDb();
+  const normalizedPhone = normalizePhoneNumber(phone);
+  const docSnap = await db.collection('otps').doc(normalizedPhone).get();
+  if (!docSnap.exists) return undefined;
+  const data = docSnap.data();
+  if (data.source !== source) return undefined;
+    // التحقق من انتهاء الصلاحية (5 دقائق)
+  const age = Date.now() - data.timestamp;
+  const maxAge = 5 * 60 * 1000;
+    if (age > maxAge) {
+    await db.collection('otps').doc(normalizedPhone).update({ expired: true });
+    data.expired = true;
+    }
+  return data;
 }
 
 // مسح OTP
-export function clearOTP(phone: string): void {
+export async function clearOTP(phone: string): Promise<void> {
+  const db = getAdminDb();
   const normalizedPhone = normalizePhoneNumber(phone);
-  const deleted = otpStorage.delete(normalizedPhone);
-  if (deleted) {
-    console.log('🗑️ OTP cleared for phone:', normalizedPhone);
-  } else {
-    console.log('🗑️ No OTP to clear for phone:', normalizedPhone);
-  }
+  await db.collection('otps').doc(normalizedPhone).delete();
 }
 
 // زيادة عدد المحاولات
-export function incrementAttempts(phone: string): void {
+export async function incrementAttempts(phone: string): Promise<void> {
+  const db = getAdminDb();
   const normalizedPhone = normalizePhoneNumber(phone);
-  const stored = otpStorage.get(normalizedPhone);
-  if (stored) {
-    stored.attempts++;
-    otpStorage.set(normalizedPhone, stored);
-    console.log('📈 Attempts incremented for phone:', normalizedPhone, 'Total:', stored.attempts);
-  }
+  const docRef = db.collection('otps').doc(normalizedPhone);
+  await db.runTransaction(async (t) => {
+    const docSnap = await t.get(docRef);
+    if (!docSnap.exists) return;
+    const data = docSnap.data();
+    const attempts = (data.attempts || 0) + 1;
+    t.update(docRef, { attempts });
+  });
 }
 
-// فحص حالة التخزين
-export function getOTPStatus(): void {
-  const totalOTPs = otpStorage.size;
-  const phones = Array.from(otpStorage.keys());
-  
-  console.log('📊 OTP Storage Status:');
-  console.log('📊 Total OTPs:', totalOTPs);
-  console.log('📊 Available phones:', phones);
-  
-  if (totalOTPs > 0) {
-    for (const [phone, data] of otpStorage.entries()) {
-      const age = Date.now() - data.timestamp;
-      const maxAge = 5 * 60 * 1000; // 5 دقائق
-      const isExpired = age > maxAge;
-      console.log('📊 Phone:', phone, 'OTP:', data.otp, 'Age:', age + 'ms', 'Expired:', isExpired, 'Attempts:', data.attempts);
-    }
-  }
+// فحص حالة التخزين (للتشخيص فقط)
+export async function getOTPStatus(): Promise<any> {
+  const db = getAdminDb();
+  const snapshot = await db.collection('otps').get();
+  const all = snapshot.docs.map(doc => ({ phone: doc.id, ...doc.data() }));
+  console.log('📊 Firestore OTP Storage:', all);
+  return all;
 } 

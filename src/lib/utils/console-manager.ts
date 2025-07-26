@@ -216,7 +216,7 @@ if (typeof window !== 'undefined') {
 export const debugConsole = {
   playerReport: {
     start: (playerId: string, viewMode: boolean) => {
-      console.group('📊 تشخيص صفحة تقارير اللاعب');
+      console.log('📊 تشخيص صفحة تقارير اللاعب');
       console.log('معلومات الطلب:', {
         playerId,
         mode: viewMode ? 'عرض لاعب آخر' : 'عرض الملف الشخصي',
@@ -225,7 +225,7 @@ export const debugConsole = {
     },
 
     playerData: (data: any) => {
-      console.group('👤 بيانات اللاعب');
+      console.log('👤 بيانات اللاعب');
       console.log('المعلومات الأساسية:', {
         name: data?.full_name,
         birthDate: data?.birth_date,
@@ -243,11 +243,10 @@ export const debugConsole = {
         videos: (data?.videos || []).length,
         documents: (data?.documents || []).length
       });
-      console.groupEnd();
     },
 
     images: (data: any) => {
-      console.group('🖼️ معالجة الصور');
+      console.log('🖼️ معالجة الصور');
       console.log('الصورة الشخصية:', {
         url: data?.profile_image_url || data?.profile_image?.url,
         type: typeof data?.profile_image
@@ -256,11 +255,10 @@ export const debugConsole = {
         count: (data?.additional_images || []).length,
         urls: data?.additional_images?.map((img: any) => img.url)
       });
-      console.groupEnd();
     },
 
     organization: (data: any) => {
-      console.group('🏢 معلومات المنظمة');
+      console.log('🏢 معلومات المنظمة');
       console.log('المعرفات:', {
         clubId: data?.club_id,
         academyId: data?.academy_id,
@@ -272,18 +270,16 @@ export const debugConsole = {
         name: data?.organizationName,
         hasLogo: !!data?.organizationLogo
       });
-      console.groupEnd();
     },
 
     error: (error: any, context: string) => {
-      console.group('❌ خطأ في التقرير');
+      console.log('❌ خطأ في التقرير');
       console.error(`خطأ في ${context}:`, error);
       console.trace('تتبع الخطأ:');
-      console.groupEnd();
     },
 
     end: () => {
-      console.groupEnd();
+      console.log('✅ انتهى تشخيص صفحة تقارير اللاعب');
     }
   }
 }; 

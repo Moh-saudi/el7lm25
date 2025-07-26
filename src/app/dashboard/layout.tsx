@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 
 // استيراد المكونات الأصلية بشكل ديناميكي مع تحسين التحميل
-const Header = dynamic(() => import('@/components/layout/Header'), {
+const Header = dynamic(() => import('@/components/layout/UnifiedHeader'), {
   loading: () => (
     <div className="h-16 bg-white shadow-lg border-b border-gray-200 flex items-center justify-center">
       <div className="w-32 h-8 bg-gray-200 rounded animate-pulse"></div>
@@ -65,10 +65,7 @@ const Footer = dynamic(() => import('@/components/layout/Footer'), {
   ssr: true
 });
 
-const SidebarProvider = dynamic(() => import('@/lib/context/SidebarContext').then(mod => mod.SidebarProvider), {
-  loading: () => <div className="min-h-screen bg-gray-50"></div>,
-  ssr: true
-});
+import { SidebarProvider } from '@/lib/context/SidebarContext';
 
 export default function DashboardLayout({
   children,
@@ -92,7 +89,8 @@ export default function DashboardLayout({
     pathname.startsWith('/dashboard/club') ||
     pathname.startsWith('/dashboard/academy') ||
     pathname.startsWith('/dashboard/agent') ||
-    pathname.startsWith('/dashboard/player/reports')
+    pathname.startsWith('/dashboard/player/reports') ||
+    pathname.startsWith('/dashboard/marketer')
   ) {
     return <>{children}</>;
   }
@@ -157,7 +155,13 @@ export default function DashboardLayout({
           pauseOnHover
           theme="light"
         />
-        <Header />
+        <Header 
+          variant="default"
+          showLanguageSwitcher={true}
+          showNotifications={true}
+          showUserMenu={true}
+          title="El7hm Dashboard"
+        />
         <div className="flex flex-1 min-h-0 pt-16 pb-16" style={{ direction: 'rtl' }}>
           {renderSidebar()}
           <main 

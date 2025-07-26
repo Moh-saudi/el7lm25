@@ -1,60 +1,51 @@
-"use client";
+'use client';
 
-import { useState } from 'react';
+import React from 'react';
+import { useTranslation } from '@/lib/translations/simple-context';
 
-export default function TestSimple() {
-  const [result, setResult] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+export default function TestSimplePage() {
+  const { t, language, setLanguage } = useTranslation();
 
-  const testAPI = async () => {
-    setLoading(true);
-    setResult(null);
-
-    try {
-      console.log('Testing simple API call...');
-      
-      const response = await fetch('/api/notifications/whatsapp/beon', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phone: '201234567890',
-          name: 'Test User'
-        }),
-      });
-
-      const data = await response.json();
-      setResult({ status: response.status, data });
-      console.log('API Result:', { status: response.status, data });
-    } catch (error: any) {
-      console.error('API Error:', error);
-      setResult({ error: error.message });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const testKeys = [
+    'home.sections.hero.slide1.title',
+    'home.sections.hero.slide1.subtitle',
+    'home.sections.services.performanceAnalysis.title',
+    'home.sections.services.performanceAnalysis.description',
+    'home.sections.services.performanceAnalysis.button'
+  ];
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Simple API Test</h1>
-      
-      <button
-        onClick={testAPI}
-        disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400"
-      >
-        {loading ? 'Testing...' : 'Test API'}
-      </button>
-
-      {result && (
-        <div className="mt-4 p-4 bg-gray-100 rounded">
-          <h3 className="font-bold">Result:</h3>
-          <pre className="text-sm mt-2">
-            {JSON.stringify(result, null, 2)}
-          </pre>
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">اختبار النظام البسيط</h1>
+        
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-4">اللغة الحالية: {language}</h2>
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setLanguage('ar')}
+              className={`px-4 py-2 rounded ${language === 'ar' ? 'bg-blue-600 text-white' : 'bg-gray-300'}`}
+            >
+              العربية
+            </button>
+            <button 
+              onClick={() => setLanguage('en')}
+              className={`px-4 py-2 rounded ${language === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-300'}`}
+            >
+              English
+            </button>
+          </div>
         </div>
-      )}
+
+        <div className="grid gap-4">
+          {testKeys.map((key) => (
+            <div key={key} className="p-4 bg-white rounded-lg shadow">
+              <div className="text-sm text-gray-500 mb-2">المفتاح: {key}</div>
+              <div className="text-lg font-semibold">الترجمة: {t(key)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 } 

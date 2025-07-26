@@ -2,54 +2,40 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    // التحقق من متغيرات البيئة
-    const businessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-    const businessPhoneId = process.env.WHATSAPP_PHONE_ID;
-    const greenApiToken = process.env.GREEN_API_TOKEN;
-    const greenApiInstance = process.env.GREEN_API_INSTANCE;
-
+    // فحص متغيرات البيئة للواتساب
     const config = {
-      business: {
-        token: businessToken ? '✅ Set' : '❌ Missing',
-        phoneId: businessPhoneId ? '✅ Set' : '❌ Missing',
-        valid: !!(businessToken && businessPhoneId)
+      whatsappBusiness: {
+        accessToken: process.env.WHATSAPP_ACCESS_TOKEN ? '✅ Set' : '❌ Missing',
+        phoneId: process.env.WHATSAPP_PHONE_ID ? '✅ Set' : '❌ Missing',
+        isValid: !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_ID)
       },
-      green: {
-        token: greenApiToken ? '✅ Set' : '❌ Missing',
-        instance: greenApiInstance ? '✅ Set' : '❌ Missing',
-        valid: !!(greenApiToken && greenApiInstance)
+      greenApi: {
+        token: process.env.GREEN_API_TOKEN ? '✅ Set' : '❌ Missing',
+        instance: process.env.GREEN_API_INSTANCE ? '✅ Set' : '❌ Missing',
+        isValid: !!(process.env.GREEN_API_TOKEN && process.env.GREEN_API_INSTANCE)
+      },
+      beOnWhatsApp: {
+        token: process.env.BEON_WHATSAPP_TOKEN ? '✅ Set' : '❌ Missing',
+        isValid: !!process.env.BEON_WHATSAPP_TOKEN
       }
     };
 
-    // تحديد النوع الافتراضي
-    const defaultType = config.business.valid ? 'business' : config.green.valid ? 'green' : 'none';
+    // تحديد الخدمة المتاحة
+    let availableService = 'none';
+    if (config.whatsappBusiness.isValid) {
+      availableService = 'whatsapp_business';
+    } else if (config.greenApi.isValid) {
+      availableService = 'green_api';
+    } else if (config.beOnWhatsApp.isValid) {
+      availableService = 'beon_whatsapp';
+    }
 
-    const result = {
-      success: config.business.valid || config.green.valid,
-      defaultType,
+    return NextResponse.json({
+      success: true,
       config,
-      message: config.business.valid || config.green.valid 
-        ? 'WhatsApp configuration is valid' 
-        : 'WhatsApp configuration is missing or invalid',
-      recommendations: []
-    };
-
-    // إضافة توصيات
-    if (!config.business.valid && !config.green.valid) {
-      result.recommendations.push('Set up either WhatsApp Business API or Green API configuration');
-    }
-
-    if (!config.business.valid && config.green.valid) {
-      result.recommendations.push('WhatsApp Business API is not configured, using Green API');
-    }
-
-    if (config.business.valid && !config.green.valid) {
-      result.recommendations.push('Green API is not configured, using WhatsApp Business API');
-    }
-
-    console.log('🔧 WhatsApp config test result:', result);
-
-    return NextResponse.json(result);
+      availableService,
+      recommendations: getRecommendations(config)
+    });
 
   } catch (error: any) {
     console.error('❌ WhatsApp config test error:', error);
@@ -57,10 +43,59 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         success: false, 
-        error: 'حدث خطأ في اختبار التكوين',
+        error: 'خطأ في فحص التكوين',
         details: error.message
       },
       { status: 500 }
     );
   }
+}
+
+function getRecommendations(config: any) {
+  const recommendations = [];
+
+  if (!config.whatsappBusiness.isValid) {
+    recommendations.push({
+      type: 'error',
+      message: 'WhatsApp Business API غير مكون. أضف WHATSAPP_ACCESS_TOKEN و WHATSAPP_PHONE_ID إلى .env.local'
+    });
+  }
+
+  if (!config.greenApi.isValid) {
+    recommendations.push({
+      type: 'error', 
+      message: 'Green API غير مكون. أضف GREEN_API_TOKEN و GREEN_API_INSTANCE إلى .env.local'
+    });
+  }
+
+  if (!config.beOnWhatsApp.isValid) {
+    recommendations.push({
+      type: 'warning',
+      message: 'BeOn WhatsApp غير مكون. أضف BEON_WHATSAPP_TOKEN إلى .env.local للاستخدام كبديل'
+    });
+  }
+
+  if (config.whatsappBusiness.isValid) {
+    recommendations.push({
+      type: 'success',
+      message: 'WhatsApp Business API جاهز للاستخدام'
+    });
+  } else if (config.greenApi.isValid) {
+    recommendations.push({
+      type: 'success', 
+      message: 'Green API جاهز للاستخدام'
+    });
+  } else if (config.beOnWhatsApp.isValid) {
+    recommendations.push({
+      type: 'info',
+      message: 'BeOn WhatsApp متاح كبديل'
+    });
+  } else {
+    recommendations.push({
+      type: 'error',
+      message: 'لا توجد خدمة واتساب مكونة. يرجى إعداد واحدة على الأقل'
+    });
+  }
+
+  return recommendations;
 } 

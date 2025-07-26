@@ -34,10 +34,10 @@ class BeOnSMSService {
 
   constructor() {
     this.config = {
-      token: process.env.BEON_SMS_TOKEN || process.env.BEON_WHATSAPP_TOKEN || '',
-      smsToken: process.env.BEON_SMS_TOKEN_REGULAR || process.env.BEON_SMS_TOKEN || process.env.BEON_WHATSAPP_TOKEN || '',
-      templateToken: process.env.BEON_SMS_TOKEN_TEMPLATE || process.env.BEON_SMS_TOKEN || process.env.BEON_WHATSAPP_TOKEN || '',
-      bulkToken: process.env.BEON_SMS_TOKEN_BULK || process.env.BEON_SMS_TOKEN || process.env.BEON_WHATSAPP_TOKEN || '',
+      token: process.env.BEON_SMS_TOKEN || process.env.BEON_WHATSAPP_TOKEN || 'vSCuMzZwLjDxzR882YphwEgW',
+      smsToken: process.env.BEON_SMS_TOKEN_REGULAR || process.env.BEON_SMS_TOKEN || process.env.BEON_WHATSAPP_TOKEN || 'vSCuMzZwLjDxzR882YphwEgW',
+      templateToken: process.env.BEON_SMS_TOKEN_TEMPLATE || process.env.BEON_SMS_TOKEN || process.env.BEON_WHATSAPP_TOKEN || 'vSCuMzZwLjDxzR882YphwEgW',
+      bulkToken: process.env.BEON_SMS_TOKEN_BULK || process.env.BEON_SMS_TOKEN || process.env.BEON_WHATSAPP_TOKEN || 'vSCuMzZwLjDxzR882YphwEgW',
       baseUrl: 'https://beon.chat/api',
       senderName: process.env.BEON_SENDER_NAME || 'El7hm'
     };
@@ -157,13 +157,33 @@ class BeOnSMSService {
     }
 
     try {
-      // إنشاء FormData
-      const formData = new FormData();
-      formData.append('phoneNumber', phoneNumber);
-      formData.append('name', name || this.config.senderName);
-      formData.append('type', 'sms');
-      formData.append('otp_length', otpLength.toString());
-      formData.append('lang', lang);
+      // إنشاء boundary للـ multipart/form-data
+      const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2, 8);
+      
+      // إنشاء body data يدوياً
+      const formData = [
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="phoneNumber"',
+        '',
+        phoneNumber,
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="name"',
+        '',
+        name || this.config.senderName,
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="type"',
+        '',
+        'sms',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="otp_length"',
+        '',
+        otpLength.toString(),
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="lang"',
+        '',
+        lang,
+        `--${boundary}--`
+      ].join('\r\n');
 
       console.log('📱 Sending request to:', `${this.config.baseUrl}/send/message/otp`);
       console.log('📱 Request data:', {
@@ -177,7 +197,8 @@ class BeOnSMSService {
       const response = await fetch(`${this.config.baseUrl}/send/message/otp`, {
         method: 'POST',
         headers: {
-          'beon-token': this.config.token
+          'beon-token': this.config.token,
+          'content-type': `multipart/form-data; boundary=${boundary}`
         },
         body: formData
       });
@@ -259,7 +280,7 @@ class BeOnSMSService {
 
   // توليد OTP عشوائي
   generateOTP(): string {
-    return Math.random().toString().substring(2, 8);
+    return Math.random().toString().substring(2, 8); // إعادة إلى 6 أرقام
   }
 
   // التحقق من صحة رقم الهاتف

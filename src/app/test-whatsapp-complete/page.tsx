@@ -1,156 +1,424 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 
-export default function TestWhatsAppComplete() {
-  const [phone, setPhone] = useState('201234567890');
-  const [name, setName] = useState('Test User');
+export default function TestWhatsAppCompletePage() {
+  const [phoneNumber, setPhoneNumber] = useState('+966501234567');
+  const [name, setName] = useState('أحمد محمد');
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any>({});
+  const [results, setResults] = useState<any[]>([]);
+  const [error, setError] = useState('');
 
-  const testEnvironment = async () => {
-    try {
-      const response = await fetch('/api/test-env');
-      const data = await response.json();
-      setResults(prev => ({ ...prev, environment: data }));
-      console.log('Environment test result:', data);
-    } catch (error) {
-      console.error('Environment test error:', error);
-      setResults(prev => ({ ...prev, environment: { error: error.message } }));
+  const addResult = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setResults(prev => [...prev, { 
+      id: Date.now(), 
+      message, 
+      type, 
+      timestamp: new Date().toLocaleTimeString('ar-SA') 
+    }]);
+  };
+
+  const clearResults = () => {
+    setResults([]);
+    setError('');
+  };
+
+  // اختبار التكوين الأساسي
+  const testConfiguration = async () => {
+    addResult('🔧 فحص تكوين WhatsApp...', 'info');
+    
+    const config = {
+      businessToken: process.env.WHATSAPP_ACCESS_TOKEN ? '✅ Set' : '❌ Missing',
+      businessPhoneId: process.env.WHATSAPP_PHONE_ID ? '✅ Set' : '❌ Missing',
+      greenApiToken: process.env.GREEN_API_TOKEN ? '✅ Set' : '❌ Missing',
+      greenApiInstance: process.env.GREEN_API_INSTANCE ? '✅ Set' : '❌ Missing',
+    };
+
+    addResult(`📱 WhatsApp Business Token: ${config.businessToken}`, 'info');
+    addResult(`📱 WhatsApp Phone ID: ${config.businessPhoneId}`, 'info');
+    addResult(`📱 Green API Token: ${config.greenApiToken}`, 'info');
+    addResult(`📱 Green API Instance: ${config.greenApiInstance}`, 'info');
+
+    const hasBusinessConfig = config.businessToken === '✅ Set' && config.businessPhoneId === '✅ Set';
+    const hasGreenConfig = config.greenApiToken === '✅ Set' && config.greenApiInstance === '✅ Set';
+
+    if (hasBusinessConfig) {
+      addResult('✅ تكوين WhatsApp Business API صحيح', 'success');
+    } else {
+      addResult('❌ تكوين WhatsApp Business API غير مكتمل', 'error');
+    }
+
+    if (hasGreenConfig) {
+      addResult('✅ تكوين Green API صحيح', 'success');
+    } else {
+      addResult('❌ تكوين Green API غير مكتمل', 'error');
+    }
+
+    if (!hasBusinessConfig && !hasGreenConfig) {
+      addResult('❌ لا يوجد تكوين صحيح للواتساب', 'error');
     }
   };
 
-  const testWhatsAppAPI = async () => {
+  // اختبار إرسال OTP عبر WhatsApp Business API
+  const testWhatsAppBusinessOTP = async () => {
     setLoading(true);
+    addResult('📱 اختبار إرسال OTP عبر WhatsApp Business API...', 'info');
+    
     try {
-      console.log('Testing WhatsApp API...');
-      
-      const response = await fetch('/api/notifications/whatsapp/beon', {
+      const response = await fetch('/api/whatsapp/send-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phone, name }),
+        body: JSON.stringify({
+          phoneNumber,
+          name,
+          serviceType: 'business'
+        })
       });
 
       const data = await response.json();
-      setResults(prev => ({ ...prev, whatsapp: { status: response.status, data } }));
-      console.log('WhatsApp API test result:', { status: response.status, data });
+      
+      if (response.ok && data.success) {
+        addResult('✅ تم إرسال OTP عبر WhatsApp Business API بنجاح', 'success');
+        addResult(`📞 الرقم: ${data.phoneNumber}`, 'info');
+        addResult(`🔢 طول OTP: ${data.otpLength}`, 'info');
+      } else {
+        addResult(`❌ فشل في إرسال OTP عبر WhatsApp Business API: ${data.error}`, 'error');
+      }
     } catch (error: any) {
-      console.error('WhatsApp API test error:', error);
-      setResults(prev => ({ ...prev, whatsapp: { error: error.message } }));
+      addResult(`❌ خطأ في اختبار WhatsApp Business API: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const testAll = async () => {
-    setResults({});
-    await testEnvironment();
-    await testWhatsAppAPI();
+  // اختبار إرسال OTP عبر Green API
+  const testWhatsAppGreenOTP = async () => {
+    setLoading(true);
+    addResult('📱 اختبار إرسال OTP عبر Green API...', 'info');
+    
+    try {
+      const response = await fetch('/api/whatsapp/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phoneNumber,
+          name,
+          serviceType: 'green'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        addResult('✅ تم إرسال OTP عبر Green API بنجاح', 'success');
+        addResult(`📞 الرقم: ${data.phoneNumber}`, 'info');
+        addResult(`🔢 طول OTP: ${data.otpLength}`, 'info');
+      } else {
+        addResult(`❌ فشل في إرسال OTP عبر Green API: ${data.error}`, 'error');
+      }
+    } catch (error: any) {
+      addResult(`❌ خطأ في اختبار Green API: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // اختبار BeOn WhatsApp
+  const testBeOnWhatsApp = async () => {
+    setLoading(true);
+    addResult('📱 اختبار إرسال OTP عبر BeOn WhatsApp...', 'info');
+    
+    try {
+      const response = await fetch('/api/notifications/whatsapp/beon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: phoneNumber,
+          name
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        addResult('✅ تم إرسال OTP عبر BeOn بنجاح', 'success');
+        addResult(`📞 الرقم: ${data.phoneNumber}`, 'info');
+        addResult(`🔢 OTP المرسل: ${data.otp}`, 'info');
+        if (data.link) {
+          addResult(`🔗 رابط WhatsApp: ${data.link}`, 'info');
+        }
+        if (data.fallback) {
+          addResult('📱 تم استخدام SMS كبديل', 'info');
+        }
+      } else {
+        addResult(`❌ فشل في إرسال OTP عبر BeOn: ${data.error}`, 'error');
+      }
+    } catch (error: any) {
+      addResult(`❌ خطأ في اختبار BeOn: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // اختبار BeOn SMS
+  const testBeOnSMS = async () => {
+    setLoading(true);
+    addResult('📱 اختبار إرسال OTP عبر BeOn SMS...', 'info');
+    
+    try {
+      const response = await fetch('/api/notifications/whatsapp/beon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: phoneNumber,
+          name,
+          type: 'sms'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        addResult('✅ تم إرسال OTP عبر BeOn SMS بنجاح', 'success');
+        addResult(`📞 الرقم: ${data.phoneNumber}`, 'info');
+        addResult(`🔢 OTP المرسل: ${data.otp}`, 'info');
+      } else {
+        addResult(`❌ فشل في إرسال OTP عبر BeOn SMS: ${data.error}`, 'error');
+      }
+    } catch (error: any) {
+      addResult(`❌ خطأ في اختبار BeOn SMS: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // اختبار API مباشر للواتساب
+  const testDirectWhatsAppAPI = async () => {
+    setLoading(true);
+    addResult('📱 اختبار API مباشر للواتساب...', 'info');
+    
+    try {
+      const response = await fetch('/api/notifications/whatsapp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: phoneNumber,
+          message: 'اختبار رسالة WhatsApp من El7hm',
+          type: 'business'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        addResult('✅ تم إرسال رسالة WhatsApp مباشرة بنجاح', 'success');
+        addResult(`📞 الرقم: ${phoneNumber}`, 'info');
+        addResult(`🆔 معرف الرسالة: ${data.messageId}`, 'info');
+      } else {
+        addResult(`❌ فشل في إرسال رسالة WhatsApp مباشرة: ${data.error}`, 'error');
+      }
+    } catch (error: any) {
+      addResult(`❌ خطأ في اختبار API المباشر: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // اختبار شامل
+  const runCompleteTest = async () => {
+    clearResults();
+    addResult('🚀 بدء الاختبار الشامل للواتساب...', 'info');
+    
+    // اختبار التكوين
+    await testConfiguration();
+    
+    // انتظار قليلاً
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // اختبار BeOn WhatsApp أولاً (الأكثر احتمالاً للعمل)
+    await testBeOnWhatsApp();
+    
+    // انتظار قليلاً
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // اختبار BeOn SMS
+    await testBeOnSMS();
+    
+    // انتظار قليلاً
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // اختبار WhatsApp Business API
+    await testWhatsAppBusinessOTP();
+    
+    // انتظار قليلاً
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // اختبار Green API
+    await testWhatsAppGreenOTP();
+    
+    // انتظار قليلاً
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // اختبار API المباشر
+    await testDirectWhatsAppAPI();
+    
+    addResult('🏁 انتهى الاختبار الشامل', 'info');
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-3xl font-bold mb-6 text-center">WhatsApp API Complete Test</h1>
+    <div className="min-h-screen bg-gray-100 p-8" dir="rtl">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">
+            اختبار شامل لـ WhatsApp OTP
+          </h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number (with country code)
+                رقم الهاتف
             </label>
             <input
               type="text"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="201234567890"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="+966501234567"
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Name
+                الاسم
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Test User"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="أحمد محمد"
             />
           </div>
         </div>
 
-        <div className="flex gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <button
+              onClick={testConfiguration}
+              disabled={loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              🔧 فحص التكوين
+            </button>
+            
+            <button
+              onClick={testBeOnWhatsApp}
+              disabled={loading}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+            >
+              📱 اختبار BeOn WhatsApp
+            </button>
+            
+            <button
+              onClick={testBeOnSMS}
+              disabled={loading}
+              className="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 disabled:opacity-50"
+            >
+              📱 اختبار BeOn SMS
+            </button>
+            
+            <button
+              onClick={testWhatsAppBusinessOTP}
+              disabled={loading}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
+            >
+              📱 اختبار WhatsApp Business
+            </button>
+            
           <button
-            onClick={testEnvironment}
-            className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700"
+              onClick={testWhatsAppGreenOTP}
+              disabled={loading}
+              className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50"
           >
-            Test Environment
+              📱 اختبار Green API
           </button>
           
           <button
-            onClick={testWhatsAppAPI}
+              onClick={testDirectWhatsAppAPI}
             disabled={loading}
-            className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
           >
-            {loading ? 'Testing...' : 'Test WhatsApp API'}
+              📱 اختبار API المباشر
           </button>
           
           <button
-            onClick={testAll}
+              onClick={runCompleteTest}
             disabled={loading}
-            className="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 disabled:bg-gray-400"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
           >
-            Test All
+              🚀 اختبار شامل
           </button>
         </div>
 
-        {/* Environment Test Results */}
-        {results.environment && (
-          <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-md">
-            <h3 className="text-lg font-medium text-gray-800 mb-3">Environment Variables Test</h3>
-            <pre className="text-sm text-gray-600 whitespace-pre-wrap">
-              {JSON.stringify(results.environment, null, 2)}
-            </pre>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">
+              نتائج الاختبار
+            </h2>
+            <button
+              onClick={clearResults}
+              className="px-3 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm"
+            >
+              مسح النتائج
+            </button>
+          </div>
+
+          <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
+            {results.length === 0 ? (
+              <p className="text-gray-500 text-center">لا توجد نتائج بعد. ابدأ الاختبار!</p>
+            ) : (
+              <div className="space-y-2">
+                {results.map((result) => (
+                  <div
+                    key={result.id}
+                    className={`p-3 rounded-md ${
+                      result.type === 'success' ? 'bg-green-100 text-green-800' :
+                      result.type === 'error' ? 'bg-red-100 text-red-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <span className="text-sm">{result.message}</span>
+                      <span className="text-xs text-gray-500 mr-2">{result.timestamp}</span>
+                    </div>
+                  </div>
+                ))}
+          </div>
+        )}
+          </div>
+
+          {loading && (
+            <div className="mt-4 text-center">
+              <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-md">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-800 mr-2"></div>
+                جاري الاختبار...
+              </div>
           </div>
         )}
 
-        {/* WhatsApp API Test Results */}
-        {results.whatsapp && (
-          <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-md">
-            <h3 className="text-lg font-medium text-gray-800 mb-3">WhatsApp API Test</h3>
-            <pre className="text-sm text-gray-600 whitespace-pre-wrap">
-              {JSON.stringify(results.whatsapp, null, 2)}
-            </pre>
-          </div>
-        )}
-
-        {/* Instructions */}
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <h3 className="text-blue-800 font-medium mb-2">Instructions:</h3>
-          <ul className="text-blue-600 text-sm space-y-1">
-            <li>• <strong>Test Environment:</strong> Checks if environment variables are loaded correctly</li>
-            <li>• <strong>Test WhatsApp API:</strong> Sends a test request to the WhatsApp API</li>
-            <li>• <strong>Test All:</strong> Runs both tests in sequence</li>
-            <li>• Check browser console for detailed logs</li>
-            <li>• Check terminal/server console for API logs</li>
-            <li>• Make sure your phone number includes country code (e.g., 201234567890)</li>
-          </ul>
+          {error && (
+            <div className="mt-4 p-4 bg-red-100 text-red-800 rounded-md">
+              <strong>خطأ:</strong> {error}
         </div>
-
-        {/* Debug Info */}
-        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-          <h3 className="text-yellow-800 font-medium mb-2">Debug Information:</h3>
-          <ul className="text-yellow-600 text-sm space-y-1">
-            <li>• Current time: {new Date().toLocaleString()}</li>
-            <li>• User agent: {navigator.userAgent}</li>
-            <li>• Window location: {typeof window !== 'undefined' ? window.location.href : 'N/A'}</li>
-            <li>• API endpoint: /api/notifications/whatsapp/beon</li>
-            <li>• Environment endpoint: /api/test-env</li>
-          </ul>
+          )}
         </div>
       </div>
     </div>

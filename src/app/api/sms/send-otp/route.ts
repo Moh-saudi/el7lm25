@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import beonSMSService from '@/lib/beon/sms-service';
-import { storeOTP, getOTPStatus } from '../otp-storage';
+import { storeOTP, getOTPStatus, getOTP } from '../otp-storage';
 
 // تخزين مؤقت للطلبات لمنع الإرسال المتكرر
 const requestCache = new Map<string, { timestamp: number; count: number; lastRequest: number }>();
@@ -34,6 +34,73 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'رقم الهاتف غير صحيح' },
         { status: 400 }
       );
+    }
+
+    // التحقق من وجود OTP مخزن مسبقاً
+    const existingOTP = await getOTP(formattedPhone);
+    if (existingOTP && !existingOTP.expired) {
+      console.log('📱 Found existing valid OTP for:', formattedPhone, 'OTP:', existingOTP.otp);
+      console.log('📱 OTP age:', Date.now() - existingOTP.timestamp, 'ms');
+      console.log('📱 Returning existing OTP without sending new one');
+      
+      return NextResponse.json({
+        success: true,
+        message: 'تم إرسال رمز التحقق بنجاح',
+        phoneNumber: formattedPhone,
+        existingOTP: true,
+        otp: existingOTP.otp
+      });
+    }
+
+    // التحقق من وجود OTP مخزن مسبقاً بتنسيق مختلف
+    const phoneWithoutPlus = formattedPhone.replace('+', '');
+    const existingOTPWithoutPlus = await getOTP(phoneWithoutPlus);
+    if (existingOTPWithoutPlus && !existingOTPWithoutPlus.expired) {
+      console.log('📱 Found existing valid OTP for:', phoneWithoutPlus, 'OTP:', existingOTPWithoutPlus.otp);
+      console.log('📱 OTP age:', Date.now() - existingOTPWithoutPlus.timestamp, 'ms');
+      console.log('📱 Returning existing OTP without sending new one');
+      
+      return NextResponse.json({
+        success: true,
+        message: 'تم إرسال رمز التحقق بنجاح',
+        phoneNumber: formattedPhone,
+        existingOTP: true,
+        otp: existingOTPWithoutPlus.otp
+      });
+    }
+
+    // التحقق من وجود OTP مخزن مسبقاً بتنسيق مختلف آخر
+    const phoneWithPlus = '+' + phoneWithoutPlus;
+    const existingOTPWithPlus = await getOTP(phoneWithPlus);
+    if (existingOTPWithPlus && !existingOTPWithPlus.expired) {
+      console.log('📱 Found existing valid OTP for:', phoneWithPlus, 'OTP:', existingOTPWithPlus.otp);
+      console.log('📱 OTP age:', Date.now() - existingOTPWithPlus.timestamp, 'ms');
+      console.log('📱 Returning existing OTP without sending new one');
+      
+      return NextResponse.json({
+        success: true,
+        message: 'تم إرسال رمز التحقق بنجاح',
+        phoneNumber: formattedPhone,
+        existingOTP: true,
+        otp: existingOTPWithPlus.otp
+      });
+    }
+
+    // التحقق من وجود OTP مخزن مسبقاً بالتنسيق الأصلي
+    const originalPhone = phoneNumber;
+    const existingOTPOriginal = await getOTP(originalPhone);
+    if (existingOTPOriginal && !existingOTPOriginal.expired) {
+      console.log('📱 Found existing valid OTP for:', originalPhone, 'OTP:', existingOTPOriginal.otp);
+      console.log('📱 OTP age:', Date.now() - existingOTPOriginal.timestamp, 'ms');
+      console.log('📱 Returning existing OTP without sending new one');
+      
+      return NextResponse.json({
+        success: true,
+        message: 'تم إرسال رمز التحقق بنجاح',
+        phoneNumber: formattedPhone,
+        existingOTP: true,
+        otp: existingOTPOriginal.otp
+      });
     }
 
     // حماية ضد الإرسال المتكرر
@@ -111,9 +178,28 @@ export async function POST(request: NextRequest) {
       
       // تخزين OTP للتحقق لاحقاً
       if (smsResult.otp) {
-        storeOTP(formattedPhone, smsResult.otp);
-        console.log('💾 OTP stored successfully for verification');
-        getOTPStatus();
+              // التحقق من وجود OTP مخزن مسبقاً قبل التخزين
+        const existingOTP = await getOTP(formattedPhone);
+
+              if (existingOTP && !existingOTP.expired) {
+                console.log('📱 Found existing OTP, not overwriting:', formattedPhone);
+                console.log('📱 SMS OTP would be:', smsResult.otp);
+                console.log('📱 Keeping existing OTP to prevent conflicts');
+
+                // إرجاع الـ OTP الموجود بدلاً من إرسال واحد جديد
+                return NextResponse.json({
+                  success: true,
+                  message: 'تم إرسال رمز التحقق بنجاح',
+                  phoneNumber: formattedPhone,
+                  existingOTP: true,
+                  otp: existingOTP.otp,
+                  source: existingOTP.source
+                });
+              } else {
+          await storeOTP(formattedPhone, smsResult.otp, 'sms');
+                console.log('💾 SMS OTP stored successfully for verification');
+              }
+        await getOTPStatus();
       } else {
         console.log('⚠️ No OTP received from SMS service');
       }
@@ -121,7 +207,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'تم إرسال رمز التحقق بنجاح',
-        phoneNumber: formattedPhone
+        phoneNumber: formattedPhone,
+        otp: smsResult.otp
       });
     } else {
       console.error('❌ Failed to send OTP:', smsResult.error);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, getDocs, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, doc, getDoc, where } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase/config';
 import { useAuth } from '@/lib/firebase/auth-provider';
 import { secureConsole } from '@/lib/utils/secure-console';
@@ -60,6 +60,7 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
   const [filterNationality, setFilterNationality] = useState('');
   const [filterCountry, setFilterCountry] = useState('');
   const [filterObjective, setFilterObjective] = useState('');
+  const [filterAccountType, setFilterAccountType] = useState('all'); // فلتر جديد لنوع الحساب
 
   // دالة إعداد معلومات المستخدم الحالي
   const setupCurrentUserInfo = () => {
@@ -108,20 +109,73 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
     }
   };
 
-  // دالة جلب اللاعبين (تجلب جميع اللاعبين فقط)
+  // دالة جلب اللاعبين (تجلب جميع اللاعبين من كلا المجموعتين)
   const loadPlayers = async () => {
     try {
       setIsLoading(true);
-      const playersQuery = query(
-        collection(db, 'players'),
-        orderBy('created_at', 'desc')
+      const allPlayers: Player[] = [];
+
+      // جلب اللاعبين من مجموعة players
+      try {
+        const playersQuery = query(
+          collection(db, 'players'),
+          orderBy('created_at', 'desc')
+        );
+        const playersSnapshot = await getDocs(playersQuery);
+        const playersFromPlayersCollection = playersSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Player[];
+        allPlayers.push(...playersFromPlayersCollection);
+        console.log(`📊 تم جلب ${playersFromPlayersCollection.length} لاعب من مجموعة players`);
+      } catch (error) {
+        console.error('❌ خطأ في جلب اللاعبين من مجموعة players:', error);
+      }
+
+      // جلب جميع المستخدمين من مجموعة users (بدون فلترة)
+      try {
+        const usersQuery = query(
+          collection(db, 'users'),
+          orderBy('created_at', 'desc')
+        );
+        const usersSnapshot = await getDocs(usersQuery);
+        const allUsers = usersSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as any[];
+
+        // إضافة جميع المستخدمين كلاعبين محتملين
+        allPlayers.push(...allUsers);
+        console.log(`📊 تم جلب ${allUsers.length} مستخدم من مجموعة users (جميع المستخدمين)`);
+        
+        // طباعة تفاصيل المستخدمين للتحقق
+        console.log('📊 تفاصيل المستخدمين المجلوبين:', allUsers.map(user => ({
+          id: user.id,
+          name: user.full_name || user.name || user.displayName,
+          email: user.email,
+          accountType: user.accountType,
+          position: user.primary_position || user.position
+        })));
+      } catch (error) {
+        console.error('❌ خطأ في جلب المستخدمين من مجموعة users:', error);
+      }
+
+      // إزالة التكرار بناءً على ID
+      const uniquePlayers = allPlayers.filter((player, index, self) => 
+        index === self.findIndex(p => p.id === player.id)
       );
-      const snapshot = await getDocs(playersQuery);
-      const allPlayers = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Player[];
-      setPlayers(allPlayers);
+
+      console.log(`📊 إجمالي اللاعبين الفريدين: ${uniquePlayers.length}`);
+      console.log('📊 تفاصيل اللاعبين النهائيين:', uniquePlayers.map(p => ({
+        id: p.id,
+        name: p.full_name || p.name || p.displayName,
+        position: p.primary_position || p.position,
+        accountType: p.accountType,
+        email: p.email
+      })));
+      
+      setPlayers(uniquePlayers);
+      setTotalPlayers(uniquePlayers.length);
     } catch (error) {
       secureConsole.error('خطأ في جلب اللاعبين:', error);
     } finally {
@@ -156,11 +210,12 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
     const matchesNationality = filterNationality ? player.nationality === filterNationality : true;
     const matchesCountry = filterCountry ? player.country === filterCountry : true;
     const matchesObjective = filterObjective ? (player.objectives && player.objectives[filterObjective]) : true;
-    return matchesSearch && matchesPosition && matchesNationality && matchesCountry && matchesObjective;
+    const matchesAccountType = filterAccountType === 'all' ? true : player.accountType === filterAccountType;
+    return matchesSearch && matchesPosition && matchesNationality && matchesCountry && matchesObjective && matchesAccountType;
   });
 
   // 5. إعادة الصفحة للأولى عند تغيير البحث أو الفلاتر
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterPosition, filterNationality, filterCountry, filterObjective]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterPosition, filterNationality, filterCountry, filterObjective, filterAccountType]);
 
   // 6. قص النتائج للصفحة الحالية بعد الفلترة
   const pagedPlayers = filteredPlayers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -192,21 +247,56 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
         onChange={e => setSearchTerm(e.target.value)}
         className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900 placeholder-blue-400 w-48"
       />
-      <select value={filterPosition} onChange={e => setFilterPosition(e.target.value)} className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900">
+      <select 
+        value={filterPosition} 
+        onChange={e => setFilterPosition(e.target.value)} 
+        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
+        aria-label="فلتر المراكز"
+      >
         <option value="">كل المراكز</option>
         {uniquePositions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
       </select>
-      <select value={filterNationality} onChange={e => setFilterNationality(e.target.value)} className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900">
+      <select 
+        value={filterNationality} 
+        onChange={e => setFilterNationality(e.target.value)} 
+        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
+        aria-label="فلتر الجنسيات"
+      >
         <option value="">كل الجنسيات</option>
         {uniqueNationalities.map(nat => <option key={nat} value={nat}>{nat}</option>)}
       </select>
-      <select value={filterCountry} onChange={e => setFilterCountry(e.target.value)} className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900">
+      <select 
+        value={filterCountry} 
+        onChange={e => setFilterCountry(e.target.value)} 
+        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
+        aria-label="فلتر الدول"
+      >
         <option value="">كل الدول</option>
         {uniqueCountries.map(c => <option key={c} value={c}>{c}</option>)}
       </select>
-      <select value={filterObjective} onChange={e => setFilterObjective(e.target.value)} className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900">
+      <select 
+        value={filterObjective} 
+        onChange={e => setFilterObjective(e.target.value)} 
+        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
+        aria-label="فلتر الأهداف"
+      >
         <option value="">كل الأهداف</option>
         {uniqueObjectives.map(obj => <option key={obj} value={obj}>{obj}</option>)}
+      </select>
+      
+      {/* فلتر نوع الحساب */}
+      <select 
+        value={filterAccountType} 
+        onChange={e => setFilterAccountType(e.target.value)} 
+        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
+        aria-label="فلتر نوع الحساب"
+      >
+        <option value="all">جميع الحسابات</option>
+        <option value="player">لاعبين فقط</option>
+        <option value="club">أندية فقط</option>
+        <option value="academy">أكاديميات فقط</option>
+        <option value="trainer">مدربين فقط</option>
+        <option value="agent">وكلاء فقط</option>
       </select>
     </div>
   );

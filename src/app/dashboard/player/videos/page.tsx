@@ -6,6 +6,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/lib/translations/simple-context';
 import { 
   VideoIcon, 
   Save, 
@@ -22,6 +23,7 @@ import VideoManager from '@/components/video/VideoManager';
 
 export default function VideosPage(props: any) {
   const router = useRouter();
+  const { t, tWithVars } = useTranslation();
   const [user, loading, authError] = useAuthState(auth);
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,14 +57,14 @@ export default function VideosPage(props: any) {
         }
       } catch (error) {
         console.error('خطأ في جلب الفيديوهات:', error);
-        setSaveMessage({ type: 'error', text: 'فشل في جلب الفيديوهات' });
+        setSaveMessage({ type: 'error', text: t('dashboard.player.videos.fetchError') });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchVideos();
-  }, [user, router]);
+  }, [user, router, t]);
 
   // حفظ الفيديوهات في Firebase
   const handleSaveVideos = async () => {
@@ -76,13 +78,13 @@ export default function VideosPage(props: any) {
       });
       
       setHasUnsavedChanges(false);
-      setSaveMessage({ type: 'success', text: 'تم حفظ الفيديوهات بنجاح!' });
+      setSaveMessage({ type: 'success', text: t('dashboard.player.videos.saveSuccess') });
       
       // إخفاء الرسالة بعد 3 ثواني
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (error) {
       console.error('خطأ في حفظ الفيديوهات:', error);
-      setSaveMessage({ type: 'error', text: 'فشل في حفظ الفيديوهات. يرجى المحاولة مرة أخرى.' });
+      setSaveMessage({ type: 'error', text: t('dashboard.player.videos.saveError') });
     } finally {
       setIsSaving(false);
     }
@@ -117,7 +119,7 @@ export default function VideosPage(props: any) {
         <div className="flex items-center justify-center min-h-96">
           <div className="flex flex-col items-center gap-4">
             <Loader className="w-8 h-8 text-blue-600 animate-spin" />
-            <p className="text-gray-600">جاري تحميل الفيديوهات...</p>
+            <p className="text-gray-600">{t('dashboard.player.videos.loading')}</p>
           </div>
         </div>
     );
@@ -131,14 +133,14 @@ export default function VideosPage(props: any) {
         <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow">
           <FileVideo className="w-8 h-8 text-blue-500" />
           <div>
-            <div className="text-sm text-gray-500">عدد الفيديوهات المرفوعة</div>
+            <div className="text-sm text-gray-500">{t('dashboard.player.videos.uploadedCount')}</div>
             <div className="text-2xl font-bold">{videos.length}</div>
           </div>
         </div>
         <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow">
           <Upload className="w-8 h-8 text-green-500" />
           <div>
-            <div className="text-sm text-gray-500">الحد الأقصى للرفع</div>
+            <div className="text-sm text-gray-500">{t('dashboard.player.videos.maxUpload')}</div>
             <div className="text-2xl font-bold">{MAX_VIDEOS}</div>
           </div>
         </div>
@@ -147,31 +149,31 @@ export default function VideosPage(props: any) {
       {/* ملاحظات وتعليمات */}
       <div className="p-4 mb-6 border-l-4 border-yellow-400 rounded bg-yellow-50">
         <ul className="space-y-1 text-sm text-yellow-800 list-disc list-inside">
-          <li>الحد الأقصى لعدد الفيديوهات: {MAX_VIDEOS} فيديو.</li>
-          <li>الصيغ المسموحة: mp4, webm, ogg أو رابط يوتيوب/فيميو.</li>
-          <li>يفضل أن يكون الفيديو قصير وواضح.</li>
-          <li>يمكنك إضافة وصف لكل فيديو.</li>
+          <li>{tWithVars('dashboard.player.videos.notes.maxVideos', { count: MAX_VIDEOS })}</li>
+          <li>{t('dashboard.player.videos.notes.formats')}</li>
+          <li>{t('dashboard.player.videos.notes.quality')}</li>
+          <li>{t('dashboard.player.videos.notes.description')}</li>
         </ul>
       </div>
 
       {/* تعليمات رفع الفيديو */}
       <div className="p-6 mb-6 bg-white rounded-lg shadow">
-        <h3 className="mb-4 text-lg font-semibold text-gray-800">كيفية رفع الفيديو</h3>
+        <h3 className="mb-4 text-lg font-semibold text-gray-800">{t('dashboard.player.videos.howToUpload.title')}</h3>
         
         {/* يوتيوب */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <Youtube className="w-12 h-12 text-red-600" />
-            <h4 className="text-lg font-medium text-blue-600">رفع الفيديو على يوتيوب:</h4>
+            <h4 className="text-lg font-medium text-blue-600">{t('dashboard.player.videos.howToUpload.youtube.title')}</h4>
           </div>
           <ol className="space-y-2 text-sm text-gray-700 list-decimal list-inside">
-            <li>قم بزيارة موقع <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">YouTube</a> وقم بتسجيل الدخول</li>
-            <li>اضغط على زر "إنشاء" في الأعلى ثم اختر "رفع فيديو"</li>
-            <li>اختر الفيديو من جهازك</li>
-            <li>أضف عنوان ووصف للفيديو</li>
-            <li>اضبط إعدادات الخصوصية على "عام"</li>
-            <li>انتظر حتى يتم رفع الفيديو</li>
-            <li>انسخ رابط الفيديو من شريط العنوان</li>
+            <li>{t('dashboard.player.videos.howToUpload.youtube.step1')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.youtube.step2')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.youtube.step3')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.youtube.step4')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.youtube.step5')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.youtube.step6')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.youtube.step7')}</li>
           </ol>
         </div>
 
@@ -179,15 +181,15 @@ export default function VideosPage(props: any) {
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <Share2 className="w-12 h-12 text-black" />
-            <h4 className="text-lg font-medium text-blue-600">رفع الفيديو على تيك توك:</h4>
+            <h4 className="text-lg font-medium text-blue-600">{t('dashboard.player.videos.howToUpload.tiktok.title')}</h4>
           </div>
           <ol className="space-y-2 text-sm text-gray-700 list-decimal list-inside">
-            <li>افتح تطبيق تيك توك على هاتفك</li>
-            <li>اضغط على زر "+" في الأسفل</li>
-            <li>اختر الفيديو من معرض الصور</li>
-            <li>أضف وصف للفيديو</li>
-            <li>اضغط على "نشر"</li>
-            <li>بعد النشر، اضغط على "مشاركة" ثم اختر "نسخ الرابط"</li>
+            <li>{t('dashboard.player.videos.howToUpload.tiktok.step1')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.tiktok.step2')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.tiktok.step3')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.tiktok.step4')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.tiktok.step5')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.tiktok.step6')}</li>
           </ol>
         </div>
 
@@ -195,35 +197,55 @@ export default function VideosPage(props: any) {
         <div>
           <div className="flex items-center gap-3 mb-4">
             <FileVideo className="w-12 h-12 text-blue-600" />
-            <h4 className="text-lg font-medium text-blue-600">إضافة الفيديو في المنصة:</h4>
+            <h4 className="text-lg font-medium text-blue-600">{t('dashboard.player.videos.howToUpload.platform.title')}</h4>
           </div>
           <ol className="space-y-2 text-sm text-gray-700 list-decimal list-inside">
-            <li>اضغط على زر "إضافة فيديو جديد"</li>
-            <li>الصق رابط الفيديو من يوتيوب أو تيك توك</li>
-            <li>أضف وصفًا مختصرًا للفيديو (مثال: "هدف من مباراة الأهلي")</li>
-            <li>اضغط على "حفظ"</li>
+            <li>{t('dashboard.player.videos.howToUpload.platform.step1')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.platform.step2')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.platform.step3')}</li>
+            <li>{t('dashboard.player.videos.howToUpload.platform.step4')}</li>
           </ol>
         </div>
       </div>
 
-      {/* إدارة الفيديوهات */}
-      <VideoManager videos={videos} onUpdate={handleUpdateVideos} maxVideos={MAX_VIDEOS} />
+      {/* مدير الفيديوهات */}
+      <VideoManager 
+        videos={videos}
+        onVideosChange={handleUpdateVideos}
+        maxVideos={MAX_VIDEOS}
+      />
 
       {/* زر الحفظ */}
-      <div className="flex gap-2 mt-6">
-        <button
-          onClick={handleSaveVideos}
-          disabled={!hasUnsavedChanges || isSaving}
-          className="px-4 py-2 text-white bg-blue-600 rounded disabled:opacity-50"
-        >
-          {isSaving ? 'جاري الحفظ...' : 'حفظ الفيديوهات'}
-        </button>
-      </div>
+      {hasUnsavedChanges && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={handleSaveVideos}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSaving ? (
+              <Loader className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSaving ? t('dashboard.player.videos.saving') : t('dashboard.player.videos.save')}
+          </button>
+        </div>
+      )}
 
-      {/* رسائل النجاح/الخطأ */}
+      {/* رسائل الحفظ */}
       {saveMessage && (
-        <div className={`mt-4 p-2 rounded ${saveMessage.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {saveMessage.text}
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+          saveMessage.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          <div className="flex items-center gap-2">
+            {saveMessage.type === 'success' ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            {saveMessage.text}
+          </div>
         </div>
       )}
     </div>

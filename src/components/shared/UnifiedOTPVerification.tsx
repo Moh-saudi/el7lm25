@@ -17,6 +17,8 @@ interface UnifiedOTPVerificationProps {
   otpExpirySeconds?: number;
   maxAttempts?: number;
   forceMethod?: OTPMethod; // لفرض نوع معين من OTP
+  language?: string;
+  t?: (key: string) => string;
 }
 
 export default function UnifiedOTPVerification({
@@ -26,11 +28,13 @@ export default function UnifiedOTPVerification({
   onVerificationSuccess,
   onVerificationFailed,
   onClose,
-  title = 'التحقق من رقم الهاتف',
+  title,
   subtitle,
   otpExpirySeconds = 30,
   maxAttempts = 3,
-  forceMethod
+  forceMethod,
+  language,
+  t
 }: UnifiedOTPVerificationProps) {
 
   const [selectedMethod, setSelectedMethod] = useState<OTPMethod>('sms');
@@ -107,10 +111,12 @@ export default function UnifiedOTPVerification({
         onVerificationSuccess={handleVerificationSuccess}
         onVerificationFailed={handleVerificationFailed}
         onClose={handleClose}
-        title={title}
-        subtitle={subtitle || getOTPMessage('sms', countryName)}
+        title={t ? t('otp.title') : (title || 'التحقق من رقم الهاتف')}
+        subtitle={t ? t('otp.subtitle_sms') : (subtitle || getOTPMessage('sms', countryName))}
         otpExpirySeconds={otpExpirySeconds}
         maxAttempts={maxAttempts}
+        language={language}
+        t={t}
       />
     );
   } else {
@@ -122,11 +128,13 @@ export default function UnifiedOTPVerification({
         onVerificationSuccess={handleVerificationSuccess}
         onVerificationFailed={handleVerificationFailed}
         onClose={handleClose}
-        title={title}
-        subtitle={subtitle || getOTPMessage('whatsapp', countryName)}
+        title={t ? t('otp.title') : (title || 'التحقق من رقم الهاتف')}
+        subtitle={t ? t('otp.subtitle_whatsapp') : (subtitle || getOTPMessage('whatsapp', countryName))}
         otpExpirySeconds={otpExpirySeconds}
         maxAttempts={maxAttempts}
         serviceType="business"
+        language={language}
+        t={t}
       />
     );
   }

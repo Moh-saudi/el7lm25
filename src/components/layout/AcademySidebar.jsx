@@ -6,6 +6,7 @@ import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { supabase } from '@/lib/supabase/client';
 import { Home, User, Users, Trophy, Calendar, Star, Bell, MessageSquare, CreditCard, KeyRound, Menu, LogOut, GraduationCap, Target, BookOpen, Award, MapPin, Settings, Search, Video } from 'lucide-react';
+import { useTranslation } from '@/lib/translations/simple-context';
 
 const getSupabaseImageUrl = (path) => {
   if (!path) return '/images/club-avatar.png';
@@ -14,38 +15,16 @@ const getSupabaseImageUrl = (path) => {
   return publicUrl || '/images/club-avatar.png';
 };
 
-const academyMenuItems = [
-  { title: 'الرئيسية', icon: <Home />, path: '/dashboard/academy' },
-  { title: 'الملف الشخصي', icon: <User />, path: '/dashboard/academy/profile' },
-  { title: 'إدارة اللاعبين', icon: <Users />, path: '/dashboard/academy/players' },
-  { title: 'البحث عن اللاعبين', icon: <Search />, path: '/dashboard/academy/search-players' },
-  { title: 'فيديوهات اللاعبين', icon: <Video />, path: '/dashboard/academy/player-videos' },
-  { title: 'البرامج التدريبية', icon: <BookOpen />, path: '/dashboard/academy/programs' },
-  { title: 'الفرق والمجموعات', icon: <Target />, path: '/dashboard/academy/teams' },
-  { title: 'المدربين والكادر', icon: <GraduationCap />, path: '/dashboard/academy/coaches' },
-  { title: 'الجدولة والحجوزات', icon: <Calendar />, path: '/dashboard/academy/schedule' },
-  { title: 'البطولات والمسابقات', icon: <Trophy />, path: '/dashboard/academy/tournaments' },
-  { title: 'تقييم الأداء', icon: <Star />, path: '/dashboard/academy/performance' },
-  { title: 'التقارير والإحصائيات', icon: <Award />, path: '/dashboard/academy/reports' },
-  { title: 'المرافق والملاعب', icon: <MapPin />, path: '/dashboard/academy/facilities' },
-  { title: 'الإشعارات', icon: <Bell />, path: '/dashboard/academy/notifications' },
-  { title: 'الرسائل', icon: <MessageSquare />, path: '/dashboard/academy/messages' },
-  
-  { title: 'دفع جماعي للاعبين', icon: <Users />, path: '/dashboard/academy/bulk-payment' },
-  { title: 'الفواتير', icon: <Award />, path: '/dashboard/academy/billing' },
-  { title: 'تغيير كلمة السر', icon: <KeyRound />, path: '/dashboard/academy/change-password' },
-];
-
 export default function AcademySidebar({ collapsed, setCollapsed }) {
   const router = useRouter();
   const { logout, user, userData } = useAuth();
-  const [lang, setLang] = useState('ar');
+  const { t, language } = useTranslation();
   const [logo, setLogo] = useState('/images/club-avatar.png');
   const [academyName, setAcademyName] = useState('');
 
   useEffect(() => {
     const htmlLang = document.documentElement.lang;
-    setLang(htmlLang || 'ar');
+    // setLang(htmlLang || 'ar'); // This line is removed as per the new_code
   }, []);
 
   // جلب شعار الأكاديمية من Firestore مع التحديث الفوري
@@ -85,6 +64,7 @@ export default function AcademySidebar({ collapsed, setCollapsed }) {
     }
   }, [userData, academyName]);
 
+  const lang = language || 'ar';
   const sidebarDir = lang === 'ar' ? 'rtl' : 'ltr';
   const borderDir = lang === 'ar' ? 'border-l' : 'border-r';
 
@@ -96,6 +76,28 @@ export default function AcademySidebar({ collapsed, setCollapsed }) {
       console.error('Error signing out:', error);
     }
   };
+
+  // عناصر القائمة الجانبية مع الترجمة
+  const academyMenuItems = [
+    { title: t('sidebar.academy.home'), icon: <Home />, path: '/dashboard/academy' },
+    { title: t('sidebar.academy.profile'), icon: <User />, path: '/dashboard/academy/profile' },
+    { title: t('sidebar.academy.students'), icon: <Users />, path: '/dashboard/academy/players' },
+    { title: t('sidebar.academy.searchPlayers'), icon: <Search />, path: '/dashboard/academy/search-players' },
+    { title: t('sidebar.academy.playerVideos'), icon: <Video />, path: '/dashboard/academy/player-videos' },
+    { title: t('sidebar.academy.courses'), icon: <BookOpen />, path: '/dashboard/academy/programs' },
+    { title: t('sidebar.academy.teams'), icon: <Target />, path: '/dashboard/academy/teams' },
+    { title: t('sidebar.academy.trainers'), icon: <GraduationCap />, path: '/dashboard/academy/coaches' },
+    { title: t('sidebar.academy.schedule'), icon: <Calendar />, path: '/dashboard/academy/schedule' },
+    { title: t('sidebar.academy.tournaments'), icon: <Trophy />, path: '/dashboard/academy/tournaments' },
+    { title: t('sidebar.academy.performance'), icon: <Star />, path: '/dashboard/academy/performance' },
+    { title: t('sidebar.academy.reports'), icon: <Award />, path: '/dashboard/academy/reports' },
+    { title: t('sidebar.academy.facilities'), icon: <MapPin />, path: '/dashboard/academy/facilities' },
+    { title: t('sidebar.common.notifications'), icon: <Bell />, path: '/dashboard/academy/notifications' },
+    { title: t('sidebar.common.messages'), icon: <MessageSquare />, path: '/dashboard/academy/messages' },
+    { title: t('sidebar.academy.bulkPayment'), icon: <Users />, path: '/dashboard/academy/bulk-payment' },
+    { title: t('sidebar.academy.billing'), icon: <Award />, path: '/dashboard/academy/billing' },
+    { title: t('sidebar.common.changePassword'), icon: <KeyRound />, path: '/dashboard/academy/change-password' },
+  ];
 
   return (
     <aside
@@ -149,7 +151,7 @@ export default function AcademySidebar({ collapsed, setCollapsed }) {
           <span className={`transition-transform duration-200 group-hover:scale-110 ${collapsed ? 'mx-auto' : ''}`} style={{ color: '#ef4444' }}>
             <LogOut />
           </span>
-          {!collapsed && <span className="truncate">تسجيل الخروج</span>}
+          {!collapsed && <span className="truncate">{t('sidebar.common.logout')}</span>}
         </button>
       </div>
     </aside>

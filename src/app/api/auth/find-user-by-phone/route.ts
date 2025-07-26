@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore } from 'firebase-admin/firestore';
-import '@/lib/firebase/admin'; // فقط لتشغيل التهيئة
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone } = await request.json();
+    console.log('🔍 find-user-by-phone API called');
+    
+    const body = await request.json();
+    console.log('🔍 Request body:', body);
+    
+    const { phone } = body;
     
     if (!phone) {
+      console.log('❌ No phone provided in request');
       return NextResponse.json(
         { success: false, error: 'رقم الهاتف مطلوب' },
         { status: 400 }
@@ -17,63 +21,73 @@ export async function POST(request: NextRequest) {
     
     // التحقق من تهيئة Firebase Admin
     try {
-      const db = getFirestore();
+      const { initializeFirebaseAdmin, getAdminDb } = await import('@/lib/firebase/admin');
+      
+      // تهيئة Firebase Admin
+      initializeFirebaseAdmin();
+      const db = getAdminDb();
       console.log('✅ Firestore instance created successfully');
       
-      const usersRef = db.collection('users');
-      console.log('✅ Users collection reference created');
+      // البحث في جميع المجموعات الممكنة
+      const collections = ['users', 'clubs', 'players', 'academies', 'agents', 'trainers', 'admins', 'marketers', 'parents'];
+      console.log('🔍 Searching in collections:', collections);
       
-      // البحث بالرقم كما هو (مع + أو بدون)
-      console.log('🔍 Searching with original phone format:', phone);
-      let query = usersRef.where('phone', '==', phone);
-      let snapshot = await query.get();
-      console.log('📊 Query result - empty:', snapshot.empty, 'size:', snapshot.size);
+      // تجربة تنسيقات مختلفة للرقم
+      const phoneFormats = [
+        phone, // كما هو
+        phone.replace(/^\+/, ''), // بدون +
+        phone.startsWith('+') ? phone : `+${phone}`, // مع +
+        phone.replace(/\D/g, ''), // أرقام فقط
+        `+${phone.replace(/\D/g, '')}` // + مع أرقام فقط
+      ];
       
-      if (snapshot.empty) {
-        // إذا لم يجد، جرب بدون +
-        const phoneWithoutPlus = phone.replace(/^\+/, '');
-        console.log('🔍 Searching without plus:', phoneWithoutPlus);
-        query = usersRef.where('phone', '==', phoneWithoutPlus);
-        snapshot = await query.get();
-        console.log('📊 Query result - empty:', snapshot.empty, 'size:', snapshot.size);
-      }
+      console.log('🔍 Phone formats to try:', phoneFormats);
       
-      if (snapshot.empty) {
-        // إذا لم يجد، جرب مع +
-        const phoneWithPlus = phone.startsWith('+') ? phone : `+${phone}`;
-        console.log('🔍 Searching with plus:', phoneWithPlus);
-        query = usersRef.where('phone', '==', phoneWithPlus);
-        snapshot = await query.get();
-        console.log('📊 Query result - empty:', snapshot.empty, 'size:', snapshot.size);
-      }
-      
-      if (!snapshot.empty) {
-        const userData = snapshot.docs[0].data();
-        console.log('✅ Found user with phone:', {
-          phone: phone,
-          foundPhone: userData.phone,
-          userId: snapshot.docs[0].id,
-          accountType: userData.accountType,
-          firebaseEmail: userData.firebaseEmail || userData.email
-        });
+      for (const collectionName of collections) {
+        console.log(`🔍 Searching in collection: ${collectionName}`);
         
-        return NextResponse.json({
-          success: true,
-          user: {
-            uid: snapshot.docs[0].id,
-            phone: userData.phone,
-            email: userData.firebaseEmail || userData.email,
-            accountType: userData.accountType,
-            full_name: userData.full_name || userData.name
+        for (const phoneFormat of phoneFormats) {
+          console.log(`🔍 Trying phone format: ${phoneFormat} in ${collectionName}`);
+          
+          const collectionRef = db.collection(collectionName);
+          const query = collectionRef.where('phone', '==', phoneFormat);
+          const snapshot = await query.get();
+          
+          console.log(`📊 Query result in ${collectionName} with ${phoneFormat} - empty:`, snapshot.empty, 'size:', snapshot.size);
+          
+          if (!snapshot.empty) {
+            const userData = snapshot.docs[0].data();
+            console.log('✅ Found user with phone:', {
+              phone: phone,
+              foundPhone: userData.phone,
+              collection: collectionName,
+              userId: snapshot.docs[0].id,
+              accountType: userData.accountType,
+              firebaseEmail: userData.firebaseEmail || userData.email
+            });
+            
+            return NextResponse.json({
+              success: true,
+              user: {
+                uid: snapshot.docs[0].id,
+                phone: userData.phone,
+                email: userData.firebaseEmail || userData.email,
+                accountType: userData.accountType,
+                full_name: userData.full_name || userData.name
+              }
+            });
           }
-        });
-      } else {
-        console.log('❌ No user found with phone:', phone);
-        return NextResponse.json(
-          { success: false, error: 'لم يتم العثور على مستخدم بهذا الرقم' },
-          { status: 404 }
-        );
+        }
       }
+      
+      // إذا لم يتم العثور على المستخدم في أي مجموعة
+      console.log('❌ No user found with phone:', phone, 'in any collection');
+      console.log('❌ Tried all phone formats:', phoneFormats);
+      console.log('❌ Searched in all collections:', collections);
+      return NextResponse.json(
+        { success: false, error: 'لم يتم العثور على مستخدم بهذا الرقم' },
+        { status: 404 }
+      );
       
     } catch (firestoreError: any) {
       console.error('❌ Firestore error:', firestoreError);

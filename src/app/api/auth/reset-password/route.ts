@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +26,6 @@ export async function POST(request: NextRequest) {
     }
 
     // البحث عن المستخدم برقم الهاتف في Firestore
-    const db = getFirestore();
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('phone', '==', phoneNumber));
     

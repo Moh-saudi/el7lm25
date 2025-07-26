@@ -11,14 +11,8 @@ const nextConfig = {
     trailingSlash: false,
     generateEtags: false,
     images: {
-        domains: [
-            'firebasestorage.googleapis.com',
-            'localhost',
-            'lh3.googleusercontent.com',
-            'ekyerljzfokqimbabzxm.supabase.co'
-        ],
-        // تحسين معالجة الصور
-        unoptimized: false,
+        // تمكين الصور المحلية
+        unoptimized: true,
         formats: ['image/webp', 'image/avif'],
         minimumCacheTTL: 60,
         dangerouslyAllowSVG: true,
@@ -47,11 +41,11 @@ const nextConfig = {
     // تحسين الأداء العام
     compress: true,
     poweredByHeader: false,
-    // إصلاح تكوين external packages
-    // serverExternalPackages: ['@firebase/admin'],
     // إضافة إعدادات إضافية للاستقرار
     experimental: {
         optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+        // Windows-specific optimizations
+        serverComponentsExternalPackages: ['firebase-admin'],
     },
     // تحسين webpack
     webpack: (config, { isServer }) => {
@@ -68,6 +62,14 @@ const nextConfig = {
                 },
             ],
         });
+        
+        // Windows-specific optimizations
+        if (process.platform === 'win32') {
+            config.watchOptions = {
+                poll: 1000,
+                aggregateTimeout: 300,
+            };
+        }
         
         return config;
     },

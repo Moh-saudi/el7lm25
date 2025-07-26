@@ -4,6 +4,7 @@ import { PlayerFormData } from '@/types/player';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
+import { useTranslation } from '@/lib/translations/simple-context';
 
 // دالة حساب العمر
 const calculateAge = (birthDate: any) => {
@@ -35,6 +36,7 @@ const calculateAge = (birthDate: any) => {
 };
 
 export default function PlayerProfile() {
+  const { t } = useTranslation();
   const [player, setPlayer] = useState<PlayerFormData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,40 +44,40 @@ export default function PlayerProfile() {
   useEffect(() => {
     const fetchPlayerData = async () => {
       try {
-        console.log('بدء جلب بيانات اللاعب...');
+        console.log(t('profile.loading.start'));
         const response = await fetch('/api/player/profile');
 
         if (!response.ok) {
           const errorData = await response.json();
-          console.error('خطأ في الاستجابة:', errorData);
-          throw new Error(errorData.error || 'فشل في جلب بيانات اللاعب');
+          console.error(t('profile.errors.response'), errorData);
+          throw new Error(errorData.error || t('profile.errors.fetchFailed'));
         }
 
         const data = await response.json();
-        console.log('تم جلب البيانات بنجاح:', data);
+        console.log(t('profile.loading.success'), data);
 
         if (!data) {
-          throw new Error('لم يتم استلام أي بيانات');
+          throw new Error(t('profile.errors.noData'));
         }
 
         setPlayer(data);
       } catch (err) {
-        console.error('خطأ في جلب البيانات:', err);
-        setError(err instanceof Error ? err.message : 'حدث خطأ أثناء جلب البيانات');
+        console.error(t('profile.errors.fetch'), err);
+        setError(err instanceof Error ? err.message : t('profile.errors.generic'));
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchPlayerData();
-  }, []);
+  }, [t]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">جاري تحميل البيانات...</p>
+          <p className="text-gray-600">{t('profile.loading.data')}</p>
         </div>
       </div>
     );
@@ -85,7 +87,7 @@ export default function PlayerProfile() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-red-500 text-center">
-          <h2 className="text-2xl font-bold mb-2">خطأ</h2>
+          <h2 className="text-2xl font-bold mb-2">{t('profile.errors.title')}</h2>
           <p>{error}</p>
           <button
             onClick={() => {
@@ -95,7 +97,7 @@ export default function PlayerProfile() {
             }}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            إعادة المحاولة
+            {t('profile.errors.retry')}
           </button>
         </div>
       </div>
@@ -106,8 +108,8 @@ export default function PlayerProfile() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-500 text-center">
-          <h2 className="text-2xl font-bold mb-2">لا توجد بيانات</h2>
-          <p>لم يتم العثور على بيانات اللاعب</p>
+          <h2 className="text-2xl font-bold mb-2">{t('profile.noData.title')}</h2>
+          <p>{t('profile.noData.message')}</p>
         </div>
       </div>
     );
@@ -124,7 +126,7 @@ export default function PlayerProfile() {
                 {player.profile_image_url ? (
                   <Image
                     src={player.profile_image_url}
-                    alt={player.full_name || 'صورة اللاعب'}
+                    alt={player.full_name || t('profile.image.alt')}
                     fill
                     className="object-cover"
                   />
@@ -142,103 +144,103 @@ export default function PlayerProfile() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Personal Information */}
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">المعلومات الشخصية</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t('profile.sections.personal')}</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">الاسم الكامل</p>
-                    <p className="font-medium">{player.full_name || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.fullName')}</p>
+                    <p className="font-medium">{player.full_name || t('profile.notAvailable')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">تاريخ الميلاد</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.birthDate')}</p>
                     <p className="font-medium">
-                      {player.birth_date ? new Date(player.birth_date).toLocaleDateString('ar-SA') : 'غير متوفر'}
+                      {player.birth_date ? new Date(player.birth_date).toLocaleDateString('ar-SA') : t('profile.notAvailable')}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">العمر</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.age')}</p>
                     <p className="font-medium">
                       {(() => {
                         const age = calculateAge(player.birth_date);
-                        return age ? `${age} سنة` : 'غير متوفر';
+                        return age ? `${age} ${t('profile.fields.years')}` : t('profile.notAvailable');
                       })()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">الجنسية</p>
-                    <p className="font-medium">{player.nationality || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.nationality')}</p>
+                    <p className="font-medium">{player.nationality || t('profile.notAvailable')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">المدينة</p>
-                    <p className="font-medium">{player.city || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.city')}</p>
+                    <p className="font-medium">{player.city || t('profile.notAvailable')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">الدولة</p>
-                    <p className="font-medium">{player.country || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.country')}</p>
+                    <p className="font-medium">{player.country || t('profile.notAvailable')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">الوضع الحالي</p>
-                    <p className="font-medium">{player.currently_contracted === 'yes' ? 'متعاقد' : 'غير متعاقد'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.currentStatus')}</p>
+                    <p className="font-medium">{player.currently_contracted === 'yes' ? t('profile.status.contracted') : t('profile.status.notContracted')}</p>
                   </div>
                 </div>
               </div>
 
               {/* Contact Information */}
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">معلومات الاتصال</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t('profile.sections.contact')}</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">رقم الهاتف</p>
-                    <p className="font-medium">{player.phone || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.phone')}</p>
+                    <p className="font-medium">{player.phone || t('profile.notAvailable')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">واتساب</p>
-                    <p className="font-medium">{player.whatsapp || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.whatsapp')}</p>
+                    <p className="font-medium">{player.whatsapp || t('profile.notAvailable')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">البريد الإلكتروني</p>
-                    <p className="font-medium">{player.email || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.email')}</p>
+                    <p className="font-medium">{player.email || t('profile.notAvailable')}</p>
                   </div>
                 </div>
               </div>
 
               {/* Sports Information */}
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">المعلومات الرياضية</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t('profile.sections.sports')}</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">المركز الأساسي</p>
-                    <p className="font-medium">{player.primary_position || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.primaryPosition')}</p>
+                    <p className="font-medium">{player.primary_position || t('profile.notAvailable')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">المركز الثانوي</p>
-                    <p className="font-medium">{player.secondary_position || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.secondaryPosition')}</p>
+                    <p className="font-medium">{player.secondary_position || t('profile.notAvailable')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">القدم المفضلة</p>
-                    <p className="font-medium">{player.preferred_foot || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.preferredFoot')}</p>
+                    <p className="font-medium">{player.preferred_foot || t('profile.notAvailable')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">سنوات الخبرة</p>
-                    <p className="font-medium">{player.experience_years || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.experienceYears')}</p>
+                    <p className="font-medium">{player.experience_years || t('profile.notAvailable')}</p>
                   </div>
                 </div>
               </div>
 
               {/* Medical Information */}
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">المعلومات الطبية</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t('profile.sections.medical')}</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">فصيلة الدم</p>
-                    <p className="font-medium">{player.blood_type || 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.bloodType')}</p>
+                    <p className="font-medium">{player.blood_type || t('profile.notAvailable')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">الطول</p>
-                    <p className="font-medium">{player.height ? `${player.height} سم` : 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.height')}</p>
+                    <p className="font-medium">{player.height ? `${player.height} ${t('profile.units.cm')}` : t('profile.notAvailable')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">الوزن</p>
-                    <p className="font-medium">{player.weight ? `${player.weight} كجم` : 'غير متوفر'}</p>
+                    <p className="text-sm text-gray-500">{t('profile.fields.weight')}</p>
+                    <p className="font-medium">{player.weight ? `${player.weight} ${t('profile.units.kg')}` : t('profile.notAvailable')}</p>
                   </div>
                 </div>
               </div>
@@ -246,11 +248,11 @@ export default function PlayerProfile() {
 
             {/* Skills Section */}
             <div className="mt-8 space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900">المهارات</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('profile.sections.skills')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Technical Skills */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4">المهارات الفنية</h3>
+                  <h3 className="text-lg font-semibold mb-4">{t('profile.skills.technical')}</h3>
                   <div className="space-y-3">
                     {Object.entries(player.technical_skills || {}).map(([skill, value]) => (
                       <div key={skill}>
@@ -271,7 +273,7 @@ export default function PlayerProfile() {
 
                 {/* Physical Skills */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4">المهارات البدنية</h3>
+                  <h3 className="text-lg font-semibold mb-4">{t('profile.skills.physical')}</h3>
                   <div className="space-y-3">
                     {Object.entries(player.physical_skills || {}).map(([skill, value]) => (
                       <div key={skill}>
@@ -292,7 +294,7 @@ export default function PlayerProfile() {
 
                 {/* Social Skills */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4">المهارات الاجتماعية</h3>
+                  <h3 className="text-lg font-semibold mb-4">{t('profile.skills.social')}</h3>
                   <div className="space-y-3">
                     {Object.entries(player.social_skills || {}).map(([skill, value]) => (
                       <div key={skill}>

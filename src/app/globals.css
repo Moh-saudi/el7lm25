@@ -2,8 +2,11 @@
    HAGZZ GO - Main Styles (Optimized & Clean)
    ============================================== */
 
-/* Cairo Font System */
+/* Cairo Font System for Arabic */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Inter Font System for English */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -21,18 +24,56 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
-    direction: rtl;
+    /* سيتم تعيين الاتجاه ديناميكياً حسب اللغة */
   }
   
   body {
     font-family: var(--font-cairo), 'Cairo', ui-sans-serif, system-ui, sans-serif;
     font-weight: 400;
     line-height: 1.6;
-    direction: rtl;
+    /* سيتم تعيين الاتجاه ديناميكياً حسب اللغة */
   }
   
   * {
     font-family: var(--font-cairo), 'Cairo', sans-serif;
+  }
+  
+  /* دعم الاتجاهات المختلفة */
+  html[dir="rtl"] {
+    direction: rtl;
+  }
+  
+  html[dir="ltr"] {
+    direction: ltr;
+  }
+  
+  /* تخصيص العناصر حسب الاتجاه */
+  html[dir="rtl"] body {
+    direction: rtl;
+    text-align: right;
+  }
+  
+  html[dir="ltr"] body {
+    direction: ltr;
+    text-align: left;
+  }
+
+  /* Language-specific font classes */
+  .font-arabic {
+    font-family: var(--font-cairo), 'Cairo', sans-serif;
+  }
+  
+  .font-english {
+    font-family: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+  
+  /* Auto font switching based on language */
+  [lang="ar"] {
+    font-family: var(--font-cairo), 'Cairo', sans-serif;
+  }
+  
+  [lang="en"] {
+    font-family: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
   }
 }
 
@@ -52,6 +93,7 @@
   --warning: #f59e0b;
   --error: #ef4444;
   --font-cairo: 'Cairo', sans-serif;
+  --font-inter: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -128,6 +170,64 @@ body {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
+  
+  /* أنماط دعم الترجمة */
+  .rtl {
+    direction: rtl;
+    text-align: right;
+  }
+  
+  .ltr {
+    direction: ltr;
+    text-align: left;
+  }
+  
+  /* تخصيص العناصر حسب الاتجاه */
+  .rtl .text-left {
+    text-align: right;
+  }
+  
+  .rtl .text-right {
+    text-align: left;
+  }
+  
+  .ltr .text-left {
+    text-align: left;
+  }
+  
+  .ltr .text-right {
+    text-align: right;
+  }
+  
+  /* أنماط مبدل اللغة */
+  .language-switcher {
+    @apply relative inline-block;
+  }
+  
+  .language-dropdown {
+    @apply absolute top-full left-0 mt-1 w-48 bg-white border border-gray-300 rounded-lg shadow-lg z-50;
+  }
+  
+  .language-option {
+    @apply w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors;
+  }
+  
+  .language-option.active {
+    @apply bg-blue-50 text-blue-600;
+  }
+
+  /* Font utilities for language switching */
+  .font-auto {
+    font-family: var(--font-cairo), 'Cairo', sans-serif;
+  }
+  
+  .font-auto[lang="en"] {
+    font-family: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+  
+  .font-auto[lang="ar"] {
+    font-family: var(--font-cairo), 'Cairo', sans-serif;
+  }
 }
 
 /* ==============================================
@@ -143,12 +243,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #c1c1c1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #a8a8a8;
 }
 
 .scrollbar-hide {

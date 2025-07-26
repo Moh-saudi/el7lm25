@@ -20,7 +20,7 @@ type Student struct {
 
 func main() {
 	// Open the CSV file
-	file, err := os.Open("students.csv")
+	file, err := os.Open("players.csv")
 	if err != nil {
 		fmt.Printf("Error opening file: %v\n", err)
 		return
@@ -48,7 +48,7 @@ func main() {
 	}
 
 	// Process each record
-	var students []Student
+	var players []Student
 	for _, record := range records {
 		// Convert string values to appropriate types
 		id, _ := strconv.Atoi(record[0])
@@ -64,12 +64,12 @@ func main() {
 			Email:      record[6],
 			ParentName: record[7],
 		}
-		students = append(students, student)
+		players = append(players, student)
 	}
 
 	// Print the processed data
-	fmt.Printf("\nProcessed %d student records:\n", len(students))
-	for _, student := range students {
+	fmt.Printf("\nProcessed %d player records:\n", len(players))
+	for _, student := range players {
 		fmt.Printf("\nStudent ID: %d\n", student.ID)
 		fmt.Printf("Name: %s\n", student.Name)
 		fmt.Printf("Age: %d\n", student.Age)

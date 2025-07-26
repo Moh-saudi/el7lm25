@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { useTranslation } from '@/lib/translations/simple-context';
 import { 
   Users, 
   CreditCard, 
@@ -56,6 +57,7 @@ interface CurrencyStats {
 }
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<StatCard[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +83,7 @@ export default function AdminDashboard() {
       setLastRatesUpdate(lastUpdate);
       await loadCurrencyStats();
     } catch (error) {
-      console.error('خطأ في تحديث أسعار الصرف:', error);
+      console.error(t('admin.dashboard.errors.exchangeRates'), error);
     } finally {
       setRatesLoading(false);
     }
@@ -143,7 +145,7 @@ export default function AdminDashboard() {
           }
         });
       } catch (error) {
-        console.error('خطأ في جلب بيانات المستخدمين:', error);
+        console.error(t('admin.dashboard.errors.users'), error);
       }
 
       // تحويل إلى مصفوفة مرتبة
@@ -153,7 +155,7 @@ export default function AdminDashboard() {
 
       setCurrencyStats(sortedCurrencies);
     } catch (error) {
-      console.error('خطأ في تحميل إحصائيات العملات:', error);
+      console.error(t('admin.dashboard.errors.currencyStats'), error);
     } finally {
       setCurrencyLoading(false);
     }
@@ -181,7 +183,7 @@ export default function AdminDashboard() {
           }
         });
       } catch (error) {
-        console.error('خطأ في جلب المستخدمين:', error);
+        console.error(t('admin.dashboard.errors.users'), error);
         // استخدام أرقام احتياطية إذا فشل Firebase
         totalUsers = 1250;
         totalPlayers = 850;
@@ -208,7 +210,7 @@ export default function AdminDashboard() {
 
       const newStats: StatCard[] = [
         {
-          title: 'إجمالي المستخدمين',
+          title: t('admin.dashboard.stats.totalUsers'),
           value: totalUsers.toLocaleString(),
           change: '+12%',
           changeType: 'increase',
@@ -216,7 +218,7 @@ export default function AdminDashboard() {
           color: 'bg-blue-500'
         },
         {
-          title: 'اللاعبين',
+          title: t('admin.dashboard.stats.players'),
           value: totalPlayers.toLocaleString(),
           change: '+8%',
           changeType: 'increase',
@@ -224,7 +226,7 @@ export default function AdminDashboard() {
           color: 'bg-green-500'
         },
         {
-          title: 'المؤسسات والأندية',
+          title: t('admin.dashboard.stats.organizations'),
           value: totalOrganizations.toLocaleString(),
           change: '+18%',
           changeType: 'increase',
@@ -232,15 +234,15 @@ export default function AdminDashboard() {
           color: 'bg-purple-500'
         },
         {
-          title: 'العملات المدعومة',
+          title: t('admin.dashboard.stats.supportedCurrencies'),
           value: Object.keys(CURRENCY_RATES).length.toLocaleString(),
-          change: `${uniqueCurrencies.size} قيد الاستخدام`,
+          change: `${uniqueCurrencies.size} ${t('admin.dashboard.stats.inUse')}`,
           changeType: 'increase',
           icon: <Coins className="w-6 h-6" />,
           color: 'bg-orange-500'
         },
         {
-          title: 'المدفوعات الجماعية',
+          title: t('admin.dashboard.stats.bulkPayments'),
           value: totalPayments.toLocaleString(),
           change: '+35%',
           changeType: 'increase',
@@ -248,8 +250,8 @@ export default function AdminDashboard() {
           color: 'bg-emerald-500'
         },
         {
-          title: 'إجمالي الإيرادات (جنيه مصري)',
-          value: `${totalAmountEGP.toLocaleString()} جنيه`,
+          title: t('admin.dashboard.stats.totalRevenue'),
+          value: `${totalAmountEGP.toLocaleString()} ${t('admin.dashboard.stats.egp')}`,
           change: '+45%',
           changeType: 'increase',
           icon: <DollarSign className="w-6 h-6" />,
@@ -264,7 +266,7 @@ export default function AdminDashboard() {
         {
           id: '1',
           type: 'payment',
-          description: 'دفعة جماعية جديدة بالريال السعودي (SAR)',
+          description: t('admin.dashboard.activities.bulkPaymentSAR'),
           timestamp: new Date(),
           amount: 450,
           currency: 'SAR'
@@ -272,19 +274,19 @@ export default function AdminDashboard() {
         {
           id: '2',
           type: 'currency',
-          description: 'تم تحديث أسعار الصرف - أكثر من 60 عملة محدثة',
+          description: t('admin.dashboard.activities.exchangeRatesUpdated'),
           timestamp: new Date(Date.now() - 1000 * 60 * 30)
         },
         {
           id: '3',
           type: 'user',
-          description: '5 لاعبين جدد انضموا من دول مختلفة',
+          description: t('admin.dashboard.activities.newPlayers'),
           timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1)
         },
         {
           id: '4',
           type: 'payment',
-          description: 'دفعة بالدولار الأمريكي (تم التحويل تلقائياً للجنيه المصري)',
+          description: t('admin.dashboard.activities.usdPayment'),
           timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
           amount: 120,
           currency: 'USD'
@@ -294,7 +296,7 @@ export default function AdminDashboard() {
       setActivities(recentActivities);
       
     } catch (error) {
-      console.error('خطأ في تحميل الإحصائيات:', error);
+      console.error(t('admin.dashboard.errors.stats'), error);
     }
   };
 
@@ -320,7 +322,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">جاري تحميل لوحة التحكم متعددة العملات...</p>
+          <p className="mt-4 text-gray-600">{t('admin.dashboard.loading')}</p>
         </div>
       </div>
     );
@@ -333,12 +335,12 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">
-              لوحة التحكم الإدارية متعددة العملات
+              {t('admin.dashboard.title')}
             </h1>
             <p className="text-blue-100">
-              أهلاً بك في نظام إدارة المنصة العالمية • العملة الأساسية: 
-              <span className="font-semibold text-green-200 mx-1">الجنيه المصري (EGP)</span>
-              • آخر تحديث: {currentTime.toLocaleDateString('ar-EG')}
+              {t('admin.dashboard.subtitle')} • {t('admin.dashboard.baseCurrency')}: 
+              <span className="font-semibold text-green-200 mx-1">{t('admin.dashboard.egp')}</span>
+              • {t('admin.dashboard.lastUpdate')}: {currentTime.toLocaleDateString('ar-EG')}
             </p>
           </div>
           <div className="bg-white/10 backdrop-blur-md rounded-lg p-4">
@@ -364,7 +366,7 @@ export default function AdminDashboard() {
                   <p className={`text-sm font-medium ${
                     stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {stat.change} {stat.changeType === 'increase' ? 'من الشهر الماضي' : ''}
+                    {stat.change} {stat.changeType === 'increase' ? t('admin.dashboard.fromLastMonth') : ''}
                   </p>
                 )}
               </div>
@@ -386,10 +388,10 @@ export default function AdminDashboard() {
                 <Coins className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">نظام العملات المتعددة</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t('admin.dashboard.currencySystem.title')}</h2>
                 <p className="text-sm text-gray-600">
-                  <span className="font-semibold text-green-600">العملة الأساسية: الجنيه المصري (EGP)</span>
-                  {' • '}{Object.keys(CURRENCY_RATES).length} عملة مدعومة • تحويل تلقائي
+                  <span className="font-semibold text-green-600">{t('admin.dashboard.currencySystem.baseCurrency')}: {t('admin.dashboard.egp')}</span>
+                  {' • '}{Object.keys(CURRENCY_RATES).length} {t('admin.dashboard.currencySystem.supported')} • {t('admin.dashboard.currencySystem.autoConvert')}
                 </p>
               </div>
             </div>
@@ -397,14 +399,14 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-2">
               {lastRatesUpdate && (
                 <div className="text-xs text-gray-500">
-                  آخر تحديث: {lastRatesUpdate.toLocaleTimeString('ar-EG')}
+                  {t('admin.dashboard.lastUpdate')}: {lastRatesUpdate.toLocaleTimeString('ar-EG')}
                 </div>
               )}
               <button
                 onClick={refreshExchangeRates}
                 disabled={ratesLoading}
                 className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
-                title="تحديث أسعار الصرف الحية من ExchangeRate-API"
+                title={t('admin.dashboard.refreshRates')}
               >
                 <RefreshCw className={`w-4 h-4 ${ratesLoading ? 'animate-spin' : ''}`} />
               </button>
@@ -416,7 +418,7 @@ export default function AdminDashboard() {
             {currencyLoading ? (
               <div className="col-span-2 text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">جاري تحميل إحصائيات العملات...</p>
+                <p className="text-gray-600">{t('admin.dashboard.loadingCurrencyStats')}</p>
               </div>
             ) : currencyStats.slice(0, 6).map((currency) => (
               <div key={currency.code} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
@@ -433,30 +435,30 @@ export default function AdminDashboard() {
                   <div className="text-right">
                     <div className="flex items-center gap-1 text-xs text-blue-600">
                       <ArrowUpDown className="w-3 h-3" />
-                      <span>1 {currency.code} = {currency.exchangeRate.toFixed(2)} جنيه</span>
+                      <span>1 {currency.code} = {currency.exchangeRate.toFixed(2)} {t('admin.dashboard.egp')}</span>
                     </div>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">👥 المستخدمين:</span>
+                    <span className="text-sm text-gray-600">{t('admin.dashboard.currencyStats.users')}:</span>
                     <span className="font-semibold text-blue-600">{currency.userCount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">💳 المدفوعات:</span>
+                    <span className="text-sm text-gray-600">{t('admin.dashboard.currencyStats.payments')}:</span>
                     <span className="font-semibold text-green-600">{currency.totalPayments}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">💰 المبلغ الأصلي:</span>
+                    <span className="text-sm text-gray-600">{t('admin.dashboard.currencyStats.originalAmount')}:</span>
                     <span className="font-bold text-gray-900">
                       {currency.totalAmount.toLocaleString()} {currency.symbol}
                     </span>
                   </div>
                   <div className="flex justify-between items-center border-t pt-2">
-                    <span className="text-sm text-gray-600">🔄 محول للجنيه المصري:</span>
+                    <span className="text-sm text-gray-600">{t('admin.dashboard.currencyStats.convertedToEGP')}:</span>
                     <span className="font-bold text-green-700 bg-green-100 px-2 py-1 rounded">
-                      {currency.totalAmountEGP.toLocaleString()} جنيه
+                      {currency.totalAmountEGP.toLocaleString()} {t('admin.dashboard.egp')}
                     </span>
                   </div>
                 </div>
@@ -472,8 +474,8 @@ export default function AdminDashboard() {
               <Activity className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">النشاط الحديث</h2>
-              <p className="text-sm text-gray-600">آخر أحداث النظام</p>
+              <h2 className="text-xl font-bold text-gray-900">{t('admin.dashboard.recentActivity.title')}</h2>
+              <p className="text-sm text-gray-600">{t('admin.dashboard.recentActivity.subtitle')}</p>
             </div>
           </div>
 
@@ -515,8 +517,8 @@ export default function AdminDashboard() {
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">حالة النظام</h2>
-            <p className="text-sm text-gray-600">جميع الأنظمة تعمل بشكل طبيعي</p>
+            <h2 className="text-xl font-bold text-gray-900">{t('admin.dashboard.systemStatus.title')}</h2>
+            <p className="text-sm text-gray-600">{t('admin.dashboard.systemStatus.subtitle')}</p>
           </div>
         </div>
 
@@ -524,29 +526,29 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
             <CheckCircle2 className="w-5 h-5 text-green-600" />
             <div>
-              <p className="font-semibold text-green-900">واجهة برمجة العملات</p>
-              <p className="text-sm text-green-600">متصل</p>
+              <p className="font-semibold text-green-900">{t('admin.dashboard.systemStatus.currencyAPI')}</p>
+              <p className="text-sm text-green-600">{t('admin.dashboard.systemStatus.connected')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
             <CheckCircle2 className="w-5 h-5 text-green-600" />
             <div>
               <p className="font-semibold text-green-900">Firebase</p>
-              <p className="text-sm text-green-600">متصل</p>
+              <p className="text-sm text-green-600">{t('admin.dashboard.systemStatus.connected')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
             <CheckCircle2 className="w-5 h-5 text-green-600" />
             <div>
-              <p className="font-semibold text-green-900">نظام المدفوعات</p>
-              <p className="text-sm text-green-600">نشط</p>
+              <p className="font-semibold text-green-900">{t('admin.dashboard.systemStatus.paymentSystem')}</p>
+              <p className="text-sm text-green-600">{t('admin.dashboard.systemStatus.active')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
             <BarChart3 className="w-5 h-5 text-blue-600" />
             <div>
-              <p className="font-semibold text-blue-900">الأداء</p>
-              <p className="text-sm text-blue-600">ممتاز</p>
+              <p className="font-semibold text-blue-900">{t('admin.dashboard.systemStatus.performance')}</p>
+              <p className="text-sm text-blue-600">{t('admin.dashboard.systemStatus.excellent')}</p>
             </div>
           </div>
         </div>

@@ -150,6 +150,8 @@ const MessageCenter: React.FC = () => {
   const COLLECTION_NAMES = {
     MESSAGES: 'messages',
     CONVERSATIONS: 'conversations',
+    SUPPORT_CONVERSATIONS: 'support_conversations',
+    SUPPORT_MESSAGES: 'support_messages',
     PLAYERS: 'players',
     CLUBS: 'clubs',
     ACADEMIES: 'academies',
@@ -171,7 +173,7 @@ const MessageCenter: React.FC = () => {
 
   // تحسين معالجة الأخطاء
   const handleError = (error: any, context: string) => {
-    console.error(`خطأ في ${context}:`, error);
+    console.error(`❌ خطأ في ${context}:`, error);
     
     // تحليل نوع الخطأ
     let errorMessage = 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.';
@@ -346,16 +348,29 @@ const MessageCenter: React.FC = () => {
     setLoading(true);
 
     const fetchInitialData = async () => {
+      if (!user || !userData) {
+        console.log('❌ لا يمكن جلب البيانات: المستخدم أو البيانات غير متوفرة');
+        return;
+      }
+
+      console.log('🔄 بدء جلب البيانات الأولية...');
+      console.log('👤 User ID:', user.uid);
+      console.log('📊 UserData:', userData);
+
       try {
+        // جلب المحادثات العادية
         const conversationsRef = collection(db, COLLECTION_NAMES.CONVERSATIONS);
         const baseQuery = query(
           conversationsRef,
           where('participants', 'array-contains', user.uid)
         );
 
-        // جلب البيانات الأولية
+        console.log('📋 جاري استعلام المحادثات العادية...');
         const snapshot = await getDocs(baseQuery);
-        const conversationsData = snapshot.docs.map(doc => {
+        
+        console.log('📊 عدد المحادثات العادية:', snapshot.size);
+        
+        let conversationsData = snapshot.docs.map(doc => {
           const data = doc.data();
           return {
             id: doc.id,
@@ -366,8 +381,51 @@ const MessageCenter: React.FC = () => {
           };
         }) as Conversation[];
 
+        // جلب محادثات الدعم الفني
+        const supportConversationsRef = collection(db, COLLECTION_NAMES.SUPPORT_CONVERSATIONS);
+        const supportQuery = query(
+          supportConversationsRef,
+          where('userId', '==', user.uid)
+        );
+
+        console.log('📋 جاري استعلام محادثات الدعم الفني...');
+        const supportSnapshot = await getDocs(supportQuery);
+        
+        console.log('📊 عدد محادثات الدعم الفني:', supportSnapshot.size);
+        
+        const supportConversationsData = supportSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            participants: [data.userId, 'system'],
+            participantNames: {
+              [data.userId]: data.userName || 'مستخدم',
+              'system': 'نظام الدعم الفني'
+            },
+            participantTypes: {
+              [data.userId]: data.userType || 'player',
+              'system': 'system'
+            },
+            subject: `دعم فني - ${data.category || 'عام'}`,
+            lastMessage: data.lastMessage || '',
+            lastMessageTime: data.lastMessageTime?.toDate() || null,
+            lastSenderId: data.lastSenderId || '',
+            unreadCount: {
+              [data.userId]: data.unreadCount || 0
+            },
+            isActive: data.status === 'open' || data.status === 'in_progress',
+            createdAt: data.createdAt?.toDate() || null,
+            updatedAt: data.updatedAt?.toDate() || null
+          };
+        }) as Conversation[];
+
+        // دمج المحادثات
+        const allConversations = [...conversationsData, ...supportConversationsData];
+        
+        console.log('📝 جميع المحادثات المحملة:', allConversations);
+
         // ترتيب المحادثات
-        const sortedConversations = conversationsData.sort((a, b) => {
+        const sortedConversations = allConversations.sort((a, b) => {
           const timeA = a.updatedAt || a.createdAt || new Date(0);
           const timeB = b.updatedAt || b.createdAt || new Date(0);
           return timeB.getTime() - timeA.getTime();
@@ -378,6 +436,7 @@ const MessageCenter: React.FC = () => {
           index === self.findIndex(c => c.id === conversation.id)
         );
 
+        console.log('✅ تم تحميل المحادثات بنجاح:', uniqueConversations.length);
         setConversations(uniqueConversations);
         setLoading(false);
 
@@ -386,6 +445,7 @@ const MessageCenter: React.FC = () => {
           baseQuery,
           {
             next: (realtimeSnapshot) => {
+              console.log('🔄 تحديث فوري للمحادثات:', realtimeSnapshot.size);
               const updatedData = realtimeSnapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
@@ -411,7 +471,7 @@ const MessageCenter: React.FC = () => {
               setConversations(uniqueUpdates);
             },
             error: (error) => {
-              console.error('خطأ في مراقب المحادثات:', error);
+              console.error('❌ خطأ في مراقب المحادثات:', error);
               // في حالة الخطأ، نحتفظ بآخر بيانات تم تحميلها
               // ونحاول إعادة إنشاء المراقب بعد فترة
               setTimeout(fetchInitialData, 5000);
@@ -419,7 +479,7 @@ const MessageCenter: React.FC = () => {
           }
         );
       } catch (error) {
-        console.error('خطأ في جلب المحادثات:', error);
+        console.error('❌ خطأ في جلب المحادثات:', error);
         setLoading(false);
         // محاولة إعادة الاتصال في حالة الفشل
         setTimeout(fetchInitialData, 5000);
@@ -445,8 +505,24 @@ const MessageCenter: React.FC = () => {
     let unsubscribe: () => void;
 
     const setupMessagesListener = async () => {
+      if (!selectedConversation || !user) {
+        console.log('❌ لا يمكن إعداد مراقب الرسائل: المحادثة أو المستخدم غير متوفر');
+        return;
+      }
+
+      console.log('🔄 بدء إعداد مراقب الرسائل...');
+      console.log('📝 Conversation ID:', selectedConversation.id);
+      console.log('👤 User ID:', user.uid);
+
       try {
-        const messagesRef = collection(db, COLLECTION_NAMES.MESSAGES);
+        // تحديد مجموعة الرسائل حسب نوع المحادثة
+        const isSupportConversation = selectedConversation.participants.includes('system');
+        const messagesCollection = isSupportConversation ? COLLECTION_NAMES.SUPPORT_MESSAGES : COLLECTION_NAMES.MESSAGES;
+        
+        console.log('📋 مجموعة الرسائل:', messagesCollection);
+        console.log('🔍 نوع المحادثة:', isSupportConversation ? 'دعم فني' : 'عادية');
+
+        const messagesRef = collection(db, messagesCollection);
         
         // استخدام استعلام بسيط لا يحتاج فهرس مركب
         const messagesQuery = query(
@@ -455,14 +531,20 @@ const MessageCenter: React.FC = () => {
           orderBy('timestamp', 'asc')
         );
 
+        console.log('📋 جاري استعلام الرسائل...');
+
         unsubscribe = onSnapshot(messagesQuery, async (snapshot) => {
           try {
+            console.log('📊 عدد الرسائل المحملة:', snapshot.size);
+            
             const messagesData = snapshot.docs.map(doc => ({
               id: doc.id,
               ...doc.data(),
               timestamp: doc.data().timestamp?.toDate() || new Date(),
               createdAt: doc.data().createdAt?.toDate() || new Date()
             })) as Message[];
+
+            console.log('📝 الرسائل المحملة:', messagesData);
 
             // تحديث حالة القراءة للرسائل غير المقروءة
             if (userData?.accountType !== 'admin') {
@@ -471,11 +553,14 @@ const MessageCenter: React.FC = () => {
                 msg.receiverId === user.uid
               );
 
+              console.log('📖 الرسائل غير المقروءة:', unreadMessages.length);
+
               if (unreadMessages.length > 0) {
                 const batch = writeBatch(db);
                 
                 // تحديث المحادثة
-                batch.update(doc(db, COLLECTION_NAMES.CONVERSATIONS, selectedConversation.id), {
+                const conversationCollection = isSupportConversation ? COLLECTION_NAMES.SUPPORT_CONVERSATIONS : COLLECTION_NAMES.CONVERSATIONS;
+                batch.update(doc(db, conversationCollection, selectedConversation.id), {
                   [`unreadCount.${user.uid}`]: 0,
                   updatedAt: serverTimestamp()
                 });
@@ -490,25 +575,31 @@ const MessageCenter: React.FC = () => {
 
                 try {
                   await batch.commit();
+                  console.log('✅ تم تحديث حالة القراءة بنجاح');
                 } catch (error) {
+                  console.error('❌ خطأ في تحديث حالة القراءة:', error);
                   handleError(error, 'تحديث حالة القراءة');
                 }
               }
             }
 
             setMessages(messagesData);
+            console.log('✅ تم تحديث الرسائل بنجاح');
           } catch (error) {
+            console.error('❌ خطأ في معالجة الرسائل:', error);
             handleError(error, 'معالجة الرسائل');
           }
         }, (error) => {
           // تجاهل أخطاء الفهرس قيد الإنشاء
           if (error.code === 'failed-precondition' && error.message.includes('index is currently building')) {
-            console.warn('Index is still building, using fallback query');
+            console.warn('⚠️ Index is still building, using fallback query');
             return;
           }
+          console.error('❌ خطأ في مراقبة الرسائل:', error);
           handleError(error, 'مراقبة الرسائل');
         });
       } catch (error) {
+        console.error('❌ خطأ في إعداد المراقب:', error);
         handleError(error, 'إعداد المراقب');
       }
     };
@@ -721,7 +812,14 @@ const MessageCenter: React.FC = () => {
         : sortedContacts;
 
       console.log('تم جلب عدد جهات الاتصال:', filteredContacts.length);
+      console.log('📝 تفاصيل جهات الاتصال:', filteredContacts.map(c => ({
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        organizationName: c.organizationName
+      })));
       setContacts(filteredContacts);
+      console.log('✅ تم تحديث حالة جهات الاتصال بنجاح');
 
     } catch (error) {
       console.error('خطأ في جلب جهات الاتصال:', error);
@@ -888,14 +986,56 @@ const MessageCenter: React.FC = () => {
                 placeholder="اكتب رسالتك..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (newMessage.trim()) {
-                      onMessageSent();
+                                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (newMessage.trim()) {
+                        // إرسال الرسالة مباشرة
+                        const sendMessage = async () => {
+                          if (!newMessage.trim() || !selectedConversation || !user || !userData) {
+                            return;
+                          }
+
+                          try {
+                            const messageData = {
+                              conversationId: selectedConversation.id,
+                              senderId: user.uid,
+                              receiverId: selectedConversation.participants.find(p => p !== user.uid) || '',
+                              senderName: getUserDisplayName(user.uid, userData.accountType, userData),
+                              receiverName: getParticipantDisplayName(selectedConversation.participants.find(p => p !== user.uid) || '', selectedConversation),
+                              senderType: userData.accountType,
+                              receiverType: selectedConversation.participantTypes[selectedConversation.participants.find(p => p !== user.uid) || ''] || 'player',
+                              message: newMessage.trim(),
+                              messageType: 'text' as const,
+                              timestamp: serverTimestamp(),
+                              isRead: false,
+                              createdAt: serverTimestamp(),
+                              updatedAt: serverTimestamp()
+                            };
+
+                            await addDoc(collection(db, 'messages'), messageData);
+
+                            // تحديث المحادثة
+                            await updateDoc(doc(db, 'conversations', selectedConversation.id), {
+                              lastMessage: newMessage.trim(),
+                              lastMessageTime: serverTimestamp(),
+                              lastSenderId: user.uid,
+                              [`unreadCount.${selectedConversation.participants.find(p => p !== user.uid) || ''}`]: increment(1),
+                              updatedAt: serverTimestamp()
+                            });
+
+                            setNewMessage('');
+                            toast.success('تم إرسال الرسالة');
+                          } catch (error) {
+                            console.error('خطأ في إرسال الرسالة:', error);
+                            toast.error('فشل في إرسال الرسالة');
+                          }
+                        };
+
+                        sendMessage();
+                      }
                     }
-                  }
-                }}
+                  }}
                 className="pr-12"
               />
               <div className="absolute left-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
@@ -926,7 +1066,6 @@ const MessageCenter: React.FC = () => {
               selectedConversation={selectedConversation}
               user={user}
               userData={userData}
-              onMessageSent={() => setNewMessage('')}
               getUserDisplayName={() => getUserDisplayName(user.uid, userData.accountType, userData)}
               scrollToBottom={scrollToBottom}
             />
@@ -983,24 +1122,32 @@ const MessageCenter: React.FC = () => {
   };
 
   // إضافة دالة عرض الحالة الفارغة
-  const renderEmptyState = () => {
-    return (
-      <div className="flex flex-col items-center justify-center h-full bg-gray-50">
-        <div className="text-center p-8">
-          <MessageSquare className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">لم يتم اختيار محادثة</h3>
-          <p className="text-gray-500 mb-6">اختر محادثة من القائمة أو ابدأ محادثة جديدة</p>
-          <Button
-            onClick={() => setShowNewChat(true)}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4 ml-2" />
-            محادثة جديدة
-          </Button>
-        </div>
+  const renderEmptyState = () => (
+    <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+        <MessageSquare className="h-10 w-10 text-green-600" />
       </div>
-    );
-  };
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">اختر محادثة</h2>
+      <p className="text-gray-600 text-center mb-8 max-w-md">
+        اختر محادثة من القائمة لبدء التواصل أو ابدأ محادثة جديدة
+      </p>
+      <div className="flex gap-4">
+        <button
+          onClick={() => {
+            console.log('🔄 تم النقر على زر محادثة جديدة من الحالة الفارغة');
+            setTimeout(() => {
+              setShowNewChat(true);
+              console.log('✅ تم تحديث showNewChat إلى true');
+            }, 100);
+          }}
+          className="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105"
+        >
+          <Plus className="h-5 w-5" />
+          <span className="font-semibold">محادثة جديدة</span>
+        </button>
+      </div>
+    </div>
+  );
 
   // دالة عرض الرسالة الواحدة
   const renderMessage = (message: Message, index: number) => {
@@ -1128,13 +1275,19 @@ const MessageCenter: React.FC = () => {
   // دالة بدء محادثة جديدة
   const startNewConversation = async (contact: Contact) => {
     if (!user || !userData) {
+      console.error('❌ لا يمكن بدء محادثة جديدة: المستخدم أو البيانات غير متوفرة');
       toast.error('يرجى تسجيل الدخول');
       return;
     }
 
+    console.log('🚀 بدء محادثة جديدة مع:', contact);
+    console.log('👤 User:', user.uid);
+    console.log('📞 Contact:', contact.id);
+
     try {
       // إنشاء معرف المحادثة
       const conversationId = [user.uid, contact.id].sort().join('-');
+      console.log('📝 Conversation ID:', conversationId);
 
       // البحث عن محادثة موجودة
       const existingConversation = conversations.find(conv => 
@@ -1142,11 +1295,14 @@ const MessageCenter: React.FC = () => {
       );
 
       if (existingConversation) {
+        console.log('✅ وجدت محادثة موجودة:', existingConversation.id);
         // إذا وجدت محادثة، انتقل إليها
         setSelectedConversation(existingConversation);
         setShowNewChat(false);
         return;
       }
+
+      console.log('🆕 إنشاء محادثة جديدة...');
 
       // إنشاء محادثة جديدة
       const conversationData = {
@@ -1173,9 +1329,13 @@ const MessageCenter: React.FC = () => {
         updatedAt: serverTimestamp()
       };
 
+      console.log('📝 بيانات المحادثة الجديدة:', conversationData);
+
       // إضافة المحادثة إلى Firestore
       const conversationRef = doc(collection(db, 'conversations'), conversationId);
       await setDoc(conversationRef, conversationData);
+
+      console.log('✅ تم إنشاء المحادثة في Firestore بنجاح');
 
       // إضافة المحادثة إلى القائمة المحلية
       const newConversation: Conversation = {
@@ -1187,30 +1347,49 @@ const MessageCenter: React.FC = () => {
 
       setConversations(prev => {
         // التحقق من عدم وجود محادثة مكررة
-        const existingIndex = prev.findIndex(conv => conv.id === newConversation.id);
-        if (existingIndex !== -1) {
-          // إذا وجدت محادثة موجودة، تحديثها بدلاً من إضافتها
-          const updated = [...prev];
-          updated[existingIndex] = newConversation;
-          return updated;
+        const existing = prev.find(conv => conv.id === conversationId);
+        if (existing) {
+          console.log('⚠️ المحادثة موجودة بالفعل في القائمة المحلية');
+          return prev;
         }
-        // إضافة المحادثة الجديدة في البداية
+        console.log('✅ إضافة المحادثة الجديدة إلى القائمة المحلية');
         return [newConversation, ...prev];
       });
 
+      // تحديد المحادثة الجديدة
       setSelectedConversation(newConversation);
       setShowNewChat(false);
+      setNewMessage('');
 
-      toast.success(`تم إنشاء محادثة مع ${contact.name}`);
-
+      toast.success(`تم بدء محادثة مع ${contact.name}`);
+      console.log('✅ تم بدء المحادثة الجديدة بنجاح');
     } catch (error) {
-      console.error('خطأ في إنشاء المحادثة:', error);
-      toast.error('حدث خطأ في إنشاء المحادثة');
+      console.error('❌ خطأ في بدء المحادثة الجديدة:', error);
+      toast.error('فشل في بدء المحادثة الجديدة');
+      handleError(error, 'بدء محادثة جديدة');
     }
   };
 
   // تحسين عرض قائمة جهات الاتصال
   const renderContactsList = () => {
+    console.log('🔄 renderContactsList called - showNewChat:', showNewChat);
+    console.log('📊 عدد جهات الاتصال:', contacts.length);
+    console.log('📝 جهات الاتصال:', contacts);
+    
+    if (!showNewChat) {
+      console.log('❌ showNewChat هو false، لن يتم عرض القائمة');
+      return null;
+    }
+    
+    if (contacts.length === 0) {
+      console.log('❌ لا توجد جهات اتصال متاحة');
+      return (
+        <div className="p-4 text-center text-gray-500">
+          <p>جاري تحميل جهات الاتصال...</p>
+        </div>
+      );
+    }
+    
     // تجميع جهات الاتصال حسب النوع
     const groupedContacts = contacts.reduce((acc, contact) => {
       const type = contact.type || 'other';
@@ -1218,6 +1397,8 @@ const MessageCenter: React.FC = () => {
       acc[type].push(contact);
       return acc;
     }, {} as Record<string, Contact[]>);
+
+    console.log('📋 جهات الاتصال المجمعة:', groupedContacts);
 
     // ترتيب المجموعات
     const orderedTypes = [
@@ -1242,7 +1423,10 @@ const MessageCenter: React.FC = () => {
       );
     });
 
+    console.log('🔍 جهات الاتصال المفلترة:', filteredContacts.length);
+
     if (filteredContacts.length === 0) {
+      console.log('❌ لا توجد جهات اتصال متاحة');
       return (
         <div className="p-4 text-center text-gray-500">
           {searchTerm ? 'لا توجد نتائج للبحث' : 'لا توجد جهات اتصال متاحة'}
@@ -1250,6 +1434,7 @@ const MessageCenter: React.FC = () => {
       );
     }
 
+    console.log('✅ عرض قائمة جهات الاتصال');
     return (
       <div className="divide-y divide-gray-100">
         {orderedTypes.map(type => {
@@ -1270,46 +1455,52 @@ const MessageCenter: React.FC = () => {
 
           if (filteredTypeContacts.length === 0) return null;
 
+          console.log(`📋 عرض ${filteredTypeContacts.length} جهة اتصال من نوع ${type}`);
+
           return (
             <div key={type} className="py-2">
-              <div className="px-4 py-2 text-sm font-medium text-gray-500">
+              <div className="px-4 py-2 text-sm font-medium text-gray-500 bg-gray-50">
                 {USER_TYPES[type as keyof typeof USER_TYPES]?.name || 'آخر'}
               </div>
               {filteredTypeContacts.map(contact => (
                 <div
                   key={contact.id}
-                  className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => startNewConversation(contact)}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+                  onClick={() => {
+                    console.log('🔄 تم النقر على جهة اتصال:', contact);
+                    startNewConversation(contact);
+                  }}
                 >
-                  <Avatar className="h-10 w-10">
+                  <Avatar className="h-12 w-12 ring-2 ring-gray-100">
                     {contact.avatar ? (
                       <AvatarImage src={contact.avatar} alt={contact.name} />
                     ) : (
-                      <AvatarFallback>
-                        {USER_TYPES[contact.type]?.icon && (
-                          <div className={USER_TYPES[contact.type]?.color}>
-                            {React.createElement(USER_TYPES[contact.type]?.icon, { size: 20 })}
-                          </div>
-                        )}
+                      <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white">
+                        {contact.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     )}
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">
-                        {contact.name}
-                      </span>
-                      {contact.isOnline && (
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                      )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900 truncate">
+                          {contact.name}
+                        </span>
+                        {contact.isOnline && (
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {USER_TYPES[contact.type]?.name || 'مستخدم'}
+                      </Badge>
                     </div>
                     {contact.organizationName && contact.type !== 'club' && contact.type !== 'academy' && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-sm text-gray-500 mt-1">
                         {contact.organizationName}
                       </div>
                     )}
-                    <div className="text-xs text-gray-500">
-                      {USER_TYPES[contact.type]?.name || 'مستخدم'}
+                    <div className="text-xs text-gray-400 mt-1">
+                      انقر لبدء محادثة جديدة
                     </div>
                   </div>
                 </div>
@@ -1333,52 +1524,177 @@ const MessageCenter: React.FC = () => {
     );
   }
 
+  // إذا كان showNewChat صحيحاً، اعرض قائمة جهات الاتصال في الجانب
+  if (showNewChat) {
+    return (
+      <div className="flex h-[75vh] min-h-[500px] bg-gray-50">
+        {/* عمود جهات الاتصال في الجانب */}
+        <div className="w-1/3 bg-white shadow-lg rounded-l-lg overflow-hidden border-r border-gray-200">
+          {/* Header مشابه لـ WhatsApp */}
+          <div className="bg-green-600 text-white p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold">جهات الاتصال</h2>
+                  <p className="text-sm text-green-100">اختر جهة اتصال لبدء محادثة</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => {
+                  console.log('🔄 تم إغلاق قائمة جهات الاتصال');
+                  setShowNewChat(false);
+                }}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/20"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Search Bar محسن */}
+          <div className="p-4 bg-gray-50 border-b">
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="البحث في جهات الاتصال..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-white border-gray-300 focus:border-green-500 focus:ring-green-500"
+              />
+              <Search className="h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            </div>
+          </div>
+          
+          {/* قائمة جهات الاتصال */}
+          <div className="overflow-y-auto max-h-[calc(75vh-140px)]">
+            {(() => {
+              console.log('🔄 عرض قائمة جهات الاتصال - showNewChat:', showNewChat);
+              console.log('📊 عدد جهات الاتصال:', contacts.length);
+              console.log('📝 جهات الاتصال:', contacts);
+              
+              if (contacts.length === 0) {
+                console.log('❌ لا توجد جهات اتصال متاحة');
+                return (
+                  <div className="p-8 text-center text-gray-500">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p className="text-lg font-medium mb-2">جاري تحميل جهات الاتصال...</p>
+                    <p className="text-sm">يرجى الانتظار قليلاً</p>
+                  </div>
+                );
+              }
+              
+              console.log('✅ عرض قائمة جهات الاتصال');
+              return renderContactsList();
+            })()}
+          </div>
+        </div>
+
+        {/* مساحة فارغة في المنتصف */}
+        <div className="flex-1 bg-gray-50 flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageSquare className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">اختر جهة اتصال</h3>
+            <p className="text-sm">انقر على جهة اتصال من القائمة لبدء محادثة جديدة</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!loading && conversations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
-        <MessageSquare className="h-12 w-12 text-gray-400 mb-4" />
-        <p className="text-gray-600 font-semibold">لا توجد محادثات</p>
-        <p className="text-sm text-gray-500 mt-2">ابدأ محادثة جديدة بالضغط على زر +</p>
+      <div className="flex flex-col items-center justify-center h-96 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg">
+        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+          <MessageSquare className="h-10 w-10 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">لا توجد محادثات</h2>
+        <p className="text-gray-600 text-center mb-8 max-w-md">
+          ابدأ محادثة جديدة مع اللاعبين والأندية والوكلاء لتبدأ التواصل
+        </p>
         <button
-          onClick={() => setShowNewChat(true)}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          onClick={() => {
+            console.log('🔄 تم النقر على زر محادثة جديدة');
+            console.log('📊 عدد جهات الاتصال الحالية:', contacts.length);
+            console.log('📝 جهات الاتصال:', contacts);
+            console.log('🔍 حالة showNewChat قبل التحديث:', showNewChat);
+            
+            // إضافة تأخير صغير للتأكد من تحميل البيانات
+            setTimeout(() => {
+              setShowNewChat(true);
+              console.log('✅ تم تحديث showNewChat إلى true');
+            }, 100);
+          }}
+          className="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105"
         >
-          <Plus className="h-4 w-4" />
-          محادثة جديدة
+          <Plus className="h-5 w-5" />
+          <span className="font-semibold">محادثة جديدة</span>
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[75vh] min-h-[500px]">
-      {/* عمود جهات الاتصال في اليمين */}
-      <div className="w-1/3 border-l border-gray-200 bg-white overflow-y-auto max-h-[75vh] order-1">
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">المحادثات</h2>
+    <div className="flex h-[75vh] min-h-[500px] bg-gray-50">
+      {/* عمود المحادثات في اليسار */}
+      <div className="w-1/3 bg-white shadow-lg rounded-l-lg overflow-hidden border-r border-gray-200">
+        {/* Header مشابه لـ WhatsApp */}
+        <div className="bg-green-600 text-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <MessageSquare className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">المحادثات</h2>
+                <p className="text-sm text-green-100">رسائل ومحادثات</p>
+              </div>
+            </div>
             <Button
-              onClick={() => setShowNewChat(true)}
-              variant="outline"
+              onClick={() => {
+                console.log('🔄 تم النقر على زر محادثة جديدة');
+                console.log('📊 عدد جهات الاتصال الحالية:', contacts.length);
+                console.log('📝 جهات الاتصال:', contacts);
+                console.log('🔍 حالة showNewChat قبل التحديث:', showNewChat);
+                
+                setTimeout(() => {
+                  setShowNewChat(true);
+                  console.log('✅ تم تحديث showNewChat إلى true');
+                }, 100);
+              }}
+              variant="ghost"
               size="sm"
-              className="text-primary"
+              className="text-white hover:bg-white/20"
             >
-              <Plus className="h-4 w-4 ml-2" />
-              محادثة جديدة
+              <Plus className="h-5 w-5" />
             </Button>
           </div>
+        </div>
+        
+        {/* Search Bar محسن */}
+        <div className="p-4 bg-gray-50 border-b">
           <div className="relative">
             <Input
               type="text"
-              placeholder="بحث في المحادثات..."
+              placeholder="البحث في المحادثات..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-white border-gray-300 focus:border-green-500 focus:ring-green-500"
             />
             <Search className="h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
         </div>
-        <div className="divide-y divide-gray-200">
+        
+        {/* قائمة المحادثات */}
+        <div className="overflow-y-auto max-h-[calc(75vh-140px)]">
           {conversations
             .filter((conversation, index, self) => 
               index === self.findIndex(c => c.id === conversation.id)
@@ -1388,42 +1704,13 @@ const MessageCenter: React.FC = () => {
       </div>
 
       {/* عمود الرسائل في المنتصف */}
-      <div className="flex-1 flex flex-col bg-gray-50 max-h-[75vh] order-2">
+      <div className="flex-1 flex flex-col bg-white shadow-lg rounded-r-lg overflow-hidden">
         {selectedConversation ? (
           renderConversationView()
         ) : (
           renderEmptyState()
         )}
       </div>
-
-      {/* عمود الشات الجانبي (عند فتح محادثة جديدة) */}
-      {showNewChat && (
-        <div className="w-1/3 border-r border-gray-200 bg-white overflow-y-auto max-h-[75vh] order-3">
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">جهات الاتصال</h2>
-              <Button
-                onClick={() => setShowNewChat(false)}
-                variant="ghost"
-                size="sm"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="بحث في جهات الاتصال..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-              <Search className="h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            </div>
-          </div>
-          {renderContactsList()}
-        </div>
-      )}
     </div>
   );
 };

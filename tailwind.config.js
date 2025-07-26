@@ -8,14 +8,19 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        // Cairo everywhere - default font
-        'sans': ['var(--font-cairo)', 'Cairo', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        // Cairo for Arabic text
         'cairo': ['var(--font-cairo)', 'Cairo', 'sans-serif'],
-        // All other fonts point to Cairo
+        // Inter for English text
+        'inter': ['var(--font-inter)', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        // Default font - Cairo for Arabic, Inter for English
+        'sans': ['var(--font-cairo)', 'Cairo', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        // Language-specific fonts
+        'arabic': ['var(--font-cairo)', 'Cairo', 'sans-serif'],
+        'english': ['var(--font-inter)', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        // All other fonts point to appropriate language font
         'noto-arabic': ['var(--font-cairo)', 'Cairo', 'sans-serif'],
         'ibm-arabic': ['var(--font-cairo)', 'Cairo', 'sans-serif'],
-        'poppins': ['var(--font-cairo)', 'Cairo', 'sans-serif'],
-        'inter': ['var(--font-cairo)', 'Cairo', 'sans-serif'],
+        'poppins': ['var(--font-inter)', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         'tajawal': ['var(--font-cairo)', 'Cairo', 'sans-serif'],
       },
       animation: {

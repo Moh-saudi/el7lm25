@@ -41,7 +41,7 @@ const quickFixCode = `
     establishedYear: 2015,
     description: 'أكاديمية رياضية متخصصة',
     stats: {
-      totalStudents: 150,
+      totalPlayers: 150,
       activePlayers: 120,
       championships: 12
     },

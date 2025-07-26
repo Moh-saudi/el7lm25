@@ -115,10 +115,13 @@ const FloatingChatWidget: React.FC = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && userData) {
+      console.log('🔄 تحميل المحادثات للمستخدم:', user.uid);
       loadExistingConversation();
+    } else {
+      console.log('❌ لا يمكن تحميل المحادثات: المستخدم أو البيانات غير متوفرة');
     }
-  }, [user]);
+  }, [user, userData]);
 
   useEffect(() => {
     if (conversation) {
@@ -250,16 +253,27 @@ const FloatingChatWidget: React.FC = () => {
   };
 
   const loadExistingConversation = async () => {
+    if (!user) {
+      console.log('❌ لا يمكن تحميل المحادثة: المستخدم غير متوفر');
+      return;
+    }
+
+    console.log('🔄 بدء تحميل المحادثات الموجودة...');
+    console.log('👤 User ID:', user.uid);
+
     try {
       // استعلام بسيط جداً بدون أي فلاتر معقدة
       const conversationsRef = collection(db, 'support_conversations');
       const q = query(
         conversationsRef,
-        where('userId', '==', user!.uid)
+        where('userId', '==', user.uid)
         // إزالة orderBy لتجنب خطأ الفهرس
       );
 
+      console.log('📋 جاري استعلام المحادثات...');
       const snapshot = await getDocs(q);
+      
+      console.log('📊 عدد المحادثات الموجودة:', snapshot.size);
       
       if (!snapshot.empty) {
         // البحث عن محادثة نشطة وترتيب النتائج محلياً
@@ -267,6 +281,8 @@ const FloatingChatWidget: React.FC = () => {
           id: doc.id,
           ...doc.data()
         })) as SupportConversation[];
+        
+        console.log('📝 المحادثات المحملة:', allConversations);
         
         // ترتيب محلي حسب updatedAt
         const sortedConversations = allConversations.sort((a, b) => {
@@ -280,24 +296,37 @@ const FloatingChatWidget: React.FC = () => {
         );
         
         if (activeConversation) {
+          console.log('✅ تم العثور على محادثة نشطة:', activeConversation.id);
           setConversation(activeConversation);
+        } else {
+          console.log('ℹ️ لا توجد محادثات نشطة');
         }
+      } else {
+        console.log('ℹ️ لا توجد محادثات للمستخدم');
       }
     } catch (error) {
-      console.error('خطأ في تحميل المحادثة:', error);
+      console.error('❌ خطأ في تحميل المحادثة:', error);
       // في حالة فشل الاستعلام، لا نعرض خطأ للمستخدم
       // سيتمكن من إنشاء محادثة جديدة
     }
   };
 
   const createNewConversation = async () => {
-    if (!user || !userData) return;
+    if (!user || !userData) {
+      console.error('❌ لا يمكن إنشاء محادثة: المستخدم أو بيانات المستخدم غير متوفرة');
+      toast.error('يرجى تسجيل الدخول أولاً');
+      return;
+    }
+
+    console.log('🚀 بدء إنشاء محادثة جديدة...');
+    console.log('👤 User:', user.uid);
+    console.log('📊 UserData:', userData);
 
     setLoading(true);
     try {
       const newConversation = {
         userId: user.uid,
-        userName: userData.name || userData.displayName || 'مستخدم',
+        userName: userData.name || userData.displayName || userData.full_name || 'مستخدم',
         userType: userData.accountType || 'player',
         status: 'open',
         priority: priority,
@@ -309,8 +338,12 @@ const FloatingChatWidget: React.FC = () => {
         updatedAt: serverTimestamp()
       };
 
+      console.log('📝 إنشاء محادثة جديدة:', newConversation);
+
       const conversationRef = await addDoc(collection(db, 'support_conversations'), newConversation);
       
+      console.log('✅ تم إنشاء المحادثة بنجاح:', conversationRef.id);
+
       setConversation({
         id: conversationRef.id,
         ...newConversation
@@ -321,7 +354,7 @@ const FloatingChatWidget: React.FC = () => {
       
       toast.success('تم إنشاء محادثة دعم فني جديدة');
     } catch (error) {
-      console.error('خطأ في إنشاء المحادثة:', error);
+      console.error('❌ خطأ في إنشاء المحادثة:', error);
       toast.error('فشل في إنشاء محادثة الدعم');
     } finally {
       setLoading(false);
@@ -329,21 +362,29 @@ const FloatingChatWidget: React.FC = () => {
   };
 
   const sendWelcomeMessage = async (conversationId: string) => {
-    const welcomeMessage = {
-      conversationId,
-      senderId: 'system',
-      senderName: 'نظام الدعم الفني',
-      senderType: 'system',
-      message: 'مرحباً بك في الدعم الفني لـ El7hm! 👋\n\nكيف يمكننا مساعدتك اليوم؟ فريق الدعم سيرد عليك في أقرب وقت ممكن.',
-      timestamp: serverTimestamp(),
-      isRead: true
-    };
+    try {
+      const welcomeMessage = {
+        conversationId,
+        senderId: 'system',
+        senderName: 'نظام الدعم الفني',
+        senderType: 'system',
+        message: 'مرحباً بك في الدعم الفني لـ الحلم el7hm! 👋\n\nكيف يمكننا مساعدتك اليوم؟ فريق الدعم سيرد عليك في أقرب وقت ممكن.',
+        timestamp: serverTimestamp(),
+        isRead: true
+      };
 
-    await addDoc(collection(db, 'support_messages'), welcomeMessage);
+      await addDoc(collection(db, 'support_messages'), welcomeMessage);
+      console.log('✅ تم إرسال رسالة الترحيب');
+    } catch (error) {
+      console.error('❌ خطأ في إرسال رسالة الترحيب:', error);
+    }
   };
 
   const sendMessage = async () => {
-    if (!message.trim() || !user || !userData) return;
+    if (!message.trim() || !user || !userData) {
+      console.error('❌ لا يمكن إرسال الرسالة: البيانات غير مكتملة');
+      return;
+    }
 
     // منع الإرسال المتكرر
     if (loading) {
@@ -353,6 +394,7 @@ const FloatingChatWidget: React.FC = () => {
 
     // إنشاء محادثة جديدة إذا لم تكن موجودة
     if (!conversation) {
+      console.log('🔄 لا توجد محادثة، إنشاء محادثة جديدة...');
       await createNewConversation();
       return;
     }
@@ -362,12 +404,14 @@ const FloatingChatWidget: React.FC = () => {
       const newMessage = {
         conversationId: conversation.id,
         senderId: user.uid,
-        senderName: userData.name || userData.displayName || 'مستخدم',
+        senderName: userData.name || userData.displayName || userData.full_name || 'مستخدم',
         senderType: userData.accountType || 'player',
         message: message.trim(),
         timestamp: serverTimestamp(),
         isRead: false
       };
+
+      console.log('📤 إرسال رسالة جديدة:', newMessage);
 
       await addDoc(collection(db, 'support_messages'), newMessage);
 
@@ -382,7 +426,7 @@ const FloatingChatWidget: React.FC = () => {
       setMessage('');
       toast.success('تم إرسال الرسالة');
     } catch (error) {
-      console.error('خطأ في إرسال الرسالة:', error);
+      console.error('❌ خطأ في إرسال الرسالة:', error);
       toast.error('فشل في إرسال الرسالة');
     } finally {
       setLoading(false);
@@ -501,6 +545,8 @@ const FloatingChatWidget: React.FC = () => {
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
                         className="w-full p-2 border rounded-md text-sm"
+                        aria-label="نوع المشكلة"
+                        title="اختر نوع المشكلة"
                       >
                         <option value="general">استفسار عام</option>
                         <option value="technical">مشكلة تقنية</option>
@@ -518,6 +564,8 @@ const FloatingChatWidget: React.FC = () => {
                         value={priority}
                         onChange={(e) => setPriority(e.target.value)}
                         className="w-full p-2 border rounded-md text-sm"
+                        aria-label="مستوى الأولوية"
+                        title="اختر مستوى الأولوية"
                       >
                         <option value="low">منخفضة</option>
                         <option value="medium">متوسطة</option>

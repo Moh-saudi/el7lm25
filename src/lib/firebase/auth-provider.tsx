@@ -83,24 +83,37 @@ interface FirebaseAuthProviderProps {
 const initializeFirestoreWithSettings = async () => {
   try {
     if (typeof window !== 'undefined') {
-      // Enable offline persistence with better settings
-      await enableIndexedDbPersistence(db, {
-        synchronizeTabs: true
-      }).catch((err) => {
+      // Check if persistence is already enabled or if Firestore has been used
+      try {
+        // Enable offline persistence with better settings
+        await enableIndexedDbPersistence(db, {
+          synchronizeTabs: true
+        });
+        console.log('✅ Firestore persistence enabled successfully');
+      } catch (err: any) {
         if (err.code === 'failed-precondition') {
           console.warn('Multiple tabs open, persistence disabled');
         } else if (err.code === 'unimplemented') {
           console.warn('Browser does not support persistence');
+        } else if (err.message?.includes('already been started')) {
+          console.warn('Firestore already initialized, skipping persistence setup');
+        } else {
+          console.warn('Failed to enable persistence:', err);
         }
-      });
+      }
     }
   } catch (error) {
     console.warn('Failed to enable persistence:', error);
   }
 };
 
-// Call initialization
-initializeFirestoreWithSettings();
+// Call initialization only if not already initialized
+if (typeof window !== 'undefined') {
+  // Use a small delay to ensure Firebase is fully initialized
+  setTimeout(() => {
+    initializeFirestoreWithSettings();
+  }, 100);
+}
 
 export function AuthProvider({ children }: FirebaseAuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);

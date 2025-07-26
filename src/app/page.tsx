@@ -9,9 +9,13 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/lib/translations/simple-context';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+import TranslationWrapper from '@/components/shared/TranslationWrapper';
 
 export default function Page() {
   const router = useRouter();
+  const { t, direction } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [stats, setStats] = useState({
@@ -27,14 +31,14 @@ export default function Page() {
 
   const slides = [
     {
-      title: "اكتشف موهبتك",
-      subtitle: "منصة متكاملة لاكتشاف وتطوير المواهب الرياضية",
+      title: t('home.sections.hero.slide1.title'),
+      subtitle: t('home.sections.hero.slide1.subtitle'),
       image: "/slider/1.png",
       gradient: "from-blue-900/90 to-blue-600/90"
     },
     {
-      title: "احترف رياضتك",
-      subtitle: "نربط بين المواهب والأندية العالمية",
+      title: t('home.sections.hero.slide2.title'),
+      subtitle: t('home.sections.hero.slide2.subtitle'),
       image: "/slider/2.png",
       gradient: "from-green-900/90 to-green-600/90"
     }
@@ -43,40 +47,40 @@ export default function Page() {
   // Subscription Packages
   const packages = [
     {
-      title: "باقة 3 شهور",
+      title: t('home.packages.package1.title'),
       price: "2",
       originalPrice: "3",
       discount: "33%",
       features: [
-        "تحليل أداء شهري",
-        "عرض للأندية المحلية",
-        "3 اختبارات",
-        "دعم فني"
+        t('home.packages.package1.features.analysis'),
+                  t('home.packages.package1.features.exposure'),
+                  t('home.packages.package1.features.tests'),
+        t('home.packages.package1.features.support')
       ]
     },
     {
-      title: "باقة 6 شهور",
+      title: t('home.packages.package2.title'),
       price: "6",
       originalPrice: "10",
       discount: "40%",
       isPopular: true,
       features: [
-        "تحليل أداء أسبوعي",
-        "عرض للأندية الإقليمية",
-        "6 اختبارات",
-        "دعم فني مباشر"
+        t('home.packages.package2.features.analysis'),
+        t('home.packages.package2.features.exposure'),
+        t('home.packages.package2.features.tests'),
+        t('home.packages.package2.features.support')
       ]
     },
     {
-      title: "باقة سنوية",
+      title: t('home.packages.package3.title'),
       price: "10",
       originalPrice: "20",
       discount: "50%",
       features: [
-        "تحليل أداء يومي",
-        "عرض للأندية العالمية",
-        "اختبارات غير محدودة",
-        "دعم فني على مدار الساعة"
+        t('home.packages.package3.features.analysis'),
+        t('home.packages.package3.features.exposure'),
+        t('home.packages.package3.features.tests'),
+        t('home.packages.package3.features.support')
       ]
     }
   ];
@@ -149,9 +153,10 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50" dir="rtl">
-      {/* Header */}
-      <header className="fixed z-50 w-full shadow-lg bg-white/90 backdrop-blur-sm">
+    <TranslationWrapper>
+      <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 ${direction === 'rtl' ? 'dir-rtl' : 'dir-ltr'}`}>
+        {/* Header */}
+        <header className="fixed z-50 w-full shadow-lg bg-white/90 backdrop-blur-sm">
         <nav className="container px-4 py-4 mx-auto">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -164,23 +169,29 @@ export default function Page() {
 
             {/* Desktop Menu */}
             <div className="items-center hidden space-x-8 space-x-reverse md:flex">
-              <a href="#services" className={`transition-colors font-semibold ${activeSection === 'services' ? 'text-blue-400 underline underline-offset-8' : 'hover:text-blue-600'}`}>الخدمات</a>
-              <a href="#clubs" className={`transition-colors font-semibold ${activeSection === 'clubs' ? 'text-blue-400 underline underline-offset-8' : 'hover:text-blue-600'}`}>الأندية</a>
-              <a href="#team" className={`transition-colors font-semibold ${activeSection === 'team' ? 'text-blue-400 underline underline-offset-8' : 'hover:text-blue-600'}`}>الفريق</a>
-              <a href="#branches" className={`transition-colors font-semibold ${activeSection === 'branches' ? 'text-blue-400 underline underline-offset-8' : 'hover:text-blue-600'}`}>الفروع</a>
-              <a href="#contact" className={`transition-colors font-semibold ${activeSection === 'contact' ? 'text-blue-400 underline underline-offset-8' : 'hover:text-blue-600'}`}>اتصل بنا</a>
+              <a href="#services" className={`transition-colors font-semibold ${activeSection === 'services' ? 'text-blue-400 underline underline-offset-8' : 'hover:text-blue-600'}`}>{t('home.navigation.services')}</a>
+              <a href="#clubs" className={`transition-colors font-semibold ${activeSection === 'clubs' ? 'text-blue-400 underline underline-offset-8' : 'hover:text-blue-600'}`}>{t('home.navigation.clubs')}</a>
+              <a href="#team" className={`transition-colors font-semibold ${activeSection === 'team' ? 'text-blue-400 underline underline-offset-8' : 'hover:text-blue-600'}`}>{t('home.navigation.team')}</a>
+              <a href="#branches" className={`transition-colors font-semibold ${activeSection === 'branches' ? 'text-blue-400 underline underline-offset-8' : 'hover:text-blue-600'}`}>{t('home.navigation.branches')}</a>
+              <a href="#contact" className={`transition-colors font-semibold ${activeSection === 'contact' ? 'text-blue-400 underline underline-offset-8' : 'hover:text-blue-600'}`}>{t('home.navigation.contact')}</a>
+              
+              {/* Language Switcher */}
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher variant="simple" />
+              </div>
+              
               <div className="flex gap-2 ml-6">
                 <button
                   onClick={() => router.push('/auth/login')}
                   className="px-6 py-2 text-white transition-all bg-blue-500 rounded-lg hover:bg-blue-700"
                 >
-                  تسجيل الدخول
+                  {t('home.navigation.login')}
                 </button>
                 <button
                   onClick={() => router.push('/auth/register')}
                   className="px-8 py-2 text-xl font-bold text-white transition-all bg-blue-600 rounded-lg hover:bg-blue-700"
                 >
-                  ابدأ رحلتك الآن
+                  {t('home.navigation.startJourney')}
                 </button>
               </div>
             </div>
@@ -194,23 +205,29 @@ export default function Page() {
           {/* Mobile Menu */}
           {isMenuOpen && (
             <div className="pt-4 pb-2 md:hidden">
-              <a href="#services" className={`block py-2 font-semibold ${activeSection === 'services' ? 'text-blue-400 underline underline-offset-8' : ''}`}>الخدمات</a>
-              <a href="#clubs" className={`block py-2 font-semibold ${activeSection === 'clubs' ? 'text-blue-400 underline underline-offset-8' : ''}`}>الأندية</a>
-              <a href="#team" className={`block py-2 font-semibold ${activeSection === 'team' ? 'text-blue-400 underline underline-offset-8' : ''}`}>الفريق</a>
-              <a href="#branches" className={`block py-2 font-semibold ${activeSection === 'branches' ? 'text-blue-400 underline underline-offset-8' : ''}`}>الفروع</a>
-              <a href="#contact" className={`block py-2 font-semibold ${activeSection === 'contact' ? 'text-blue-400 underline underline-offset-8' : ''}`}>اتصل بنا</a>
+              <a href="#services" className={`block py-2 font-semibold ${activeSection === 'services' ? 'text-blue-400 underline underline-offset-8' : ''}`}>{t('home.navigation.services')}</a>
+              <a href="#clubs" className={`block py-2 font-semibold ${activeSection === 'clubs' ? 'text-blue-400 underline underline-offset-8' : ''}`}>{t('home.navigation.clubs')}</a>
+              <a href="#team" className={`block py-2 font-semibold ${activeSection === 'team' ? 'text-blue-400 underline underline-offset-8' : ''}`}>{t('home.navigation.team')}</a>
+              <a href="#branches" className={`block py-2 font-semibold ${activeSection === 'branches' ? 'text-blue-400 underline underline-offset-8' : ''}`}>{t('home.navigation.branches')}</a>
+              <a href="#contact" className={`block py-2 font-semibold ${activeSection === 'contact' ? 'text-blue-400 underline underline-offset-8' : ''}`}>{t('home.navigation.contact')}</a>
+              
+              {/* Mobile Language Switcher */}
+              <div className="py-2">
+                <LanguageSwitcher variant="simple" />
+              </div>
+              
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={() => router.push('/auth/login')}
                   className="w-1/2 px-4 py-2 text-white bg-blue-500 rounded-lg"
                 >
-                  تسجيل الدخول
+                  {t('home.navigation.login')}
                 </button>
                 <button
                   onClick={() => router.push('/auth/register')}
                   className="w-1/2 px-4 py-2 text-white bg-blue-600 rounded-lg"
                 >
-                  ابدأ رحلتك الآن
+                  {t('home.navigation.startJourney')}
                 </button>
               </div>
             </div>
@@ -260,13 +277,13 @@ export default function Page() {
                 className="w-full aspect-square sm:h-[400px] md:h-[500px] lg:h-[600px]"
               >
                 {[
-                  { desktop: '/slider/1.png', mobile: '/slider/slider mobil/1.png', title: 'صورة السلايدر 1' },
-                  { desktop: '/slider/2.png', mobile: '/slider/slider mobil/2.png', title: 'صورة السلايدر 2' },
-                  { desktop: '/slider/3.png', mobile: '/slider/slider mobil/3.png', title: 'صورة السلايدر 3' },
-                  { desktop: '/slider/4.png', mobile: '/slider/slider mobil/4.png', title: 'صورة السلايدر 4' },
-                  { desktop: '/slider/5.png', mobile: '/slider/slider mobil/5.png', title: 'صورة السلايدر 5' },
-                  { desktop: '/slider/6.png', mobile: '/slider/slider mobil/6.png', title: 'صورة السلايدر 6' },
-                  { desktop: '/slider/7.png', mobile: '/slider/slider mobil/7.png', title: 'صورة السلايدر 7' },
+                  { desktop: '/slider/1.png', mobile: '/slider/slider mobil/1.png', title: t('home.sections.hero.slide1.title') },
+                  { desktop: '/slider/2.png', mobile: '/slider/slider mobil/2.png', title: t('home.sections.hero.slide2.title') },
+                  { desktop: '/slider/3.png', mobile: '/slider/slider mobil/3.png', title: t('home.sections.hero.slide3.title') },
+                  { desktop: '/slider/4.png', mobile: '/slider/slider mobil/4.png', title: t('home.sections.hero.slide4.title') },
+                  { desktop: '/slider/5.png', mobile: '/slider/slider mobil/5.png', title: t('home.sections.hero.slide5.title') },
+                  { desktop: '/slider/6.png', mobile: '/slider/slider mobil/6.png', title: t('home.sections.hero.slide6.title') },
+                  { desktop: '/slider/7.png', mobile: '/slider/slider mobil/7.png', title: t('home.sections.hero.slide7.title') },
                 ].map((slide, index) => (
                   <SwiperSlide key={index}>
                     <div className={`relative w-full ${isMobile ? 'aspect-square' : 'aspect-[16/9]'} bg-gray-100`}>
@@ -298,25 +315,25 @@ export default function Page() {
               <div className="mb-2 text-4xl font-bold text-blue-600">
                 {stats.players.toLocaleString()}+
               </div>
-              <div className="text-gray-600">لاعب محترف</div>
+              <div className="text-gray-600">{t('home.sections.stats.players')}</div>
             </div>
             <div className="p-6 text-center bg-gradient-to-br from-green-50 to-green-100 rounded-2xl">
               <div className="mb-2 text-4xl font-bold text-green-600">
                 {stats.clubs.toLocaleString()}+
               </div>
-              <div className="text-gray-600">نادي شريك</div>
+              <div className="text-gray-600">{t('home.sections.stats.clubs')}</div>
             </div>
             <div className="p-6 text-center bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl">
               <div className="mb-2 text-4xl font-bold text-amber-600">
                 {stats.countries.toLocaleString()}+
               </div>
-              <div className="text-gray-600">دولة</div>
+              <div className="text-gray-600">{t('home.sections.stats.countries')}</div>
             </div>
             <div className="p-6 text-center bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl">
               <div className="mb-2 text-4xl font-bold text-purple-600">
                 {stats.success.toLocaleString()}+
               </div>
-              <div className="text-gray-600">صفقة ناجحة</div>
+              <div className="text-gray-600">{t('home.sections.stats.success')}</div>
             </div>
           </div>
         </div>
@@ -328,7 +345,7 @@ export default function Page() {
           <div className="text-center mb-12 flex flex-col items-center">
             <span className="text-4xl mb-2 animate-bounce">🛡️</span>
             <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800 inline-flex items-center gap-2">
-              <span>الخدمات</span>
+              <span>{t('home.sections.services.title')}</span>
             </h2>
           </div>
           
@@ -339,60 +356,60 @@ export default function Page() {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500 flex items-center gap-2">
                   <span className="animate-rotate">🧠</span>
-                  تحليل الأداء
+                  {t('home.sections.services.performanceAnalysis.title')}
                 </h3>
                 <div className="p-3 text-blue-500 bg-blue-100 rounded-xl group-hover:scale-110 transition-transform shadow-md">
                   <Brain className="w-7 h-7" />
                 </div>
               </div>
-              <p className="mb-6 text-gray-600">نقدم لك تحليل دقيق لأدائك ونساعدك على تحسين نقاط الضعف وتعزيز نقاط القوة</p>
+                              <p className="mb-6 text-gray-600">{t('home.sections.services.performanceAnalysis.description')}</p>
               <button className="w-full py-3 text-white transition-all transform bg-gradient-to-r from-blue-600 to-teal-500 rounded-xl hover:shadow-lg hover:scale-[1.04] font-bold tracking-wide">
-                اعرف المزيد
+                                  {t('home.sections.services.performanceAnalysis.button')}
               </button>
             </div>
 
             <div className="group p-8 transition-all duration-300 transform bg-white rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-2">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500">
-                  العروض الاحترافية
+                  {t('home.sections.services.professionalOffers.title')}
                 </h3>
                 <div className="p-3 text-green-500 bg-green-50 rounded-xl group-hover:scale-110 transition-transform">
                   <Trophy className="w-6 h-6" />
                 </div>
               </div>
-              <p className="mb-6 text-gray-600">نقدم لك عروض احترافية للأندية العالمية والمحلية مع فرص حقيقية للانضمام</p>
+                              <p className="mb-6 text-gray-600">{t('home.sections.services.professionalOffers.description')}</p>
               <button className="w-full py-3 text-white transition-all transform bg-gradient-to-r from-blue-600 to-teal-500 rounded-xl hover:shadow-lg hover:scale-[1.02]">
-                اعرف المزيد
+                                  {t('home.sections.services.professionalOffers.button')}
               </button>
             </div>
 
             <div className="group p-8 transition-all duration-300 transform bg-white rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-2">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500">
-                  المعايشات الدولية
+                  {t('home.sections.services.internationalTrials.title')}
                 </h3>
                 <div className="p-3 text-purple-500 bg-purple-50 rounded-xl group-hover:scale-110 transition-transform">
                   <Globe className="w-6 h-6" />
                 </div>
               </div>
-              <p className="mb-6 text-gray-600">فرص معايشات في أرقى الأندية العالمية والمحلية في قطر والإمارات والجزائر والسعودية</p>
+                              <p className="mb-6 text-gray-600">{t('home.sections.services.internationalTrials.description')}</p>
               <button className="w-full py-3 text-white transition-all transform bg-gradient-to-r from-blue-600 to-teal-500 rounded-xl hover:shadow-lg hover:scale-[1.02]">
-                اعرف المزيد
+                                  {t('home.sections.services.internationalTrials.button')}
               </button>
             </div>
 
             <div className="group p-8 transition-all duration-300 transform bg-white rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-2">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500">
-                  توكيل التفاوض
+                  {t('home.sections.services.negotiationAgency.title')}
                 </h3>
                 <div className="p-3 text-yellow-500 bg-yellow-50 rounded-xl group-hover:scale-110 transition-transform">
                   <Network className="w-6 h-6" />
                 </div>
               </div>
-              <p className="mb-6 text-gray-600">نقوم بالتفاوض نيابة عنك مع الأندية والوكلاء الرياضيين للحصول على أفضل الشروط</p>
+                              <p className="mb-6 text-gray-600">{t('home.sections.services.negotiationAgency.description')}</p>
               <button className="w-full py-3 text-white transition-all transform bg-gradient-to-r from-blue-600 to-teal-500 rounded-xl hover:shadow-lg hover:scale-[1.02]">
-                اعرف المزيد
+                                  {t('home.sections.services.negotiationAgency.button')}
               </button>
             </div>
 
@@ -402,15 +419,15 @@ export default function Page() {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-pink-500 flex items-center gap-2">
                   <span className="animate-rotate">📄</span>
-                  صياغة العقود القانونية
+                  {t('home.sections.services.legalContracts.title')}
                 </h3>
                 <div className="p-3 text-red-500 bg-red-100 rounded-xl group-hover:scale-110 transition-transform shadow-md">
                   <FileText className="w-7 h-7" />
                 </div>
               </div>
-              <p className="mb-6 text-gray-600">نقدم خدمات صياغة العقود القانونية المتوافقة مع القوانين المحلية والدولية</p>
+                              <p className="mb-6 text-gray-600">{t('home.sections.services.legalContracts.description')}</p>
               <button className="w-full py-3 text-white transition-all transform bg-gradient-to-r from-red-600 to-pink-500 rounded-xl hover:shadow-lg hover:scale-[1.04] font-bold tracking-wide">
-                اعرف المزيد
+                                  {t('home.sections.services.legalContracts.button')}
               </button>
             </div>
 
@@ -420,15 +437,15 @@ export default function Page() {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500 flex items-center gap-2">
                   <span className="animate-rotate">🚚</span>
-                  الخدمات اللوجستية للأندية
+                  {t('home.sections.services.logisticsServices.title')}
                 </h3>
                 <div className="p-3 text-indigo-500 bg-indigo-100 rounded-xl group-hover:scale-110 transition-transform shadow-md">
                   <Truck className="w-7 h-7" />
                 </div>
               </div>
-              <p className="mb-6 text-gray-600">نقدم خدمات لوجستية متكاملة للأندية تشمل السفر والإقامة والتنقلات</p>
+                              <p className="mb-6 text-gray-600">{t('home.sections.services.logisticsServices.description')}</p>
               <button className="w-full py-3 text-white transition-all transform bg-gradient-to-r from-indigo-600 to-blue-500 rounded-xl hover:shadow-lg hover:scale-[1.04] font-bold tracking-wide">
-                اعرف المزيد
+                                  {t('home.sections.services.logisticsServices.button')}
               </button>
             </div>
           </div>
@@ -440,10 +457,10 @@ export default function Page() {
         <div className="container px-4 mx-auto">
           <div className="text-center mb-16">
             <h2 className="mb-4 text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
-              شركاؤنا
+              {t('home.sections.partners.title')}
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              نتعاون مع كبرى المؤسسات والشركات العالمية
+              {t('home.sections.partners.subtitle')}
             </p>
           </div>
           
@@ -474,12 +491,12 @@ export default function Page() {
               }}
             >
               {[
-                { name: 'FIFA', src: '/images/supports/fifa.png' },
-                { name: 'QFA', src: '/images/supports/qfa.png' },
-                { name: 'QFC', src: '/images/supports/qfc.png' },
-                { name: 'Microsoft', src: '/images/supports/microsoft.png' },
-                { name: 'Peachscore', src: '/images/supports/peachscore-dealum-logo-new.png' },
-                { name: 'YJPPG', src: '/images/supports/YJPPG.jpg' }
+                { name: t('home.sections.partners.fifa'), src: '/images/supports/fifa.png' },
+                { name: t('home.sections.partners.qfa'), src: '/images/supports/qfa.png' },
+                { name: t('home.sections.partners.qfc'), src: '/images/supports/qfc.png' },
+                { name: t('home.sections.partners.microsoft'), src: '/images/supports/microsoft.png' },
+                { name: t('home.sections.partners.peachscore'), src: '/images/supports/peachscore-dealum-logo-new.png' },
+                { name: t('home.sections.partners.yjppg'), src: '/images/supports/YJPPG.jpg' }
               ].map((partner, index) => (
                 <SwiperSlide key={index}>
                   <div className="p-6 transition-all duration-300 transform bg-white rounded-2xl hover:shadow-lg hover:-translate-y-2">
@@ -511,7 +528,7 @@ export default function Page() {
           <div className="text-center mb-12 flex flex-col items-center">
             <span className="text-4xl mb-2 animate-bounce">🏟️</span>
             <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800 inline-flex items-center gap-2">
-              <span>الأندية</span>
+              <span>{t('home.sections.clubs.title')}</span>
             </h2>
           </div>
           
@@ -542,16 +559,16 @@ export default function Page() {
             className="clubs-swiper"
           >
             {[
-              { name: 'العين', logo: 'al-ain-fc-logo.png' },
-              { name: 'الشمال', logo: 'al-shamal-sc-logo-png_seeklogo-487123.png' },
-              { name: 'الشحانية', logo: '1503438199al-shahania-sc-football-logo-png.png' },
-              { name: 'الهلال', logo: 'al_hilal_sfc-logo_brandlogos.net_3tkg2-512x512.png' },
-              { name: 'النصر السعودي', logo: 'elnasr saudi.png' },
-              { name: 'الزمالك', logo: 'zamalk.png' },
-              { name: 'النصر الإماراتي', logo: 'elnaser uha.jpg' },
-              { name: 'المكلا', logo: 'elmkolon.jpg' },
-              { name: 'الدحيل', logo: 'eldohel.jpg' },
-              { name: 'أجمان', logo: 'agman.png' }
+              { name: t('home.sections.clubs.alain'), logo: 'al-ain-fc-logo.png' },
+              { name: t('home.sections.clubs.alshamal'), logo: 'al-shamal-sc-logo-png_seeklogo-487123.png' },
+              { name: t('home.sections.clubs.alshahania'), logo: '1503438199al-shahania-sc-football-logo-png.png' },
+              { name: t('home.sections.clubs.alhilal'), logo: 'al_hilal_sfc-logo_brandlogos.net_3tkg2-512x512.png' },
+              { name: t('home.sections.clubs.alnasr'), logo: 'elnasr saudi.png' },
+              { name: t('home.sections.clubs.zamalek'), logo: 'zamalk.png' },
+              { name: t('home.sections.clubs.alnasruae'), logo: 'elnaser uha.jpg' },
+              { name: t('home.sections.clubs.almukalla'), logo: 'elmkolon.jpg' },
+              { name: t('home.sections.clubs.aldohail'), logo: 'eldohel.jpg' },
+              { name: t('home.sections.clubs.ajman'), logo: 'agman.png' }
             ].map((club, index) => (
               <SwiperSlide key={index}>
                 <div className="p-6 transition-all duration-300 transform bg-white rounded-2xl hover:shadow-lg hover:-translate-y-2">
@@ -580,35 +597,35 @@ export default function Page() {
           <div className="text-center mb-12 flex flex-col items-center">
             <span className="text-4xl mb-2 animate-bounce">👨‍💼</span>
             <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800 inline-flex items-center gap-2">
-              <span>الفريق</span>
+              <span>{t('home.sections.team.title')}</span>
             </h2>
           </div>
           
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {[
               {
-                name: 'محمد سعودي',
-                role: 'الرئيس التنفيذي',
+                name: t('home.sections.team.members.ceo.name'),
+                role: t('home.sections.team.members.ceo.role'),
                 image: '/images/team/ceo .jpg',
-                description: 'خبرة 17 عام في إدارة تكنولوجيا الأندية الرياضية والرعاية الصحية'
+                description: t('home.sections.team.members.ceo.description')
               },
               {
-                name: 'محمد علي',
-                role: 'فريق العمليات - مصر',
+                name: t('home.sections.team.members.cto.name'),
+                role: t('home.sections.team.members.cto.role'),
                 image: '/images/team/opertionegypt.jpg',
-                description: 'خبرة 10 سنوات في إدارة العمليات الرياضية'
+                description: t('home.sections.team.members.cto.description')
               },
               {
-                name: 'مروان فضل',
-                role: 'فريق العمليات - قطر',
+                name: t('home.sections.team.members.cfo.name'),
+                role: t('home.sections.team.members.cfo.role'),
                 image: '/images/team/opetion qatar.jpg',
-                description: 'خبرة 8 سنوات في إدارة العلاقات الدولية'
+                description: t('home.sections.team.members.cfo.description')
               },
               {
-                name: 'مصطفي امين',
-                role: 'المستشار القانوني',
+                name: t('home.sections.team.members.legal.name'),
+                role: t('home.sections.team.members.legal.role'),
                 image: '/images/team/law.jpg',
-                description: 'خبير في العقود والقانون الدولي'
+                description: t('home.sections.team.members.legal.description')
               }
             ].map((member, index) => (
               <div key={index} className="p-6 transition-all duration-300 transform bg-white rounded-2xl hover:shadow-lg hover:-translate-y-2">
@@ -637,17 +654,17 @@ export default function Page() {
           <div className="text-center mb-12 flex flex-col items-center">
             <span className="text-4xl mb-2 animate-bounce">📍</span>
             <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800 inline-flex items-center gap-2">
-              <span>الفروع</span>
+              <span>{t('home.sections.branches.title')}</span>
             </h2>
           </div>
           
           <div className="grid gap-8 md:grid-cols-4">
-            {[
-              { city: 'الرياض', country: 'السعودية', address: 'شارع الملك فهد', flag: 'saudi-arabia' },
-              { city: 'دبي', country: 'الإمارات', address: 'برج خليفة', flag: 'uae' },
-              { city: 'الدوحة', country: 'قطر', address: 'الخليج الغربي', flag: 'qatar' },
-              { city: 'القاهرة', country: 'مصر', address: 'مدينة نصر', flag: 'egypt' }
-            ].map((branch, index) => (
+                          {[
+                { city: t('home.sections.branches.cities.riyadh'), country: t('home.sections.branches.locations.saudiArabia'), address: t('home.sections.branches.addresses.riyadh'), flag: 'saudi-arabia' },
+                { city: t('home.sections.branches.cities.dubai'), country: t('home.sections.branches.locations.uae'), address: t('home.sections.branches.addresses.dubai'), flag: 'uae' },
+                { city: t('home.sections.branches.cities.doha'), country: t('home.sections.branches.locations.qatar'), address: t('home.sections.branches.addresses.doha'), flag: 'qatar' },
+                { city: t('home.sections.branches.cities.cairo'), country: t('home.sections.branches.locations.egypt'), address: t('home.sections.branches.addresses.cairo'), flag: 'egypt' }
+              ].map((branch, index) => (
               <div key={index} className="p-6 transition-all duration-300 transform bg-white rounded-2xl hover:shadow-lg hover:-translate-y-2">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -685,10 +702,10 @@ export default function Page() {
           </div>
           <div className="text-center mb-16">
             <h2 className="mb-4 text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
-              انضم إلينا اليوم
+              {t('home.sections.contact.joinUs.title')}
             </h2>
             <p className="text-2xl text-gray-600 max-w-2xl mx-auto">
-              نحن هنا لمساعدتك في تحقيق أحلامك في كرة القدم
+              {t('home.sections.contact.joinUs.subtitle')}
             </p>
           </div>
 
@@ -698,7 +715,7 @@ export default function Page() {
               <div className="text-center">
                 <h3 className="mb-6 text-3xl font-bold text-gray-800 flex items-center justify-center gap-2">
                   <img src="/images/flags/egypt.png" alt="علم مصر" className="w-8 h-8 inline-block" />
-                  مصر
+                  {t('home.sections.contact.countries.egypt')}
                 </h3>
                 <div className="mb-6 p-4 bg-blue-50 rounded-xl flex items-center justify-center gap-3">
                   <span className="text-2xl font-bold text-gray-700">+20</span>
@@ -719,7 +736,7 @@ export default function Page() {
                   <svg className="w-7 h-7 ml-3" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                   </svg>
-                  تواصل معنا على واتساب
+                  {t('home.sections.contact.whatsapp')}
                 </a>
               </div>
             </div>
@@ -729,7 +746,7 @@ export default function Page() {
               <div className="text-center">
                 <h3 className="mb-6 text-3xl font-bold text-gray-800 flex items-center justify-center gap-2">
                   <img src="/images/flags/qatar.png" alt="علم قطر" className="w-8 h-8 inline-block" />
-                  قطر
+                  {t('home.sections.contact.countries.qatar')}
                 </h3>
                 <div className="mb-6 p-4 bg-blue-50 rounded-xl flex items-center justify-center gap-3">
                   <span className="text-2xl font-bold text-gray-700">+974</span>
@@ -750,7 +767,7 @@ export default function Page() {
                   <svg className="w-7 h-7 ml-3" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                   </svg>
-                  تواصل معنا على واتساب
+                  {t('home.sections.contact.whatsapp')}
                 </a>
               </div>
             </div>
@@ -758,10 +775,10 @@ export default function Page() {
 
           <div className="mt-16 text-center">
             <p className="text-2xl font-semibold text-gray-700 mb-4">
-              لا تنتظر! ابدأ رحلتك نحو النجومية اليوم
+              {t('home.sections.contact.joinUs.callToAction')}
             </p>
             <p className="text-xl text-gray-600">
-              فريقنا من الخبراء جاهز لمساعدتك في تحقيق أحلامك
+              {t('home.sections.contact.joinUs.description')}
             </p>
           </div>
         </div>
@@ -774,21 +791,21 @@ export default function Page() {
             <div>
               <img src="/el7hm-logo.png" alt="Logo" className="w-auto h-14 mb-4" />
               <p className="text-gray-100 text-lg">
-                منصة متكاملة لاكتشاف وتطوير المواهب الرياضية
+                {t('home.sections.footer.description')}
               </p>
             </div>
             <div>
-              <h3 className="mb-4 text-lg font-bold text-white">روابط سريعة</h3>
+              <h3 className="mb-4 text-lg font-bold text-white">{t('home.sections.footer.quickLinks')}</h3>
               <ul className="space-y-2">
-                <li><a href="#services" className="text-gray-200 hover:text-white">الخدمات</a></li>
-                <li><a href="#clubs" className="text-gray-200 hover:text-white">الأندية</a></li>
-                <li><a href="#team" className="text-gray-200 hover:text-white">الفريق</a></li>
-                <li><a href="#branches" className="text-gray-200 hover:text-white">الفروع</a></li>
-                <li><a href="#contact" className="text-gray-200 hover:text-white">اتصل بنا</a></li>
+                <li><a href="#services" className="text-gray-200 hover:text-white">{t('home.sections.footer.services')}</a></li>
+                <li><a href="#clubs" className="text-gray-200 hover:text-white">{t('home.sections.footer.clubs')}</a></li>
+                <li><a href="#team" className="text-gray-200 hover:text-white">{t('home.sections.footer.team')}</a></li>
+                <li><a href="#branches" className="text-gray-200 hover:text-white">{t('home.sections.footer.branches')}</a></li>
+                <li><a href="#contact" className="text-gray-200 hover:text-white">{t('home.sections.footer.contact')}</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="mb-4 text-lg font-bold text-white">تواصل معنا</h3>
+              <h3 className="mb-4 text-lg font-bold text-white">{t('home.sections.footer.contactUs')}</h3>
               <ul className="space-y-2">
                 <li className="flex items-center text-gray-100">
                   <Phone className="w-5 h-5 ml-2 text-violet-300" />
@@ -801,7 +818,7 @@ export default function Page() {
               </ul>
             </div>
             <div>
-              <h3 className="mb-4 text-lg font-bold text-white">تابعنا</h3>
+              <h3 className="mb-4 text-lg font-bold text-white">{t('home.sections.footer.followUs')}</h3>
               <div className="flex gap-4 mt-2">
                 <a 
                   href="https://www.facebook.com/hagzz" 
@@ -839,21 +856,22 @@ export default function Page() {
             </div>
           </div>
           <div className="pt-8 mt-8 text-center text-gray-200 border-t border-violet-900">
-            <p>© {new Date().getFullYear()} El7hm. جميع الحقوق محفوظة</p>
+            <p>© {new Date().getFullYear()} El7hm. {t('home.sections.footer.copyright')}</p>
           </div>
         </div>
         {/* جزء محفور في أسفل الصفحة */}
         <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-gray-100 py-2 z-50">
           <div className="container mx-auto">
             <p className="text-center text-sm text-gray-500 font-arabic flex items-center justify-center gap-1.5">
-              <span>صنع بكل حب في</span>
-              <span className="text-red-500 font-medium">مصر</span>
+              <span>{t('home.sections.footer.madeWithLove')}</span>
+              <span className="text-red-500 font-medium">{t('home.sections.footer.egypt')}</span>
               <Heart className="w-3.5 h-3.5 text-red-500" />
             </p>
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </TranslationWrapper>
   );
 }
 

@@ -7,14 +7,10 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { useAuth } from '@/lib/firebase/auth-provider';
-
-
+import { useTranslation } from '@/lib/translations/simple-context';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { useRouter } from 'next/navigation';
-
-// Define user role types
-type UserRole = 'player' | 'club' | 'academy' | 'agent' | 'trainer' | 'admin';
 import { useState, useEffect, useRef } from 'react';
-
 import {
   AlertTriangle,
   Check,
@@ -32,8 +28,10 @@ import {
   Users,
   X
 } from 'lucide-react';
-
 import UnifiedOTPVerification from '@/components/shared/UnifiedOTPVerification';
+
+// Define user role types
+type UserRole = 'player' | 'club' | 'academy' | 'agent' | 'trainer' | 'admin';
 
 // قائمة الدول مع أكوادها والعملات وأطوال أرقام الهاتف
 const countries = [
@@ -85,6 +83,8 @@ function normalizePhone(countryCode: string, phone: string) {
 export default function RegisterPage() {
   const router = useRouter();
   const { register: registerUser, loginWithGoogle, userData } = useAuth();
+  const { t, language, direction } = useTranslation();
+  
   const [formData, setFormData] = useState({
     phone: '',
     password: '',
@@ -109,16 +109,50 @@ export default function RegisterPage() {
   const [selectedCountry, setSelectedCountry] = useState<any>(null);
   const [phoneCheckLoading, setPhoneCheckLoading] = useState(false);
   const [phoneExistsError, setPhoneExistsError] = useState('');
+  const [enteredOTP, setEnteredOTP] = useState<string>('');
   const phoneCheckRef = useRef(false);
   const phoneCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // تحقق من تكرار رقم الهاتف عند الكتابة
+  const handlePhoneValidation = async (phoneNumber: string) => {
+    if (!formData.countryCode) {
+      setPhoneExistsError('يرجى اختيار الدولة أولاً');
+      return;
+    }
+    if (phoneCheckTimeoutRef.current) {
+      clearTimeout(phoneCheckTimeoutRef.current);
+    }
+    setPhoneExistsError('');
+    if (!phoneNumber || phoneNumber.length < 6) return;
+    phoneCheckTimeoutRef.current = setTimeout(async () => {
+      setPhoneCheckLoading(true);
+      try {
+        const checkRes = await fetch('/api/auth/check-user-exists', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: `${formData.countryCode}${phoneNumber}` }),
+        });
+        const checkData = await checkRes.json();
+        if (checkData.phoneExists) {
+          setPhoneExistsError('رقم الهاتف مستخدم بالفعل. يمكنك تسجيل الدخول مباشرة.');
+        } else {
+          setPhoneExistsError('');
+        }
+      } catch (e) {
+        setPhoneExistsError('تعذر التحقق من رقم الهاتف. حاول لاحقًا.');
+      } finally {
+        setPhoneCheckLoading(false);
+      }
+    }, 500);
+  };
+
   const accountTypes = [
-    { value: 'player', label: 'لاعب', icon: Star },
-    { value: 'club', label: 'نادي', icon: Home },
-    { value: 'agent', label: 'وكيل لاعبين', icon: UserCheck },
-    { value: 'academy', label: 'أكاديمية', icon: Users },
-    { value: 'trainer', label: 'مدرب', icon: User },
-    { value: 'marketer', label: 'مسوق لاعبين', icon: Users }
+    { value: 'player', label: t('accountTypes.player'), icon: Star },
+    { value: 'club', label: t('accountTypes.club'), icon: Home },
+    { value: 'agent', label: t('accountTypes.agent'), icon: UserCheck },
+    { value: 'academy', label: t('accountTypes.academy'), icon: Users },
+    { value: 'trainer', label: t('accountTypes.trainer'), icon: User },
+    { value: 'marketer', label: t('accountTypes.marketer'), icon: Users }
   ];
 
   // عند تحميل الصفحة: تحقق من وجود رقم هاتف معلق في localStorage
@@ -130,6 +164,7 @@ export default function RegisterPage() {
     }
   }, []);
 
+  // عدل handleInputChange ليستخدم التحقق
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, checked, type } = e.target;
     
@@ -140,8 +175,6 @@ export default function RegisterPage() {
         ...prev,
         [name]: numbersOnly
       }));
-      
-      // التحقق من تكرار رقم الهاتف أثناء الكتابة
       handlePhoneValidation(numbersOnly);
       return;
     }
@@ -152,83 +185,10 @@ export default function RegisterPage() {
     }));
   };
 
-  // دالة التحقق من تكرار رقم الهاتف أثناء الكتابة
-  const handlePhoneValidation = async (phoneNumber: string) => {
-    // إلغاء التحقق السابق إذا كان موجوداً
-    if (phoneCheckTimeoutRef.current) {
-      clearTimeout(phoneCheckTimeoutRef.current);
-    }
-
-    // مسح رسالة الخطأ السابقة
-    setPhoneExistsError('');
-
-    // التحقق من أن الرقم ليس فارغاً أو قصيراً جداً
-    if (!phoneNumber || phoneNumber.length < 6) {
-      return;
-    }
-
-    // التحقق من صحة تنسيق الرقم حسب الدولة
-    const country = countries.find(c => c.name === formData.country);
-    if (country) {
-      const phoneRegex = new RegExp(country.phonePattern);
-      if (!phoneRegex.test(phoneNumber)) {
-        return;
-      }
-    } else {
-      if (!/^[0-9]{8,10}$/.test(phoneNumber)) {
-        return;
-      }
-    }
-
-    // تأخير التحقق لمدة 500 مللي ثانية لتجنب الطلبات المتكررة
-    phoneCheckTimeoutRef.current = setTimeout(async () => {
-      // منع الاستدعاءات المتكررة
-      if (phoneCheckRef.current || phoneCheckLoading) return;
-      
-      phoneCheckRef.current = true;
-      setPhoneCheckLoading(true);
-      
-      try {
-        const fullPhoneNumber = normalizePhone(formData.countryCode, phoneNumber);
-        console.log('🔍 Checking phone number:', {
-          originalPhone: phoneNumber,
-          countryCode: formData.countryCode,
-          fullPhoneNumber
-        });
-        
-        const checkRes = await fetch('/api/auth/check-user-exists', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone: fullPhoneNumber || undefined,
-          }),
-        });
-        const checkData = await checkRes.json();
-        console.log('📊 Check result:', checkData);
-        
-        if (checkData.phoneExists) {
-          setPhoneExistsError('رقم الهاتف مستخدم بالفعل. يرجى استخدام رقم آخر أو تسجيل الدخول.');
-        }
-      } catch (e) {
-        console.error('❌ Phone check error:', e);
-        setPhoneExistsError('تعذر التحقق من رقم الهاتف. حاول لاحقًا.');
-      } finally {
-        setPhoneCheckLoading(false);
-        phoneCheckRef.current = false;
-      }
-    }, 500);
-  };
-
   // دالة لتحديث الدولة المختارة
   const handleCountryChange = (countryName: string) => {
     const country = countries.find(c => c.name === countryName);
     setSelectedCountry(country);
-    
-    // مسح رسالة الخطأ ورقم الهاتف عند تغيير الدولة
-    setPhoneExistsError('');
-    if (phoneCheckTimeoutRef.current) {
-      clearTimeout(phoneCheckTimeoutRef.current);
-    }
     
     setFormData(prev => ({
       ...prev,
@@ -238,27 +198,6 @@ export default function RegisterPage() {
       currencySymbol: country?.currencySymbol || '',
       phone: '' // مسح رقم الهاتف عند تغيير الدولة
     }));
-  };
-
-  // دالة التحقق الفوري من رقم الهاتف عند الخروج من الحقل
-  const handlePhoneBlur = async () => {
-    // التحقق من أن الرقم مكتمل وصحيح
-    const country = countries.find(c => c.name === formData.country);
-    if (!formData.phone.trim()) return;
-    if (country) {
-      const phoneRegex = new RegExp(country.phonePattern);
-      if (!phoneRegex.test(formData.phone)) return;
-    } else {
-      if (!/^[0-9]{8,10}$/.test(formData.phone)) return;
-    }
-    
-    // إذا كان التحقق جارياً بالفعل، لا نحتاج للتحقق مرة أخرى
-    if (phoneCheckRef.current || phoneCheckLoading) return;
-    
-    // التحقق من تكرار الرقم إذا لم يتم التحقق منه بعد
-    if (!phoneExistsError && formData.phone.length >= 6) {
-      handlePhoneValidation(formData.phone);
-    }
   };
 
   const validateForm = () => {
@@ -278,22 +217,6 @@ export default function RegisterPage() {
     if (!formData.phone.trim()) {
       setError('يرجى إدخال رقم الهاتف');
       return false;
-    }
-
-    // التحقق من صحة تنسيق رقم الهاتف حسب الدولة
-    const country = countries.find(c => c.name === formData.country);
-    if (country) {
-      const phoneRegex = new RegExp(country.phonePattern);
-      if (!phoneRegex.test(formData.phone)) {
-        setError(`يرجى إدخال رقم هاتف صحيح مكون من ${country.phoneLength} أرقام للدولة ${country.name}`);
-        return false;
-      }
-    } else {
-      // التحقق عام إذا لم يتم اختيار دولة
-      if (!/^[0-9]{8,10}$/.test(formData.phone)) {
-        setError('يرجى إدخال رقم هاتف صحيح مكون من 8-10 أرقام');
-        return false;
-      }
     }
 
     // التحقق من كلمة المرور
@@ -317,6 +240,11 @@ export default function RegisterPage() {
       return false;
     }
 
+    if (phoneExistsError) {
+      setError(phoneExistsError);
+      return false;
+    }
+
     return true;
   };
 
@@ -325,254 +253,69 @@ export default function RegisterPage() {
     setError('');
     if (!validateForm()) return;
 
-    // منع التسجيل المتكرر
-    if (loading || showPhoneVerification) {
-      console.log('🛑 Registration blocked - already loading or OTP modal open');
-      return;
-    }
-
     console.log('🚀 Starting registration process...');
     setLoading(true);
+    
     try {
-      // تحقق من وجود المستخدم مسبقاً (برقم الهاتف فقط)
-      const fullPhoneNumber = normalizePhone(formData.countryCode, formData.phone);
-      console.log('🔍 Final check before registration:', {
-        phone: formData.phone,
-        countryCode: formData.countryCode,
-        fullPhoneNumber
-      });
+      // إرسال OTP أولاً
+      const formattedPhone = normalizePhone(formData.countryCode, formData.phone);
       
-      const checkRes = await fetch('/api/auth/check-user-exists', {
+      console.log('📱 Sending OTP to:', formattedPhone);
+      
+      const otpResponse = await fetch('/api/notifications/smart-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          phone: fullPhoneNumber || undefined,
-        }),
+          phone: formattedPhone,
+          name: formData.name,
+          country: formData.country,
+          countryCode: formData.countryCode
+        })
       });
-      const checkData = await checkRes.json();
-      console.log('📊 Final check result:', checkData);
+
+      const otpData = await otpResponse.json();
       
-      if (checkData.phoneExists) {
-        setError('رقم الهاتف مستخدم بالفعل. يرجى استخدام رقم آخر أو تسجيل الدخول.');
-        setLoading(false);
-        return;
+      if (!otpResponse.ok || !otpData.success) {
+        throw new Error(otpData.error || 'فشل في إرسال رمز التحقق');
       }
 
-      // إذا الرقم غير مستخدم، أظهر نافذة OTP وأرسل الكود
-      const selectedCountry = countries.find(c => c.name === formData.country);
-      const registrationData = {
-        full_name: formData.name,
-        phone: formData.phone,
+      console.log('✅ OTP sent successfully:', otpData);
+      
+      // حفظ بيانات التسجيل المعلقة
+      const pendingData = {
+        phone: formattedPhone,
+        name: formData.name,
+        password: formData.password,
+        accountType: formData.accountType,
         country: formData.country,
         countryCode: formData.countryCode,
-        currency: selectedCountry?.currency || 'USD',
-        currencySymbol: selectedCountry?.currencySymbol || '$'
+        currency: formData.currency,
+        currencySymbol: formData.currencySymbol,
+        otp: otpData.otp,
+        method: otpData.method
       };
       
-      console.log('📞 Setting up OTP verification for:', fullPhoneNumber);
+      localStorage.setItem('pendingRegistration', JSON.stringify(pendingData));
+      localStorage.setItem('pendingPhoneVerification', formattedPhone);
       
-      // التحقق من أن رقم الهاتف لم يتغير
-      if (pendingPhone === fullPhoneNumber && showPhoneVerification) {
-        console.log('🛑 OTP verification already open for this phone number');
-        setLoading(false);
-        return;
-      }
-      
-      // حفظ البيانات المعلقة وعرض التحقق من رقم الهاتف
-      setPendingRegistrationData(registrationData);
-      setPendingPhone(fullPhoneNumber);
+      // إظهار نافذة التحقق من OTP
+      setPendingPhone(formattedPhone);
       setShowPhoneVerification(true);
-      localStorage.setItem('pendingPhoneVerification', fullPhoneNumber);
-      
-    } catch (error: unknown) {
-      console.error('❌ Registration error:', error);
-      if (error instanceof Error) {
-        setError(error.message || 'حدث خطأ أثناء التسجيل.');
-      } else {
-        setError('حدث خطأ أثناء التسجيل.');
-      }
-    } finally {
       setLoading(false);
-    }
-  };
-
-  const handlePhoneVerificationSuccess = async (verifiedPhone: string) => {
-    // منع المعالجة المتكررة
-    if (loading) {
-      console.log('🛑 Phone verification success blocked - already processing');
-      return;
-    }
-
-    // أغلق نافذة التحقق فوراً بعد النجاح
-    setShowPhoneVerification(false);
-    setPendingPhone(null);
-    localStorage.removeItem('pendingPhoneVerification');
-    setError('');
-    setLoading(true);
-    try {
-      // التأكد من وجود بيانات التسجيل المعلقة
-      if (!pendingRegistrationData) {
-        throw new Error('بيانات التسجيل غير متوفرة. يرجى المحاولة مرة أخرى.');
-      }
       
-      // توليد بريد إلكتروني مؤقت آمن لـ Firebase
-      let firebaseEmail = '';
-      const cleanPhone = (formData.phone || '').replace(/[^0-9]/g, '');
-      const cleanCountryCode = (formData.countryCode || '').replace(/[^0-9]/g, '');
-      const normalizedPhone = normalizePhone(formData.countryCode, formData.phone);
+      setMessage(`✅ تم إرسال رمز التحقق عبر ${otpData.method === 'both' ? 'WhatsApp و SMS' : otpData.method === 'whatsapp' ? 'WhatsApp' : 'SMS'}. يرجى إدخال الرمز للاستمرار.`);
       
-      // التأكد من وجود البيانات المطلوبة
-      if (!cleanPhone || !cleanCountryCode) {
-        throw new Error('بيانات رقم الهاتف غير مكتملة');
-      }
-      
-      // إنشاء بريد إلكتروني آمن وفريد
-      const timestamp = Date.now();
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
-      firebaseEmail = `user_${cleanCountryCode}_${cleanPhone}_${timestamp}_${randomSuffix}@el7hm.com`;
-      
-      // التحقق من صحة البريد الإلكتروني
-      if (!isValidEmail(firebaseEmail)) {
-        console.error('❌ Invalid email format:', firebaseEmail);
-        throw new Error('البريد الإلكتروني المُنشأ غير صالح');
-      }
-      
-      console.log('✅ Email validation passed:', firebaseEmail);
-      
-      // التأكد من اختيار نوع الحساب
-      if (!formData.accountType) {
-        throw new Error('يرجى اختيار نوع الحساب');
-      }
-      
-      console.log('📧 Using Firebase email:', firebaseEmail);
-      console.log('📱 Phone data:', { 
-        originalPhone: formData.phone, 
-        cleanPhone, 
-        countryCode: formData.countryCode, 
-        cleanCountryCode,
-        verifiedPhone 
-      });
-      
-      // طباعة البيانات المرسلة إلى Firebase
-      console.log('Trying to register with:', { 
-        email: firebaseEmail, 
-        password: formData.password, 
-        accountType: formData.accountType, 
-        extra: { 
-          ...pendingRegistrationData, 
-          phone: verifiedPhone, 
-          originalEmail: formData.phone.trim() || null, 
-          firebaseEmail 
-        } 
-      });
-      
-      // إكمال عملية التسجيل بعد التحقق من رقم الهاتف
-      const userData = await registerUser(
-        firebaseEmail,
-        formData.password, 
-        formData.accountType as UserRole,
-        {
-          ...pendingRegistrationData,
-          phone: verifiedPhone,
-          originalEmail: formData.phone.trim() || null, // حفظ البريد الأصلي إذا كان موجوداً
-          firebaseEmail: firebaseEmail // حفظ البريد المستخدم في Firebase
-        }
-      );
-      console.log('✅ Registration successful:', userData);
-      const otpMethod = formData.country === 'مصر' ? 'SMS' : 'WhatsApp';
-      setMessage(`✅ تم التحقق من رقم الهاتف بنجاح عبر ${otpMethod}! سيتم تحويلك للوحة التحكم.`);
-      setTimeout(() => {
-        const dashboardRoute = getDashboardRoute(formData.accountType);
-        router.replace(dashboardRoute);
-      }, 2000);
     } catch (error: unknown) {
       console.error('❌ Registration failed:', error);
       if (error instanceof Error) {
-        // طباعة رسالة الخطأ التفصيلية من Firebase إذا وجدت
-        if ((error as any).code) {
-          console.error('Firebase error code:', (error as any).code);
-        }
-        if ((error as any).message) {
-          console.error('Firebase error message:', (error as any).message);
-        }
-        if (error.message.includes('auth/email-already-in-use')) {
-          setError(
-            <div className="space-y-3">
-              <p>البريد الإلكتروني مستخدم بالفعل. لديك حساب موجود.</p>
-              <p className="text-sm text-gray-600">يمكنك تسجيل الدخول بحسابك الموجود أو استخدام بريد إلكتروني آخر.</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => router.push('/auth/login')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
-                >
-                  تسجيل الدخول
-                </button>
-                <button
-                  onClick={() => {
-                    setError('');
-                    setShowPhoneVerification(false);
-                    setPendingPhone(null);
-                    localStorage.removeItem('pendingPhoneVerification');
-                    setFormData(prev => ({ ...prev, phone: '' }));
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700"
-                >
-                  استخدام بريد آخر
-                </button>
-              </div>
-            </div>
-          );
-        } else if (error.message.includes('auth/operation-not-allowed')) {
-          setError(
-            <div className="space-y-3">
-              <p>تسجيل الحسابات غير مفعل في النظام.</p>
-              <p className="text-sm text-gray-600">يرجى التواصل مع الدعم الفني.</p>
-              <a 
-                href="/test-firebase-diagnosis" 
-                className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
-              >
-                فحص إعدادات Firebase
-              </a>
-            </div>
-          );
-        } else if (error.message.includes('auth/network-request-failed')) {
-          setError('مشكلة في الاتصال بالإنترنت. يرجى التحقق من الاتصال والمحاولة مرة أخرى.');
-        } else if (error.message.includes('Invalid email format')) {
-          setError('البريد الإلكتروني المُنشأ غير صالح. يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني.');
-        } else if (error.message.includes('بيانات رقم الهاتف غير مكتملة')) {
-          setError('بيانات رقم الهاتف غير مكتملة. يرجى التأكد من اختيار الدولة وإدخال رقم الهاتف الصحيح.');
-        } else if (error.message.includes('auth/weak-password')) {
-          setError('كلمة المرور ضعيفة جداً. يجب أن تكون 8 أحرف على الأقل.');
-        } else if (error.message.includes('auth/invalid-email')) {
-          setError('البريد الإلكتروني غير صالح. يرجى المحاولة مرة أخرى.');
-        } else if (error.message.includes('بيانات التسجيل غير متوفرة')) {
-          setError('بيانات التسجيل غير متوفرة. يرجى المحاولة مرة أخرى من البداية.');
-        } else if (error.message.includes('يرجى اختيار نوع الحساب')) {
-          setError('يرجى اختيار نوع الحساب قبل المتابعة.');
-        } else {
-          setError(error.message || 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.');
-        }
+        setError(error.message || 'حدث خطأ أثناء التسجيل.');
       } else {
         setError('حدث خطأ غير متوقع أثناء التسجيل.');
       }
-    } finally {
       setLoading(false);
     }
-  };
-
-  const handlePhoneVerificationFailed = (error: string) => {
-    console.log('❌ Phone verification failed:', error);
-    
-    // إذا كان الخطأ يتعلق بـ WhatsApp، نعرض رسالة خاصة
-    if (error.includes('WhatsApp') || error.includes('whatsapp')) {
-      setError(`فشل في إرسال رمز التحقق عبر WhatsApp: ${error}. يرجى التأكد من إعدادات WhatsApp أو التواصل مع الدعم الفني.`);
-    } else {
-      setError(error);
-    }
-    
-    setShowPhoneVerification(false);
-    setPendingPhone(null);
-    localStorage.removeItem('pendingPhoneVerification');
   };
 
   const handlePhoneVerificationClose = () => {
@@ -580,20 +323,100 @@ export default function RegisterPage() {
     setShowPhoneVerification(false);
     setPendingPhone(null);
     localStorage.removeItem('pendingPhoneVerification');
-    setError('تم إلغاء التحقق من رقم الهاتف.');
+    localStorage.removeItem('pendingRegistration');
+    setError(t('register.messages.verificationCancelled'));
+  };
+
+  const handleOTPVerification = async (otp: string) => {
+    console.log('🔐 Verifying OTP:', otp);
+    setLoading(true);
+    
+    try {
+      // استرجاع بيانات التسجيل المعلقة
+      const pendingDataStr = localStorage.getItem('pendingRegistration');
+      if (!pendingDataStr) {
+        throw new Error('بيانات التسجيل غير موجودة');
+      }
+      
+      const pendingData = JSON.parse(pendingDataStr);
+      
+      // التحقق من صحة OTP
+      if (otp !== pendingData.otp) {
+        throw new Error('رمز التحقق غير صحيح');
+      }
+      
+      console.log('✅ OTP verified, creating account...');
+      
+      // توليد بريد إلكتروني مؤقت آمن لـ Firebase
+      const cleanPhone = (pendingData.phone || '').replace(/[^0-9]/g, '');
+      const cleanCountryCode = (pendingData.countryCode || '').replace(/[^0-9]/g, '');
+      const timestamp = Date.now();
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const firebaseEmail = `user_${cleanCountryCode}_${cleanPhone}_${timestamp}_${randomSuffix}@el7hm.com`;
+      
+      const registrationData = {
+        full_name: pendingData.name,
+        phone: pendingData.phone,
+        country: pendingData.country,
+        countryCode: pendingData.countryCode,
+        currency: pendingData.currency,
+        currencySymbol: pendingData.currencySymbol
+      };
+      
+      // إنشاء الحساب
+      const userData = await registerUser(
+        firebaseEmail,
+        pendingData.password, 
+        pendingData.accountType as UserRole,
+        {
+          ...registrationData,
+          phone: pendingData.phone,
+          originalEmail: pendingData.phone.trim() || null,
+          firebaseEmail: firebaseEmail
+        }
+      );
+      
+      console.log('✅ Account created successfully:', userData);
+      
+      // تنظيف البيانات المعلقة
+      localStorage.removeItem('pendingRegistration');
+      localStorage.removeItem('pendingPhoneVerification');
+      setShowPhoneVerification(false);
+      setPendingPhone(null);
+      
+      setMessage('✅ تم إنشاء الحساب بنجاح! سيتم تحويلك للوحة التحكم.');
+      setTimeout(() => {
+        const dashboardRoute = getDashboardRoute(pendingData.accountType);
+        router.replace(dashboardRoute);
+      }, 2000);
+      
+    } catch (error: unknown) {
+      console.error('❌ OTP verification failed:', error);
+      if (error instanceof Error) {
+        setError(error.message || 'فشل في التحقق من رمز التحقق.');
+      } else {
+        setError('حدث خطأ غير متوقع أثناء التحقق من رمز التحقق.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <>
-      <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-600 to-purple-700" dir="rtl">
+        <div className={`flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-600 to-purple-700 ${direction === 'rtl' ? 'dir-rtl' : 'dir-ltr'}`}>
         <div className="w-full max-w-xl overflow-hidden bg-white shadow-2xl rounded-xl">
           {/* Header Section */}
           <div className="p-6 text-center text-white bg-gradient-to-r from-blue-500 to-purple-600">
             <div className="flex justify-center mb-4">
               <Shield className="w-12 h-12" />
             </div>
-            <h1 className="mb-2 text-3xl font-bold">إنشاء حساب جديد</h1>
-            <p className="text-blue-100">انضم إلى مجتمعنا الرياضي عبر التحقق من رقم الهاتف</p>
+            <h1 className="mb-2 text-3xl font-bold">{t('register.title')}</h1>
+            <p className="text-blue-100">{t('register.subtitle')}</p>
+            
+            {/* Language Switcher */}
+            <div className="flex justify-center mt-4">
+              <LanguageSwitcher variant="simple" />
+            </div>
           </div>
 
           <form onSubmit={handleRegister} className="p-8 space-y-6">
@@ -642,7 +465,7 @@ export default function RegisterPage() {
             <div className="space-y-4">
               {/* Full Name Input */}
               <div>
-                <label className="block mb-2 text-gray-700">الاسم الكامل</label>
+                <label className="block mb-2 text-gray-700">{t('register.form.fullName')}</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -650,7 +473,7 @@ export default function RegisterPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     className="w-full py-3 pl-4 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="أدخل اسمك الكامل"
+                    placeholder={t('register.form.enterFullName')}
                     required
                     maxLength={50}
                   />
@@ -660,7 +483,7 @@ export default function RegisterPage() {
 
               {/* Country Selection */}
               <div>
-                <label className="block mb-2 text-gray-700">الدولة</label>
+                <label className="block mb-2 text-gray-700">{t('register.form.country')}</label>
                 <div className="relative">
                   <select
                     name="country"
@@ -669,10 +492,10 @@ export default function RegisterPage() {
                     className="w-full py-3 pl-4 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
-                    <option value="">اختر الدولة</option>
+                    <option value="">{t('register.form.selectCountry')}</option>
                     {countries.map((country) => (
                       <option key={country.code} value={country.name}>
-                        {country.name} ({country.code}) - {country.phoneLength} أرقام
+                        {country.name} ({country.code}) - {country.phoneLength} {t('register.form.digits')}
                       </option>
                     ))}
                   </select>
@@ -699,63 +522,39 @@ export default function RegisterPage() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      onBlur={handlePhoneBlur}
-                      className={`w-full py-3 pl-12 pr-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        phoneExistsError 
-                          ? 'border-red-300 focus:ring-red-500' 
-                          : phoneCheckLoading 
-                            ? 'border-blue-300 focus:ring-blue-500'
-                            : 'border-gray-300 focus:ring-blue-500'
-                      }`}
+                      className={`w-full py-3 pl-12 pr-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300 ${phoneExistsError ? 'border-red-300 focus:ring-red-500' : phoneCheckLoading ? 'border-blue-300 focus:ring-blue-500' : 'border-gray-300 focus:ring-blue-500'}`}
                       placeholder={selectedCountry ? `${selectedCountry.phoneLength} أرقام` : "رقم الهاتف"}
                       required
-                      pattern={selectedCountry?.phonePattern}
                       maxLength={selectedCountry?.phoneLength || 10}
                     />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                      {phoneCheckLoading ? (
-                        <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                      ) : phoneExistsError ? (
-                        <X className="w-4 h-4 text-red-500" />
-                      ) : formData.phone.length >= 6 && !phoneExistsError ? (
-                        <Check className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Phone className="w-4 h-4 text-gray-400" />
-                      )}
-                    </div>
+                    {phoneCheckLoading ? (
+                      <Loader2 className="absolute w-5 h-5 text-blue-500 animate-spin right-2 top-1/2 -translate-y-1/2" />
+                    ) : phoneExistsError ? (
+                      <X className="absolute w-5 h-5 text-red-500 right-2 top-1/2 -translate-y-1/2" />
+                    ) : formData.phone.length >= 6 && !phoneExistsError ? (
+                      <Check className="absolute w-5 h-5 text-green-500 right-2 top-1/2 -translate-y-1/2" />
+                    ) : (
+                      <Phone className="absolute w-5 h-5 text-gray-400 right-2 top-1/2 -translate-y-1/2" />
+                    )}
                   </div>
+                  {/* توضيح خاص لكل دولة */}
                   {selectedCountry && (
                     <p className="text-xs text-gray-500 mt-1">
-                      مثال: {selectedCountry.name === 'مصر' ? '1234567890' : 
-                             selectedCountry.name === 'قطر' ? '12345678' : 
-                             selectedCountry.name === 'السعودية' ? '123456789' : 
-                             '123456789'}
-                    </p>
-                  )}
-                  {phoneCheckLoading && (
-                    <p className="mt-1 text-sm text-blue-600 flex items-center gap-1">
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      جاري التحقق من الرقم...
+                      {selectedCountry.name === 'مصر' ? '10 أرقام بدون الصفر في البداية' :
+                       selectedCountry.name === 'قطر' ? '8 أرقام بدون الصفر في البداية' :
+                       selectedCountry.name === 'السعودية' ? '9 أرقام بدون الصفر في البداية' :
+                       `${selectedCountry.phoneLength} أرقام`}
                     </p>
                   )}
                   {phoneExistsError && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                      <X className="w-3 h-3" />
-                      {phoneExistsError}
-                    </p>
-                  )}
-                  {formData.phone.length >= 6 && !phoneExistsError && !phoneCheckLoading && (
-                    <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
-                      <Check className="w-3 h-3" />
-                      رقم الهاتف متاح
-                    </p>
+                    <p className="text-xs text-red-500 mt-1">{phoneExistsError}</p>
                   )}
                 </div>
               </div>
 
               {/* Password Input */}
               <div>
-                <label className="block mb-2 text-gray-700">كلمة المرور</label>
+                <label className="block mb-2 text-gray-700">{t('register.form.password')}</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -763,7 +562,7 @@ export default function RegisterPage() {
                     value={formData.password}
                     onChange={handleInputChange}
                     className="w-full py-3 pl-12 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="8 أحرف على الأقل"
+                  placeholder="8 أحرف على الأقل"
                     required
                     minLength={8}
                   />
@@ -777,9 +576,10 @@ export default function RegisterPage() {
                   </button>
                 </div>
               </div>
+          
               {/* Confirm Password Input */}
               <div>
-                <label className="block mb-2 text-gray-700">تأكيد كلمة المرور</label>
+                <label className="block mb-2 text-gray-700">{t('register.form.confirmPassword')}</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -787,7 +587,7 @@ export default function RegisterPage() {
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     className="w-full py-3 pl-12 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="أعد إدخال كلمة المرور"
+                  placeholder={t('register.form.confirmPasswordPlaceholder')}
                     required
                   />
                   <Lock className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 right-3 top-1/2" />
@@ -811,16 +611,16 @@ export default function RegisterPage() {
                 onChange={handleInputChange}
                 className="w-4 h-4 text-blue-600 rounded"
               />
-              <span className="text-base text-gray-600">أوافق على
+              <span className="text-base text-gray-600">{t('register.form.agreeToTerms')}
                 <button type="button" className="ml-1 text-blue-600 hover:underline" onClick={() => setShowTerms(true)}>
-                  الشروط والأحكام
+                الشروط والأحكام
                 </button>
               </span>
             </div>
 
             <button
               type="submit"
-              disabled={loading || phoneCheckLoading || !!phoneExistsError}
+            disabled={loading || phoneCheckLoading || !!phoneExistsError}
               className={`w-full py-4 rounded-lg text-white font-bold text-lg transition-all flex items-center justify-center gap-2 ${
                 loading
                   ? 'bg-gray-400 cursor-not-allowed'
@@ -830,32 +630,27 @@ export default function RegisterPage() {
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  جاري فحص البيانات...
+                جاري إنشاء الحساب...
                 </>
               ) : (
                 <>
-                  <Phone className="w-5 h-5" />
-                  التحقق من رقم الهاتف
-                  {formData.country && formData.country !== 'مصر' && (
-                    <span className="text-sm opacity-90">(WhatsApp)</span>
-                  )}
-                  {formData.country === 'مصر' && (
-                    <span className="text-sm opacity-90">(SMS)</span>
-                  )}
+                <Shield className="w-5 h-5" />
+                {t('register.form.register')}
                 </>
               )}
             </button>
 
             {/* Login Link */}
+            {!showPhoneVerification && (
             <div className="text-center text-gray-600 space-y-2">
               <div>
-                لديك حساب بالفعل؟{' '}
+                {t('register.messages.alreadyHaveAccount')}{' '}
                 <button
                   type="button"
                   onClick={() => router.push('/auth/login')}
                   className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
                 >
-                  تسجيل الدخول
+                  {t('register.messages.login')}
                 </button>
               </div>
               <div>
@@ -864,13 +659,11 @@ export default function RegisterPage() {
                   onClick={() => router.push('/auth/forgot-password')}
                   className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
                 >
-                  نسيت كلمة المرور؟
+                  {t('register.messages.forgotPassword')}
                 </button>
               </div>
             </div>
-
-            {/* Google Login Button */}
-            {/* ابحث عن أي كود أو زر متعلق بـ loginWithGoogle أو Google واحذفه بالكامل من الفورم */}
+            )}
           </form>
         </div>
 
@@ -879,78 +672,70 @@ export default function RegisterPage() {
           <AlertDialogContent className="max-w-3xl">
             <AlertDialogHeader>
               <AlertDialogTitle className="mb-4 text-2xl font-bold">
-                الشروط والأحكام وسياسة الخصوصية
+                {t('register.terms.title')}
               </AlertDialogTitle>
             </AlertDialogHeader>
             <div className="space-y-4 text-gray-700 overflow-y-auto max-h-[60vh]">
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold">1. مقدمة</h3>
+                <h3 className="text-xl font-semibold">{t('register.terms.introduction.title')}</h3>
                 <div className="text-sm text-gray-600">
-                  مرحباً بك في منصة El7hm. نحن نقدم خدمات رياضية متخصصة تهدف إلى ربط اللاعبين بالفرص المناسبة.
+                  {t('register.terms.introduction.content')}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold">2. شروط التسجيل</h3>
-                <div className="space-y-2">
-                  <div className="flex gap-2 text-sm text-gray-600">
-                    <span>•</span>
-                    <span>يجب أن تكون فوق 16 عاماً للتسجيل في المنصة</span>
-                  </div>
-                  <div className="flex gap-2 text-sm text-gray-600">
-                    <span>•</span>
-                    <span>يجب تقديم معلومات صحيحة ودقيقة عند التسجيل</span>
-                  </div>
-                  <div className="flex gap-2 text-sm text-gray-600">
-                    <span>•</span>
-                    <span>يجب الحفاظ على سرية معلومات حسابك</span>
-                  </div>
-                  <div className="flex gap-2 text-sm text-gray-600">
-                    <span>•</span>
-                    <span>يحق لنا إيقاف أي حساب يخالف شروط الاستخدام</span>
-                  </div>
+                <h3 className="text-xl font-semibold">{t('register.terms.registration.title')}</h3>
+              <div className="text-sm text-gray-600">
+                {t('register.terms.registration.items')}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold">3. سياسة الخصوصية</h3>
-                <div className="space-y-2">
-                  <div className="flex gap-2 text-sm text-gray-600">
-                    <span>•</span>
-                    <span>نحن نحمي معلوماتك الشخصية ونحترم خصوصيتك</span>
-                  </div>
-                  <div className="flex gap-2 text-sm text-gray-600">
-                    <span>•</span>
-                    <span>لن نشارك معلوماتك مع أي طرف ثالث دون موافقتك</span>
-                  </div>
-                  <div className="flex gap-2 text-sm text-gray-600">
-                    <span>•</span>
-                    <span>يمكنك طلب حذف حسابك وبياناتك في أي وقت</span>
-                  </div>
-                  <div className="flex gap-2 text-sm text-gray-600">
-                    <span>•</span>
-                    <span>نستخدم تقنيات تشفير متقدمة لحماية بياناتك</span>
-                  </div>
+                <h3 className="text-xl font-semibold">{t('register.terms.privacy.title')}</h3>
+              <div className="text-sm text-gray-600">
+                {t('register.terms.privacy.items')}
                 </div>
               </div>
             </div>
           </AlertDialogContent>
         </AlertDialog>
+
+      {/* OTP Verification Modal */}
+      {showPhoneVerification && pendingPhone && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                التحقق من رقم الهاتف
+              </h2>
+              <p className="text-gray-600">
+                تم إرسال رمز التحقق إلى {pendingPhone}
+              </p>
       </div>
 
-      {/* Phone Verification Modal */}
       <UnifiedOTPVerification
-        phoneNumber={pendingPhone || `${formData.countryCode}${formData.phone}`}
-        name={formData.name}
+              phoneNumber={pendingPhone}
         isOpen={showPhoneVerification}
-        onVerificationSuccess={handlePhoneVerificationSuccess}
-        onVerificationFailed={handlePhoneVerificationFailed}
+              onVerificationSuccess={(phoneNumber) => {
+                // استرجاع OTP المدخل من المكون
+                const pendingDataStr = localStorage.getItem('pendingRegistration');
+                if (pendingDataStr) {
+                  const pendingData = JSON.parse(pendingDataStr);
+                  handleOTPVerification(pendingData.otp);
+                }
+              }}
+              onVerificationFailed={(error) => {
+                setError(error);
+              }}
         onClose={handlePhoneVerificationClose}
-        title="التحقق من رقم الهاتف"
-        subtitle={`تم إرسال رمز التحقق عبر ${formData.country === 'مصر' ? 'SMS' : 'WhatsApp أو SMS'}`}
-        otpExpirySeconds={30}
-        maxAttempts={3}
-      />
-    </>
+              title="التحقق من رقم الهاتف"
+              subtitle={`تم إرسال رمز التحقق إلى ${pendingPhone}`}
+              language={language}
+              t={t}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

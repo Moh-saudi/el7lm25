@@ -15,6 +15,8 @@ interface WhatsAppOTPVerificationProps {
   otpExpirySeconds?: number;
   maxAttempts?: number;
   serviceType?: 'business' | 'green';
+  language?: string;
+  t?: (key: string) => string;
 }
 
 export default function WhatsAppOTPVerification({
@@ -24,11 +26,13 @@ export default function WhatsAppOTPVerification({
   onVerificationSuccess,
   onVerificationFailed,
   onClose,
-  title = 'التحقق من رقم الهاتف',
-  subtitle = 'تم إرسال رمز التحقق عبر WhatsApp',
+  title,
+  subtitle,
   otpExpirySeconds = 30, // 30 ثانية
   maxAttempts = 3,
-  serviceType = 'business'
+  serviceType = 'business',
+  language,
+  t,
 }: WhatsAppOTPVerificationProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -378,6 +382,18 @@ export default function WhatsAppOTPVerification({
 
   if (!isOpen) return null;
 
+  // استخدم t في كل النصوص:
+  const titleText = t ? t('otp.title') : (title || 'التحقق من رقم الهاتف');
+  const subtitleText = t ? t('otp.subtitle_whatsapp') : (subtitle || 'تم إرسال رمز التحقق عبر WhatsApp');
+  const resendText = t ? t('otp.resend') : 'إعادة إرسال الرمز';
+  const sendingText = t ? t('otp.sending') : 'جاري الإرسال...';
+  const cancelText = t ? t('otp.cancel') : 'إلغاء';
+  const inputLabel = t ? t('otp.inputLabel') : 'أدخل رمز التحقق المكون من 6 أرقام';
+  const timeLeftText = t ? t('otp.timeLeft') : 'الوقت المتبقي';
+  const expiredText = t ? t('otp.expired') : 'انتهت صلاحية الرمز';
+  const attemptsLeftText = t ? t('otp.attemptsLeft') : 'المحاولات المتبقية';
+  const helpText = t ? t('otp.helpText') : 'تأكد من أن هاتفك متصل بالإنترنت لاستلام الرسالة';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-xl" dir="rtl">
@@ -387,9 +403,9 @@ export default function WhatsAppOTPVerification({
             <div className="flex justify-center mb-4">
               <MessageCircle className="w-12 h-12 text-green-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center">{title}</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center">{titleText}</h2>
             <p className="text-gray-600 text-center">
-              {subtitle}
+              {subtitleText}
               <br />
               <span className="font-semibold text-green-600">{formatPhoneNumber(phoneNumber)}</span>
             </p>
@@ -437,7 +453,7 @@ export default function WhatsAppOTPVerification({
         {/* OTP Input */}
         <div className="mb-6">
           <label className="block mb-3 text-sm font-medium text-gray-700 text-center">
-            أدخل رمز التحقق المكون من 6 أرقام
+            {inputLabel}
           </label>
           <div className="flex justify-center gap-2" dir="rtl">
             {otp.map((digit, index) => (
@@ -464,17 +480,17 @@ export default function WhatsAppOTPVerification({
           {timeRemaining > 0 ? (
             <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
               <Clock className="w-4 h-4" />
-              <span>الوقت المتبقي: {formatTime(timeRemaining)}</span>
+              <span>{timeLeftText}: {formatTime(timeRemaining)}</span>
             </div>
           ) : (
             <div className="text-sm text-red-600">
-              انتهت صلاحية الرمز
+              {expiredText}
             </div>
           )}
           
           {attempts > 0 && (
             <div className="text-sm text-orange-600">
-              المحاولات المتبقية: {maxAttempts - attempts}
+              {attemptsLeftText}: {maxAttempts - attempts}
             </div>
           )}
         </div>
@@ -493,12 +509,12 @@ export default function WhatsAppOTPVerification({
             {resendLoading ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                جاري الإرسال...
+                {sendingText}
               </>
             ) : (
               <>
                 <RefreshCw className="w-4 h-4" />
-                إعادة إرسال الرمز
+                {resendText}
               </>
             )}
           </button>
@@ -508,14 +524,14 @@ export default function WhatsAppOTPVerification({
             disabled={loading}
             className="w-full py-3 px-4 text-gray-600 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
           >
-            إلغاء
+            {cancelText}
           </button>
         </div>
 
         {/* Help Text */}
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-500">
-            تأكد من أن WhatsApp مثبت على هاتفك ومتصل بالإنترنت
+            {helpText}
           </p>
         </div>
       </div>

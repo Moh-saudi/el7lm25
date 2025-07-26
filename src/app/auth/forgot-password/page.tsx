@@ -6,6 +6,7 @@ import { auth } from '@/lib/firebase/config';
 import { signInWithEmailAndPassword, updatePassword } from 'firebase/auth';
 import { Shield, Phone, CheckCircle, AlertTriangle, Loader2, ArrowLeft, Check, X } from 'lucide-react';
 import UnifiedOTPVerification from '@/components/shared/UnifiedOTPVerification';
+import { useTranslation } from '@/lib/translations/simple-context';
 import Link from 'next/link';
 
 // قائمة الدول مع أكوادها
@@ -29,6 +30,7 @@ const countries = [
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const { t, language } = useTranslation();
   const [formData, setFormData] = useState({
     phone: '',
     country: '',
@@ -41,6 +43,11 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | React.ReactNode>('');
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [pendingPhone, setPendingPhone] = useState<string | null>(null);
+
+  // سجل لتتبع تغييرات pendingPhone
+  useEffect(() => {
+    console.log('🔍 pendingPhone state changed to:', pendingPhone);
+  }, [pendingPhone]);
   const [selectedCountry, setSelectedCountry] = useState<any>(null);
   const [step, setStep] = useState<'phone' | 'otp' | 'password'>('phone');
   const [phoneCheckLoading, setPhoneCheckLoading] = useState(false);
@@ -51,7 +58,9 @@ export default function ForgotPasswordPage() {
   // عند تحميل الصفحة: تحقق من وجود رقم هاتف معلق في localStorage
   useEffect(() => {
     const storedPendingPhone = localStorage.getItem('pendingPasswordReset');
+    console.log('🔍 useEffect - storedPendingPhone from localStorage:', storedPendingPhone);
     if (storedPendingPhone) {
+      console.log('✅ useEffect - setting pendingPhone from localStorage:', storedPendingPhone);
       setPendingPhone(storedPendingPhone);
       setShowPhoneVerification(true);
       setStep('otp');
@@ -218,42 +227,81 @@ export default function ForgotPasswordPage() {
     try {
       // تجهيز رقم الهاتف الكامل مع رمز الدولة
       const fullPhoneNumber = `${formData.countryCode}${formData.phone}`;
+      console.log('🔍 handlePhoneSubmit - fullPhoneNumber:', fullPhoneNumber);
+      console.log('🔍 handlePhoneSubmit - formData:', formData);
       
-      console.log('📱 Starting password reset for:', fullPhoneNumber);
+      // تحقق من القيم المطلوبة
+      if (!formData.country || !formData.countryCode || !formData.phone) {
+        console.error('❌ handlePhoneSubmit - missing required fields:', { country: formData.country, countryCode: formData.countryCode, phone: formData.phone });
+        setError('يرجى اختيار الدولة وإدخال رقم الهاتف بشكل صحيح');
+        setLoading(false);
+        return;
+      }
+      console.log('🔍 Sending to smart-otp:', {
+        phone: fullPhoneNumber,
+        name: 'مستخدم',
+        country: formData.country,
+        countryCode: formData.countryCode
+      });
+      // أرسل طلب إلى API إرسال OTP (مثل صفحة التسجيل)
+      const otpResponse = await fetch('/api/notifications/smart-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: fullPhoneNumber,
+          name: 'مستخدم',
+          country: formData.country,
+          countryCode: formData.countryCode
+        })
+      });
+      const otpData = await otpResponse.json();
+      if (!otpResponse.ok || !otpData.success) {
+        throw new Error(otpData.error || 'فشل في إرسال رمز التحقق');
+      }
+
+      // إذا نجح، افتح نافذة التحقق
+      console.log('✅ handlePhoneSubmit - setting pendingPhone to:', fullPhoneNumber);
+      console.log('✅ handlePhoneSubmit - fullPhoneNumber type:', typeof fullPhoneNumber);
+      console.log('✅ handlePhoneSubmit - fullPhoneNumber length:', fullPhoneNumber?.length);
       
-      // التحقق من أن رقم الهاتف لم يتغير
-      if (pendingPhone === fullPhoneNumber && showPhoneVerification) {
-        console.log('🛑 OTP verification already open for this phone number');
+      if (!fullPhoneNumber || fullPhoneNumber.trim() === '') {
+        console.error('❌ handlePhoneSubmit - fullPhoneNumber is empty or null');
+        setError('حدث خطأ في تجهيز رقم الهاتف. يرجى المحاولة مرة أخرى.');
         setLoading(false);
         return;
       }
       
-      // حفظ البيانات المعلقة وعرض التحقق من رقم الهاتف
       setPendingPhone(fullPhoneNumber);
       setShowPhoneVerification(true);
       localStorage.setItem('pendingPasswordReset', fullPhoneNumber);
       setStep('otp');
-      
-    } catch (error: unknown) {
-      console.error('❌ Password reset error:', error);
-      if (error instanceof Error) {
-        setError(error.message || 'حدث خطأ أثناء التحقق من رقم الهاتف.');
-      } else {
-        setError('حدث خطأ أثناء التحقق من رقم الهاتف.');
-      }
+    } catch (error: any) {
+      setError(error.message || 'حدث خطأ أثناء إرسال رمز التحقق');
     } finally {
       setLoading(false);
     }
   };
 
   const handlePhoneVerificationSuccess = async (verifiedPhone: string) => {
+    console.log('✅ Phone verification success, setting pendingPhone to:', verifiedPhone);
+    console.log('✅ handlePhoneVerificationSuccess - verifiedPhone type:', typeof verifiedPhone);
+    console.log('✅ handlePhoneVerificationSuccess - verifiedPhone length:', verifiedPhone?.length);
+    
+    // التحقق من أن verifiedPhone صحيح
+    if (!verifiedPhone || verifiedPhone.trim() === '') {
+      console.error('❌ handlePhoneVerificationSuccess - verifiedPhone is empty or null');
+      setError('حدث خطأ في التحقق من رقم الهاتف. يرجى المحاولة مرة أخرى.');
+      return;
+    }
+    
     // أغلق نافذة التحقق فوراً بعد النجاح
     setShowPhoneVerification(false);
-    setPendingPhone(null);
-    localStorage.removeItem('pendingPasswordReset');
+    setPendingPhone(verifiedPhone); // حفظ الرقم المحقق
+    localStorage.setItem('pendingPasswordReset', verifiedPhone); // حفظ في localStorage
     setError('');
     setStep('password');
     setMessage('تم التحقق من رقم الهاتف بنجاح! أدخل كلمة المرور الجديدة.');
+    console.log('✅ handlePhoneVerificationSuccess - pendingPhone set to:', verifiedPhone);
   };
 
   const handlePhoneVerificationFailed = (error: string) => {
@@ -266,6 +314,7 @@ export default function ForgotPasswordPage() {
       setError(error);
     }
     
+    console.log('🔒 handlePhoneVerificationFailed - setting pendingPhone to null');
     setShowPhoneVerification(false);
     setPendingPhone(null);
     localStorage.removeItem('pendingPasswordReset');
@@ -273,6 +322,7 @@ export default function ForgotPasswordPage() {
   };
 
   const handlePhoneVerificationClose = () => {
+    console.log('🔒 handlePhoneVerificationClose - setting pendingPhone to null');
     setShowPhoneVerification(false);
     setPendingPhone(null);
     localStorage.removeItem('pendingPasswordReset');
@@ -284,6 +334,18 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError('');
     if (!validatePasswordForm()) return;
+
+    console.log('🔍 handlePasswordSubmit - pendingPhone:', pendingPhone);
+    console.log('🔍 handlePasswordSubmit - localStorage pendingPasswordReset:', localStorage.getItem('pendingPasswordReset'));
+
+    // التحقق من وجود رقم الهاتف
+    if (!pendingPhone) {
+      console.error('❌ No pending phone number found');
+      console.error('❌ Current step:', step);
+      console.error('❌ showPhoneVerification:', showPhoneVerification);
+      setError('لم يتم العثور على رقم الهاتف المحقق. يرجى إعادة التحقق من رقم الهاتف.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -611,6 +673,8 @@ export default function ForgotPasswordPage() {
         subtitle={`تم إرسال رمز التحقق عبر ${formData.country === 'مصر' ? 'SMS' : 'WhatsApp'}`}
         otpExpirySeconds={30}
         maxAttempts={3}
+        language={language}
+        t={t}
       />
     </>
   );

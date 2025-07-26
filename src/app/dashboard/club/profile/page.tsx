@@ -468,250 +468,273 @@ export default function ClubProfilePage() {
   }
 
   return (
-    <main className="flex-1 min-h-0 p-6 mx-4 my-6 overflow-auto rounded-lg shadow-inner md:p-10 bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-4xl px-4 py-10 mx-auto">
-        {/* زر العودة */}
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 mb-6 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          العودة للوحة التحكم
-        </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
+      {/* Header بسيط */}
+      <div className="sticky top-0 z-50 border-b border-gray-200 shadow-sm backdrop-blur-md bg-white/95">
+        <div className="px-4 py-4 mx-auto max-w-7xl">
+          <div className="flex justify-between items-center">
+            {/* زر العودة */}
+            <button
+              onClick={() => router.back()}
+              className="flex gap-2 items-center px-4 py-2 text-gray-600 rounded-lg transition-all hover:text-gray-800 hover:bg-gray-100"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">العودة للبحث</span>
+            </button>
 
-        {/* صورة الغلاف */}
-        <div className="relative h-48 mb-8 overflow-hidden rounded-2xl">
-          <img
-            src={clubData?.coverImage || '/images/hero-1.jpg'}
-            alt="صورة الغلاف"
-            className="object-cover w-full h-full"
-          />
-          {editMode && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-              <label className="p-2 transition rounded-lg cursor-pointer bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'cover')}
-                />
-                {uploading ? 'جاري الرفع...' : 'تغيير صورة الغلاف'}
-              </label>
+            {/* عنوان الصفحة */}
+            <div className="text-center">
+              <h1 className="text-xl font-bold text-gray-900">ملف النادي الشخصي</h1>
+              {clubData && (
+                <p className="text-sm text-gray-600">{clubData.name}</p>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* كرت بيانات النادي */}
-        <div className="flex flex-col items-center gap-8 p-8 mb-8 bg-white shadow-lg dark:bg-gray-800 rounded-2xl md:flex-row">
-          <div className="relative">
-            <img
-              src={clubData?.logo || '/images/club-avatar.png'}
-              alt="شعار النادي"
-              className="object-cover w-32 h-32 border-4 rounded-full shadow border-primary dark:border-primary/80"
-            />
-            {editMode && (
-              <label className="absolute inset-0 flex items-center justify-center transition rounded-full cursor-pointer bg-black/50 hover:bg-black/60">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'logo')}
-                />
-                <Edit className="text-white" size={24} />
-              </label>
-            )}
-          </div>
-          <div className="flex-1 text-right">
-            <h2 className="mb-2 text-3xl font-bold text-primary dark:text-primary/90">{clubData?.name}</h2>
-            <p className="mb-2 text-gray-600 dark:text-gray-300">{clubData?.description}</p>
-            <div className="flex flex-wrap gap-4 mt-2 text-base text-gray-500 dark:text-gray-400">
-              <span className="flex items-center gap-1"><MapPin size={18} /> {clubData?.city}, {clubData?.country}</span>
-              <span className="flex items-center gap-1"><Calendar size={18} /> تأسس {clubData?.founded}</span>
-              <span className="flex items-center gap-1"><User size={18} /> نوع النادي: {clubData?.type}</span>
-            </div>
-          </div>
-          <button
-            className="flex items-center gap-2 px-5 py-2 text-white transition rounded-lg shadow bg-gradient-to-l from-blue-400 to-blue-600 hover:scale-105 dark:from-blue-500 dark:to-blue-700"
-            onClick={() => editMode ? handleSaveChanges() : setEditMode(true)}
-            disabled={uploading}
-          >
-            <Edit size={18} /> {editMode ? 'حفظ التغييرات' : 'تعديل البيانات'}
-          </button>
-        </div>
-
-        {/* كروت الإحصائيات */}
-        <div className="grid grid-cols-2 gap-6 mb-8 md:grid-cols-4">
-          <div className="flex flex-col items-center p-5 text-white shadow bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700 rounded-xl">
-            <Users size={28} />
-            <div className="mt-2 text-2xl font-bold">{clubData?.stats?.players ?? 0}</div>
-            <div className="mt-1 text-sm">اللاعبون</div>
-          </div>
-          <div className="flex flex-col items-center p-5 text-white shadow bg-gradient-to-br from-green-400 to-green-600 dark:from-green-500 dark:to-green-700 rounded-xl">
-            <FileText size={28} />
-            <div className="mt-2 text-2xl font-bold">{clubData?.stats?.contracts ?? 0}</div>
-            <div className="mt-1 text-sm">العقود النشطة</div>
-          </div>
-          <div className="flex flex-col items-center p-5 text-white shadow bg-gradient-to-br from-yellow-400 to-yellow-600 dark:from-yellow-500 dark:to-yellow-700 rounded-xl">
-            <Trophy size={28} />
-            <div className="mt-2 text-2xl font-bold">{clubData?.stats?.trophies ?? 0}</div>
-            <div className="mt-1 text-sm">البطولات</div>
-          </div>
-          <div className="flex flex-col items-center p-5 text-white shadow bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-700 rounded-xl">
-            <User size={28} />
-            <div className="mt-2 text-2xl font-bold">{clubData?.stats?.staff ?? 0}</div>
-            <div className="mt-1 text-sm">المدربون/الإداريون</div>
+            {/* مساحة فارغة للتوازن */}
+            <div className="w-24"></div>
           </div>
         </div>
+      </div>
 
-        {/* معلومات الأكاديميات والمدارس */}
-        <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2">
-          <div className="p-6 bg-white shadow dark:bg-gray-800 rounded-xl">
-            <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-primary dark:text-primary/90">
-              <School size={20} /> الأكاديميات والمدارس
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-300">عدد الأكاديميات</span>
-                <span className="font-bold dark:text-white">{clubData?.academies?.total ?? 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-300">مدارس كرة القدم للرجال</span>
-                <span className="font-bold dark:text-white">{clubData?.schools?.men ?? 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-300">مدارس كرة القدم للسيدات</span>
-                <span className="font-bold dark:text-white">{clubData?.schools?.women ?? 0}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* البطولات */}
-          <div className="p-6 bg-white shadow dark:bg-gray-800 rounded-xl">
-            <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-primary dark:text-primary/90">
-              <Award size={20} /> البطولات
-            </h3>
-            <div className="space-y-3">
-              {clubData?.trophies?.map((trophy, index) => (
-                <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-700">
-                  <span className="font-medium dark:text-white">{trophy.name}</span>
-                  <span className="text-gray-600 dark:text-gray-300">{trophy.year}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* معلومات مجلس الإدارة */}
-        <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2">
-          <div className="p-6 bg-white shadow dark:bg-gray-800 rounded-xl">
-            <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-primary dark:text-primary/90">
-              <UserCircle2 size={20} /> رئيس مجلس الإدارة
-            </h3>
-            <div className="flex items-center gap-4">
+      {/* المحتوى الرئيسي */}
+      <div className="px-4 py-8 mx-auto max-w-7xl">
+        <main className="flex-1 min-h-0 p-6 mx-4 my-6 overflow-auto rounded-lg shadow-inner md:p-10 bg-gray-50 dark:bg-gray-900">
+          <div className="max-w-4xl px-4 py-10 mx-auto">
+            {/* صورة الغلاف */}
+            <div className="relative h-48 mb-8 overflow-hidden rounded-2xl">
               <img
-                src={clubData?.board?.chairman?.image || '/images/club-avatar.png'}
-                alt="صورة رئيس مجلس الإدارة"
-                className="object-cover w-20 h-20 rounded-full"
+                src={clubData?.coverImage || '/images/hero-1.jpg'}
+                alt="صورة الغلاف"
+                className="object-cover w-full h-full"
               />
-              <div className="flex-1">
-                <h4 className="font-bold dark:text-white">{clubData?.board?.chairman?.name}</h4>
-                <div className="space-y-1 text-gray-600 dark:text-gray-300">
-                  <p className="flex items-center gap-2">
-                    <Phone size={16} /> {clubData?.board?.chairman?.phone}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Mail size={16} /> {clubData?.board?.chairman?.email}
-                  </p>
+              {editMode && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <label className="p-2 transition rounded-lg cursor-pointer bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'cover')}
+                    />
+                    {uploading ? 'جاري الرفع...' : 'تغيير صورة الغلاف'}
+                  </label>
                 </div>
-              </div>
+              )}
             </div>
-          </div>
 
-          <div className="p-6 bg-white shadow dark:bg-gray-800 rounded-xl">
-            <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-primary dark:text-primary/90">
-              <UserCircle2 size={20} /> رئيس قطاع الناشئين
-            </h3>
-            <div className="flex items-center gap-4">
-              <img
-                src={clubData?.board?.youthDirector?.image || '/images/club-avatar.png'}
-                alt="صورة رئيس قطاع الناشئين"
-                className="object-cover w-20 h-20 rounded-full"
-              />
-              <div className="flex-1">
-                <h4 className="font-bold dark:text-white">{clubData?.board?.youthDirector?.name}</h4>
-                <div className="space-y-1 text-gray-600 dark:text-gray-300">
-                  <p className="flex items-center gap-2">
-                    <Phone size={16} /> {clubData?.board?.youthDirector?.phone}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Mail size={16} /> {clubData?.board?.youthDirector?.email}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* معرض الصور */}
-        <div className="p-6 mb-8 bg-white shadow dark:bg-gray-800 rounded-xl">
-          <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-primary dark:text-primary/90">
-            <Building2 size={20} /> معرض الصور
-          </h3>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {clubData?.gallery?.map((image, index) => (
-              <div key={index} className="relative overflow-hidden rounded-lg aspect-square">
+            {/* كرت بيانات النادي */}
+            <div className="flex flex-col items-center gap-8 p-8 mb-8 bg-white shadow-lg dark:bg-gray-800 rounded-2xl md:flex-row">
+              <div className="relative">
                 <img
-                  src={image}
-                  alt={`صورة ${index + 1}`}
-                  className="object-cover w-full h-full"
+                  src={clubData?.logo || '/images/club-avatar.png'}
+                  alt="شعار النادي"
+                  className="object-cover w-32 h-32 border-4 rounded-full shadow border-primary dark:border-primary/80"
                 />
+                {editMode && (
+                  <label className="absolute inset-0 flex items-center justify-center transition rounded-full cursor-pointer bg-black/50 hover:bg-black/60">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'logo')}
+                    />
+                    <Edit className="text-white" size={24} />
+                  </label>
+                )}
               </div>
-            ))}
-            {editMode && (
-              <label className="flex items-center justify-center transition border-2 border-gray-300 border-dashed rounded-lg cursor-pointer dark:border-gray-600 aspect-square hover:border-primary dark:hover:border-primary/80">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'gallery')}
-                />
-                <Plus size={24} className="text-gray-400 dark:text-gray-500" />
-              </label>
-            )}
-          </div>
-        </div>
+              <div className="flex-1 text-right">
+                <h2 className="mb-2 text-3xl font-bold text-primary dark:text-primary/90">{clubData?.name}</h2>
+                <p className="mb-2 text-gray-600 dark:text-gray-300">{clubData?.description}</p>
+                <div className="flex flex-wrap gap-4 mt-2 text-base text-gray-500 dark:text-gray-400">
+                  <span className="flex items-center gap-1"><MapPin size={18} /> {clubData?.city}, {clubData?.country}</span>
+                  <span className="flex items-center gap-1"><Calendar size={18} /> تأسس {clubData?.founded}</span>
+                  <span className="flex items-center gap-1"><User size={18} /> نوع النادي: {clubData?.type}</span>
+                </div>
+              </div>
+              <button
+                className="flex items-center gap-2 px-5 py-2 text-white transition rounded-lg shadow bg-gradient-to-l from-blue-400 to-blue-600 hover:scale-105 dark:from-blue-500 dark:to-blue-700"
+                onClick={() => editMode ? handleSaveChanges() : setEditMode(true)}
+                disabled={uploading}
+              >
+                <Edit size={18} /> {editMode ? 'حفظ التغييرات' : 'تعديل البيانات'}
+              </button>
+            </div>
 
-        {/* معلومات التواصل */}
-        <div className="p-6 bg-white shadow dark:bg-gray-800 rounded-xl">
-          <h3 className="mb-4 text-lg font-bold text-primary dark:text-primary/90">معلومات التواصل</h3>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="space-y-3">
-              <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <Phone size={18} /> {clubData?.phone}
-              </p>
-              <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <Mail size={18} /> {clubData?.email}
-              </p>
-              <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <MapPin size={18} /> {clubData?.address}
-              </p>
+            {/* كروت الإحصائيات */}
+            <div className="grid grid-cols-2 gap-6 mb-8 md:grid-cols-4">
+              <div className="flex flex-col items-center p-5 text-white shadow bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700 rounded-xl">
+                <Users size={28} />
+                <div className="mt-2 text-2xl font-bold">{clubData?.stats?.players ?? 0}</div>
+                <div className="mt-1 text-sm">اللاعبون</div>
+              </div>
+              <div className="flex flex-col items-center p-5 text-white shadow bg-gradient-to-br from-green-400 to-green-600 dark:from-green-500 dark:to-green-700 rounded-xl">
+                <FileText size={28} />
+                <div className="mt-2 text-2xl font-bold">{clubData?.stats?.contracts ?? 0}</div>
+                <div className="mt-1 text-sm">العقود النشطة</div>
+              </div>
+              <div className="flex flex-col items-center p-5 text-white shadow bg-gradient-to-br from-yellow-400 to-yellow-600 dark:from-yellow-500 dark:to-yellow-700 rounded-xl">
+                <Trophy size={28} />
+                <div className="mt-2 text-2xl font-bold">{clubData?.stats?.trophies ?? 0}</div>
+                <div className="mt-1 text-sm">البطولات</div>
+              </div>
+              <div className="flex flex-col items-center p-5 text-white shadow bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-700 rounded-xl">
+                <User size={28} />
+                <div className="mt-2 text-2xl font-bold">{clubData?.stats?.staff ?? 0}</div>
+                <div className="mt-1 text-sm">المدربون/الإداريون</div>
+              </div>
             </div>
-            <div className="space-y-3">
-              <a href={clubData?.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
-                <Globe size={18} /> الموقع الإلكتروني
-              </a>
-              <a href={clubData?.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
-                <Facebook size={18} /> Facebook
-              </a>
-              <a href={clubData?.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
-                <Twitter size={18} /> Twitter
-              </a>
-              <a href={clubData?.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400">
-                <Instagram size={18} /> Instagram
-              </a>
+
+            {/* معلومات الأكاديميات والمدارس */}
+            <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2">
+              <div className="p-6 bg-white shadow dark:bg-gray-800 rounded-xl">
+                <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-primary dark:text-primary/90">
+                  <School size={20} /> الأكاديميات والمدارس
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-300">عدد الأكاديميات</span>
+                    <span className="font-bold dark:text-white">{clubData?.academies?.total ?? 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-300">مدارس كرة القدم للرجال</span>
+                    <span className="font-bold dark:text-white">{clubData?.schools?.men ?? 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-300">مدارس كرة القدم للسيدات</span>
+                    <span className="font-bold dark:text-white">{clubData?.schools?.women ?? 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* البطولات */}
+              <div className="p-6 bg-white shadow dark:bg-gray-800 rounded-xl">
+                <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-primary dark:text-primary/90">
+                  <Award size={20} /> البطولات
+                </h3>
+                <div className="space-y-3">
+                  {clubData?.trophies?.map((trophy, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-700">
+                      <span className="font-medium dark:text-white">{trophy.name}</span>
+                      <span className="text-gray-600 dark:text-gray-300">{trophy.year}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* معلومات مجلس الإدارة */}
+            <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2">
+              <div className="p-6 bg-white shadow dark:bg-gray-800 rounded-xl">
+                <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-primary dark:text-primary/90">
+                  <UserCircle2 size={20} /> رئيس مجلس الإدارة
+                </h3>
+                <div className="flex items-center gap-4">
+                  <img
+                    src={clubData?.board?.chairman?.image || '/images/club-avatar.png'}
+                    alt="صورة رئيس مجلس الإدارة"
+                    className="object-cover w-20 h-20 rounded-full"
+                  />
+                  <div className="flex-1">
+                    <h4 className="font-bold dark:text-white">{clubData?.board?.chairman?.name}</h4>
+                    <div className="space-y-1 text-gray-600 dark:text-gray-300">
+                      <p className="flex items-center gap-2">
+                        <Phone size={16} /> {clubData?.board?.chairman?.phone}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <Mail size={16} /> {clubData?.board?.chairman?.email}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 bg-white shadow dark:bg-gray-800 rounded-xl">
+                <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-primary dark:text-primary/90">
+                  <UserCircle2 size={20} /> رئيس قطاع الناشئين
+                </h3>
+                <div className="flex items-center gap-4">
+                  <img
+                    src={clubData?.board?.youthDirector?.image || '/images/club-avatar.png'}
+                    alt="صورة رئيس قطاع الناشئين"
+                    className="object-cover w-20 h-20 rounded-full"
+                  />
+                  <div className="flex-1">
+                    <h4 className="font-bold dark:text-white">{clubData?.board?.youthDirector?.name}</h4>
+                    <div className="space-y-1 text-gray-600 dark:text-gray-300">
+                      <p className="flex items-center gap-2">
+                        <Phone size={16} /> {clubData?.board?.youthDirector?.phone}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <Mail size={16} /> {clubData?.board?.youthDirector?.email}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* معرض الصور */}
+            <div className="p-6 mb-8 bg-white shadow dark:bg-gray-800 rounded-xl">
+              <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-primary dark:text-primary/90">
+                <Building2 size={20} /> معرض الصور
+              </h3>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                {clubData?.gallery?.map((image, index) => (
+                  <div key={index} className="relative overflow-hidden rounded-lg aspect-square">
+                    <img
+                      src={image}
+                      alt={`صورة ${index + 1}`}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                ))}
+                {editMode && (
+                  <label className="flex items-center justify-center transition border-2 border-gray-300 border-dashed rounded-lg cursor-pointer dark:border-gray-600 aspect-square hover:border-primary dark:hover:border-primary/80">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'gallery')}
+                    />
+                    <Plus size={24} className="text-gray-400 dark:text-gray-500" />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* معلومات التواصل */}
+            <div className="p-6 bg-white shadow dark:bg-gray-800 rounded-xl">
+              <h3 className="mb-4 text-lg font-bold text-primary dark:text-primary/90">معلومات التواصل</h3>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-3">
+                  <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <Phone size={18} /> {clubData?.phone}
+                  </p>
+                  <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <Mail size={18} /> {clubData?.email}
+                  </p>
+                  <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <MapPin size={18} /> {clubData?.address}
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <a href={clubData?.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+                    <Globe size={18} /> الموقع الإلكتروني
+                  </a>
+                  <a href={clubData?.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+                    <Facebook size={18} /> Facebook
+                  </a>
+                  <a href={clubData?.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+                    <Twitter size={18} /> Twitter
+                  </a>
+                  <a href={clubData?.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400">
+                    <Instagram size={18} /> Instagram
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </main>
 
         {/* نافذة التعديل */}
         {editMode && (
@@ -1022,6 +1045,6 @@ export default function ClubProfilePage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 } 

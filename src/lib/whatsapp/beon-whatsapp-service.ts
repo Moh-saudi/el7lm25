@@ -1,23 +1,21 @@
 interface BeOnWhatsAppConfig {
-  baseUrl: string;
   token: string;
-  callbackUrl?: string;
+  baseUrl: string;
 }
 
-interface BeOnOTPResponse {
+interface BeOnWhatsAppResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  link?: string;
+  fallback?: boolean;
+}
+
+interface OTPResponse {
   success: boolean;
   otp?: string;
-  link?: string;
   error?: string;
-  reference?: string;
-}
-
-interface BeOnCallbackResponse {
-  otp: string;
-  reference: string;
-  status: string;
-  clientPhone: string;
-  clientName: string;
+  message?: string;
 }
 
 class BeOnWhatsAppService {
@@ -25,17 +23,16 @@ class BeOnWhatsAppService {
 
   constructor() {
     this.config = {
-      baseUrl: 'https://chat.beon.com/api/send/message/otp',
-      token: process.env.BEON_WHATSAPP_TOKEN || '',
-      callbackUrl: process.env.BEON_CALLBACK_URL || 'http://www.el7lm.com/api/notifications/whatsapp/callback'
+      token: process.env.BEON_SMS_TOKEN || process.env.BEON_WHATSAPP_TOKEN || '',
+      baseUrl: 'https://beon.chat/api'
     };
   }
 
   // التحقق من صحة التكوين
   private validateConfig(): boolean {
-    const isValid = !!(this.config.token && this.config.token.length > 0);
+    const isValid = !!this.config.token;
     if (!isValid) {
-      console.warn('⚠️ BeOn WhatsApp API not configured properly');
+      console.warn('⚠️ BeOn WhatsApp configuration is missing');
       console.warn('   Token:', this.config.token ? 'Set' : 'Missing');
     }
     return isValid;
@@ -55,7 +52,7 @@ class BeOnWhatsAppService {
       
       if (result.success) {
         console.log('✅ BeOn WhatsApp OTP sent successfully');
-        return { success: true, otp };
+        return { success: true, otp, message: result.message };
       } else {
         console.error('❌ BeOn WhatsApp OTP failed:', result.error);
         return { success: false, error: result.error };
@@ -78,9 +75,111 @@ class BeOnWhatsAppService {
 El7hm Team`;
   }
 
-  // توليد OTP عشوائي
-  generateOTP(): string {
-    return Math.random().toString().substring(2, 8);
+  // إرسال رسالة WhatsApp عبر BeOn API الجديد
+  async sendMessage(phoneNumber: string, message: string, type?: 'whatsapp' | 'sms'): Promise<BeOnWhatsAppResponse> {
+    if (!this.validateConfig()) {
+      return { success: false, error: 'WhatsApp configuration is missing' };
+    }
+
+    try {
+      // استخدام API الجديد لإرسال OTP
+      const formData = new FormData();
+      formData.append('phoneNumber', phoneNumber);
+      formData.append('name', 'El7hm User');
+      formData.append('type', type || 'whatsapp'); // استخدام WhatsApp كافتراضي
+      formData.append('otp_length', '6');
+      formData.append('lang', 'ar');
+
+      console.log('📱 Sending request to BeOn WhatsApp API:', {
+        phoneNumber,
+        type: type || 'whatsapp',
+        otp_length: 6,
+        lang: 'ar'
+      });
+
+      const response = await fetch(`${this.config.baseUrl}/send/message/otp`, {
+        method: 'POST',
+        headers: {
+          'beon-token': this.config.token
+        },
+        body: formData
+      });
+
+      console.log('📱 BeOn WhatsApp response status:', response.status);
+      const result = await response.json();
+      console.log('📱 BeOn WhatsApp response data:', result);
+
+      if (response.ok && result.status === 200) {
+        console.log('✅ BeOn WhatsApp message sent successfully to:', phoneNumber);
+        return { 
+          success: true, 
+          message: result.message || 'WhatsApp message sent successfully',
+          link: result.link // إذا كان هناك رابط WhatsApp
+        };
+      } else {
+        console.error('❌ BeOn WhatsApp sending failed:', result);
+        
+        // إذا فشل WhatsApp، جرب SMS كبديل
+        if (type !== 'sms') {
+          console.log('📱 Trying SMS fallback...');
+          const smsResult = await this.sendSMSFallback(phoneNumber, message);
+          if (smsResult.success) {
+            return { 
+              success: true, 
+              message: 'تم إرسال الرسالة عبر SMS (WhatsApp غير متاح)',
+              fallback: true
+            };
+          }
+        }
+        
+        return { 
+          success: false, 
+          error: result.message || `HTTP ${response.status}: Failed to send WhatsApp message` 
+        };
+      }
+    } catch (error: any) {
+      console.error('❌ BeOn WhatsApp error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // إرسال SMS كبديل عند فشل WhatsApp
+  private async sendSMSFallback(phoneNumber: string, message: string): Promise<BeOnWhatsAppResponse> {
+    try {
+      const formData = new FormData();
+      formData.append('phoneNumber', phoneNumber);
+      formData.append('name', 'El7hm User');
+      formData.append('type', 'sms');
+      formData.append('otp_length', '6');
+      formData.append('lang', 'ar');
+
+      const response = await fetch(`${this.config.baseUrl}/send/message/otp`, {
+        method: 'POST',
+        headers: {
+          'beon-token': this.config.token
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.status === 200) {
+        console.log('✅ SMS fallback sent successfully to:', phoneNumber);
+        return { 
+          success: true, 
+          message: 'SMS sent successfully as fallback'
+        };
+      } else {
+        console.error('❌ SMS fallback failed:', result);
+        return { 
+          success: false, 
+          error: result.message || 'SMS fallback failed' 
+        };
+      }
+    } catch (error: any) {
+      console.error('❌ SMS fallback error:', error);
+      return { success: false, error: error.message };
+    }
   }
 
   // تنسيق رقم الهاتف
@@ -90,64 +189,29 @@ El7hm Team`;
     
     // إذا لم يبدأ بـ +، أضف +966 كافتراضي
     if (!phoneNumber.startsWith('+')) {
-      if (cleaned.startsWith('966')) {
-        return `+${cleaned}`;
-      } else if (cleaned.startsWith('0')) {
-        return `+966${cleaned.substring(1)}`;
+      cleaned = '+966' + cleaned;
       } else {
-        return `+966${cleaned}`;
-      }
+      cleaned = '+' + cleaned;
     }
     
-    return phoneNumber;
+    return cleaned;
   }
 
   // التحقق من صحة رقم الهاتف
   validatePhoneNumber(phoneNumber: string): boolean {
-    // التحقق من أن الرقم يبدأ بـ +
-    if (!phoneNumber.startsWith('+')) {
-      return false;
-    }
-    
-    // التحقق من أن الرقم يحتوي على 10-15 رقم
-    const digits = phoneNumber.replace(/\D/g, '');
-    if (digits.length < 10 || digits.length > 15) {
-      return false;
-    }
-    
-    return true;
+    const formatted = this.formatPhoneNumber(phoneNumber);
+    // التحقق من أن الرقم يحتوي على رمز الدولة و 9-15 رقم
+    return /^\+\d{1,3}\d{9,15}$/.test(formatted);
   }
 
-  // إنشاء reference فريد
-  generateReference(): string {
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 8);
-    return `user${timestamp}${random}`;
-  }
-
-  // التحقق من صحة OTP (simulation - في الواقع سيتم عبر callback)
-  async verifyOTP(reference: string, otp: string): Promise<boolean> {
-    // في الواقع، هذا سيتم عبر callback من BeOn
-    // لكن يمكننا محاكاة التحقق هنا
-    console.log('🔍 Verifying OTP:', { reference, otp });
-    return true;
-  }
-
-  // معالجة callback من BeOn
-  handleCallback(callbackData: BeOnCallbackResponse): boolean {
-    console.log('📞 BeOn callback received:', callbackData);
-    
-    // هنا يمكنك معالجة البيانات حسب احتياجاتك
-    // مثلاً: تحديث حالة المستخدم، إرسال إشعار، إلخ
-    
-    return callbackData.status === 'verified';
+  // توليد OTP عشوائي
+  generateOTP(): string {
+    return Math.random().toString().substring(2, 8);
   }
 }
 
 // دالة وهمية لإرسال OTP عبر BeOn WhatsApp (لتجنب خطأ الاستيراد)
 export async function sendBeOnWhatsAppOTP(phone: string, otp: string, name?: string) {
-  // يمكنك لاحقًا ربطها بالخدمة الحقيقية
-  return { success: true, message: 'OTP sent (mock)' };
+  const service = new BeOnWhatsAppService();
+  return await service.sendOTP(phone, otp, name, 'whatsapp');
 }
-
-export default BeOnWhatsAppService; 

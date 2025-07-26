@@ -1,8 +1,18 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-const SidebarContext = createContext();
+interface SidebarContextType {
+  isCollapsed: boolean;
+  isMobileOpen: boolean;
+  setIsCollapsed: (collapsed: boolean) => void;
+  setIsMobileOpen: (open: boolean) => void;
+  toggleSidebar: () => void;
+  toggleMobileSidebar: () => void;
+  closeMobileSidebar: () => void;
+}
+
+const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export const useSidebar = () => {
   const context = useContext(SidebarContext);
@@ -12,7 +22,11 @@ export const useSidebar = () => {
   return context;
 };
 
-export const SidebarProvider = ({ children }) => {
+interface SidebarProviderProps {
+  children: ReactNode;
+}
+
+export const SidebarProvider = ({ children }: SidebarProviderProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -41,7 +55,7 @@ export const SidebarProvider = ({ children }) => {
     setIsMobileOpen(false);
   };
 
-  const value = {
+  const value: SidebarContextType = {
     isCollapsed,
     isMobileOpen,
     setIsCollapsed,

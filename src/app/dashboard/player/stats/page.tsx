@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/firebase/auth-provider';
 import { db } from '@/lib/firebase/config';
 import { collection, doc, getDoc, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
+import { useTranslation } from '@/lib/translations/simple-context';
 import {
     CartesianGrid,
     Cell,
@@ -20,6 +21,7 @@ import {
 
 export default function StatsPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [playerData, setPlayerData] = useState<any>(null);
   const [playerStats, setPlayerStats] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,7 +84,7 @@ export default function StatsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-xl">جاري التحميل...</div>
+        <div className="text-xl">{t('dashboard.player.stats.loading')}</div>
       </div>
     );
   }
@@ -90,29 +92,29 @@ export default function StatsPage() {
   return (
     <>
       <div className="p-6 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">إحصائيات اللاعب</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.player.stats.title')}</h1>
 
         {/* معلومات اللاعب الأساسية */}
         <Card>
           <CardHeader>
-            <CardTitle>المعلومات الأساسية</CardTitle>
+            <CardTitle>{t('dashboard.player.stats.basicInfo')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="p-4 rounded-lg bg-gray-50">
-                <h3 className="text-sm font-medium text-gray-500">المركز</h3>
-                <p className="mt-1 text-lg font-semibold">{playerData?.position || 'غير محدد'}</p>
+                <h3 className="text-sm font-medium text-gray-500">{t('dashboard.player.stats.position')}</h3>
+                <p className="mt-1 text-lg font-semibold">{playerData?.position || t('dashboard.player.stats.notSpecified')}</p>
               </div>
               <div className="p-4 rounded-lg bg-gray-50">
-                <h3 className="text-sm font-medium text-gray-500">عدد التسجيلات</h3>
+                <h3 className="text-sm font-medium text-gray-500">{t('dashboard.player.stats.recordings')}</h3>
                 <p className="mt-1 text-lg font-semibold">{playerStats.length}</p>
               </div>
               <div className="p-4 rounded-lg bg-gray-50">
-                <h3 className="text-sm font-medium text-gray-500">آخر تحديث</h3>
+                <h3 className="text-sm font-medium text-gray-500">{t('dashboard.player.stats.lastUpdate')}</h3>
                 <p className="mt-1 text-lg font-semibold">
                   {playerStats.length > 0
                     ? new Date(playerStats[0].date).toLocaleDateString('ar-SA')
-                    : 'لا يوجد'}
+                    : t('dashboard.player.stats.none')}
                 </p>
               </div>
             </div>
@@ -123,7 +125,7 @@ export default function StatsPage() {
         {averageStats && (
           <Card>
             <CardHeader>
-              <CardTitle>متوسط الإحصائيات</CardTitle>
+              <CardTitle>{t('dashboard.player.stats.averageStats')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -131,12 +133,12 @@ export default function StatsPage() {
                   <PieChart>
                     <Pie
                       data={[
-                        { name: 'السرعة', value: averageStats.speed },
-                        { name: 'اللياقة', value: averageStats.stamina },
-                        { name: 'التسديد', value: averageStats.shooting },
-                        { name: 'التمرير', value: averageStats.passing },
-                        { name: 'المراوغة', value: averageStats.dribbling },
-                        { name: 'الدفاع', value: averageStats.defending }
+                        { name: t('dashboard.player.stats.speed'), value: averageStats.speed },
+                        { name: t('dashboard.player.stats.stamina'), value: averageStats.stamina },
+                        { name: t('dashboard.player.stats.shooting'), value: averageStats.shooting },
+                        { name: t('dashboard.player.stats.passing'), value: averageStats.passing },
+                        { name: t('dashboard.player.stats.dribbling'), value: averageStats.dribbling },
+                        { name: t('dashboard.player.stats.defending'), value: averageStats.defending }
                       ]}
                       cx="50%"
                       cy="50%"
@@ -161,7 +163,7 @@ export default function StatsPage() {
         {/* تطور الإحصائيات */}
         <Card>
           <CardHeader>
-            <CardTitle>تطور الإحصائيات</CardTitle>
+            <CardTitle>{t('dashboard.player.stats.progress')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -172,12 +174,12 @@ export default function StatsPage() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="speed" stroke="#0088FE" name="السرعة" />
-                  <Line type="monotone" dataKey="stamina" stroke="#00C49F" name="اللياقة" />
-                  <Line type="monotone" dataKey="shooting" stroke="#FFBB28" name="التسديد" />
-                  <Line type="monotone" dataKey="passing" stroke="#FF8042" name="التمرير" />
-                  <Line type="monotone" dataKey="dribbling" stroke="#8884D8" name="المراوغة" />
-                  <Line type="monotone" dataKey="defending" stroke="#82ca9d" name="الدفاع" />
+                  <Line type="monotone" dataKey="speed" stroke="#0088FE" name={t('dashboard.player.stats.speed')} />
+                  <Line type="monotone" dataKey="stamina" stroke="#00C49F" name={t('dashboard.player.stats.stamina')} />
+                  <Line type="monotone" dataKey="shooting" stroke="#FFBB28" name={t('dashboard.player.stats.shooting')} />
+                  <Line type="monotone" dataKey="passing" stroke="#FF8042" name={t('dashboard.player.stats.passing')} />
+                  <Line type="monotone" dataKey="dribbling" stroke="#8884D8" name={t('dashboard.player.stats.dribbling')} />
+                  <Line type="monotone" dataKey="defending" stroke="#82ca9d" name={t('dashboard.player.stats.defending')} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -187,32 +189,32 @@ export default function StatsPage() {
         {/* آخر التسجيلات */}
         <Card>
           <CardHeader>
-            <CardTitle>آخر التسجيلات</CardTitle>
+            <CardTitle>{t('dashboard.player.stats.recentRecords')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="text-right border-b">
-                    <th className="pb-3">التاريخ</th>
-                    <th className="pb-3">السرعة</th>
-                    <th className="pb-3">اللياقة</th>
-                    <th className="pb-3">التسديد</th>
-                    <th className="pb-3">التمرير</th>
-                    <th className="pb-3">المراوغة</th>
-                    <th className="pb-3">الدفاع</th>
+                    <th className="pb-3">{t('dashboard.player.stats.date')}</th>
+                    <th className="pb-3">{t('dashboard.player.stats.speed')}</th>
+                    <th className="pb-3">{t('dashboard.player.stats.stamina')}</th>
+                    <th className="pb-3">{t('dashboard.player.stats.shooting')}</th>
+                    <th className="pb-3">{t('dashboard.player.stats.passing')}</th>
+                    <th className="pb-3">{t('dashboard.player.stats.dribbling')}</th>
+                    <th className="pb-3">{t('dashboard.player.stats.defending')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {playerStats.slice(0, 5).map((stat, index) => (
-                    <tr key={stat.id} className="text-right border-b">
-                      <td className="py-3">{new Date(stat.date).toLocaleDateString('ar-SA')}</td>
-                      <td className="py-3">{stat.speed}</td>
-                      <td className="py-3">{stat.stamina}</td>
-                      <td className="py-3">{stat.shooting}</td>
-                      <td className="py-3">{stat.passing}</td>
-                      <td className="py-3">{stat.dribbling}</td>
-                      <td className="py-3">{stat.defending}</td>
+                  {playerStats.slice(0, 10).map((stat, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="py-2">{new Date(stat.date).toLocaleDateString('ar-SA')}</td>
+                      <td className="py-2">{stat.speed || 0}</td>
+                      <td className="py-2">{stat.stamina || 0}</td>
+                      <td className="py-2">{stat.shooting || 0}</td>
+                      <td className="py-2">{stat.passing || 0}</td>
+                      <td className="py-2">{stat.dribbling || 0}</td>
+                      <td className="py-2">{stat.defending || 0}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -458,7 +458,7 @@ export default function AcademyProfilePage() {
           <div className="flex flex-col items-center p-5 text-white shadow bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl">
             <Users size={28} />
             <div className="mt-2 text-2xl font-bold">{academyData?.stats?.students ?? 150}</div>
-            <div className="mt-1 text-sm">الطلاب</div>
+                            <div className="mt-1 text-sm">اللاعبين</div>
           </div>
           <div className="flex flex-col items-center p-5 text-white shadow bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl">
             <BookOpen size={28} />

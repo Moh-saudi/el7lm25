@@ -26,14 +26,21 @@ interface Notification {
 }
 
 export default function ExternalNotifications() {
-  const [user] = useAuthState(auth);
+  const [user, loading] = useAuthState(auth);
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
+  // إضافة حالة التحميل للتعامل مع Hydration
   useEffect(() => {
-    if (!user) return;
+    setIsClient(true);
+  }, []);
+
+  // مراقبة الإشعارات - يجب أن يكون هذا useEffect دائماً موجود
+  useEffect(() => {
+    if (!user || !isClient) return;
 
     let retryCount = 0;
     const maxRetries = 3;
@@ -96,7 +103,7 @@ export default function ExternalNotifications() {
 
     setupListener();
     return () => unsubscribe();
-  }, [user]);
+  }, [user, isClient]);
 
   const formatTimeAgo = (timestamp: any) => {
     if (!timestamp || !timestamp.toDate) return '';
@@ -194,7 +201,26 @@ export default function ExternalNotifications() {
     }
   };
 
-  if (!user) return null;
+  // إذا كان التطبيق لا يزال في حالة التحميل أو لم يتم تحميله على العميل، لا نعرض شيئاً
+  if (!isClient || loading) {
+    return (
+      <div className="relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="relative"
+          disabled
+        >
+          <Bell className="w-5 h-5" />
+        </Button>
+      </div>
+    );
+  }
+
+  // إذا لم يكن هناك مستخدم، لا نعرض المكون
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="relative">
@@ -206,7 +232,7 @@ export default function ExternalNotifications() {
         onClick={() => setIsOpen(!isOpen)}
       >
         <Bell className="w-5 h-5" />
-        {unreadCount > 0 && (
+        {isClient && unreadCount > 0 && (
           <Badge
             className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-red-500"
           >
@@ -216,7 +242,7 @@ export default function ExternalNotifications() {
       </Button>
 
       {/* قائمة الإشعارات */}
-      {isOpen && (
+      {isClient && isOpen && (
         <div className="absolute left-0 mt-2 w-96 bg-white rounded-lg shadow-lg border overflow-hidden z-50">
           <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
             <h3 className="font-semibold">الإشعارات</h3>

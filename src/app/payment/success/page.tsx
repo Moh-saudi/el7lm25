@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { useTranslation } from '@/lib/translations/simple-context';
 
 export default function PaymentSuccessPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [paymentData, setPaymentData] = useState<any>(null);
@@ -27,21 +29,21 @@ export default function PaymentSuccessPage() {
           }
         }
       } catch (error) {
-        console.error('Error fetching payment data:', error);
+        console.error(t('payment.success.errors.fetchData'), error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchPaymentData();
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">جاري التحقق من الدفع...</p>
+          <p className="text-gray-600">{t('payment.success.loading')}</p>
         </div>
       </div>
     );
@@ -60,33 +62,33 @@ export default function PaymentSuccessPage() {
 
           {/* عنوان النجاح */}
           <h1 className="text-3xl font-bold text-green-700 mb-4">
-            تم الدفع بنجاح! 🎉
+            {t('payment.success.title')} 🎉
           </h1>
 
           {/* رسالة النجاح */}
           <p className="text-lg text-gray-700 mb-8">
-            شكراً لك على الاشتراك في منصتنا. تم تفعيل اشتراكك بنجاح ويمكنك الآن الاستمتاع بجميع المميزات.
+            {t('payment.success.message')}
           </p>
 
           {/* تفاصيل الدفع */}
           {paymentData && (
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">تفاصيل الدفع</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">{t('payment.success.paymentDetails')}</h2>
               <div className="space-y-3 text-right">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">رقم الطلب:</span>
-                  <span className="font-medium">{paymentData.transactionNumber || 'غير متوفر'}</span>
+                  <span className="text-gray-600">{t('payment.success.orderNumber')}:</span>
+                  <span className="font-medium">{paymentData.transactionNumber || t('payment.success.notAvailable')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">المبلغ:</span>
+                  <span className="text-gray-600">{t('payment.success.amount')}:</span>
                   <span className="font-medium">{paymentData.amount} {paymentData.currencySymbol}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">الباقة:</span>
+                  <span className="text-gray-600">{t('payment.success.package')}:</span>
                   <span className="font-medium">{paymentData.packageType}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">تاريخ الدفع:</span>
+                  <span className="text-gray-600">{t('payment.success.paymentDate')}:</span>
                   <span className="font-medium">
                     {paymentData.createdAt?.toDate?.()?.toLocaleDateString('ar-EG') || 
                      new Date().toLocaleDateString('ar-EG')}
@@ -98,23 +100,23 @@ export default function PaymentSuccessPage() {
 
           {/* معلومات إضافية */}
           <div className="bg-blue-50 rounded-2xl p-6 mb-8">
-            <h3 className="text-lg font-bold text-blue-800 mb-3">ماذا بعد؟</h3>
+            <h3 className="text-lg font-bold text-blue-800 mb-3">{t('payment.success.whatsNext')}</h3>
             <ul className="text-right space-y-2 text-blue-700">
               <li className="flex items-center gap-2">
                 <span className="text-blue-500">✓</span>
-                تم تفعيل اشتراكك تلقائياً
+                {t('payment.success.nextSteps.subscriptionActivated')}
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-blue-500">✓</span>
-                يمكنك الآن الوصول لجميع المميزات
+                {t('payment.success.nextSteps.accessFeatures')}
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-blue-500">✓</span>
-                ستتلقى إشعارات بالعروض الجديدة
+                {t('payment.success.nextSteps.notifications')}
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-blue-500">✓</span>
-                فريق الدعم متاح لمساعدتك
+                {t('payment.success.nextSteps.support')}
               </li>
             </ul>
           </div>
@@ -125,20 +127,20 @@ export default function PaymentSuccessPage() {
               onClick={() => router.push('/dashboard')}
               className="px-8 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
             >
-              الذهاب للوحة التحكم
+              {t('payment.success.buttons.dashboard')}
             </button>
             <button
               onClick={() => router.push('/')}
               className="px-8 py-3 bg-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-300 transition-colors"
             >
-              العودة للرئيسية
+              {t('payment.success.buttons.home')}
             </button>
           </div>
 
           {/* رسالة الدعم */}
           <div className="mt-8 p-4 bg-yellow-50 rounded-xl">
             <p className="text-sm text-yellow-800">
-              إذا واجهت أي مشكلة أو لديك استفسار، لا تتردد في التواصل مع فريق الدعم عبر البريد الإلكتروني أو الواتساب.
+              {t('payment.success.supportMessage')}
             </p>
           </div>
         </div>

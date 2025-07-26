@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from '@/lib/translations/simple-context';
 import { 
   Search, 
   Filter, 
@@ -106,21 +107,8 @@ interface FilterOptions {
   sortBy: 'relevance' | 'rating' | 'followers' | 'recent' | 'alphabetical';
 }
 
-const ENTITY_TYPES = {
-  club: { label: 'نادي', icon: Building, color: 'bg-blue-500' },
-  agent: { label: 'وكيل لاعبين', icon: Briefcase, color: 'bg-purple-500' },
-  scout: { label: 'سكاوت', icon: Eye, color: 'bg-green-500' },
-  academy: { label: 'أكاديمية', icon: Trophy, color: 'bg-orange-500' },
-  sponsor: { label: 'راعي', icon: Award, color: 'bg-red-500' },
-  trainer: { label: 'مدرب', icon: User, color: 'bg-cyan-500' }
-};
-
-const COUNTRIES = [
-  'مصر', 'السعودية', 'الإمارات', 'قطر', 'الكويت', 'البحرين', 'عمان',
-  'الأردن', 'لبنان', 'العراق', 'المغرب', 'الجزائر', 'تونس', 'ليبيا'
-];
-
 export default function SearchPage() {
+  const { t, tWithVars } = useTranslation();
   const [user, loading] = useAuthState(auth);
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
@@ -147,6 +135,33 @@ export default function SearchPage() {
   // حالة الواجهة
   const [showFilters, setShowFilters] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // تعريف أنواع الكيانات مع الترجمة
+  const ENTITY_TYPES = {
+    club: { label: t('dashboard.player.search.entityTypes.club'), icon: Building, color: 'bg-blue-500' },
+    agent: { label: t('dashboard.player.search.entityTypes.agent'), icon: Briefcase, color: 'bg-purple-500' },
+    scout: { label: t('dashboard.player.search.entityTypes.scout'), icon: Eye, color: 'bg-green-500' },
+    academy: { label: t('dashboard.player.search.entityTypes.academy'), icon: Trophy, color: 'bg-orange-500' },
+    sponsor: { label: t('dashboard.player.search.entityTypes.sponsor'), icon: Award, color: 'bg-red-500' },
+    trainer: { label: t('dashboard.player.search.entityTypes.trainer'), icon: User, color: 'bg-cyan-500' }
+  };
+
+  const COUNTRIES = [
+    t('dashboard.player.search.countries.egypt'),
+    t('dashboard.player.search.countries.saudiArabia'),
+    t('dashboard.player.search.countries.uae'),
+    t('dashboard.player.search.countries.qatar'),
+    t('dashboard.player.search.countries.kuwait'),
+    t('dashboard.player.search.countries.bahrain'),
+    t('dashboard.player.search.countries.oman'),
+    t('dashboard.player.search.countries.jordan'),
+    t('dashboard.player.search.countries.lebanon'),
+    t('dashboard.player.search.countries.iraq'),
+    t('dashboard.player.search.countries.morocco'),
+    t('dashboard.player.search.countries.algeria'),
+    t('dashboard.player.search.countries.tunisia'),
+    t('dashboard.player.search.countries.libya')
+  ];
 
   // جلب البيانات من Firestore
   const fetchEntities = useCallback(async (reset = false) => {
@@ -190,7 +205,7 @@ export default function SearchPage() {
             // تحويل بيانات النادي إلى تنسيق SearchEntity
             const entity: SearchEntity = {
               id: doc.id,
-              name: clubData.name || 'نادي غير مسمى',
+              name: clubData.name || t('dashboard.player.search.defaultNames.club'),
               type: 'club',
               email: clubData.email || '',
               phone: clubData.phone || '',
@@ -202,17 +217,17 @@ export default function SearchPage() {
                 city: clubData.city || '',
                 address: clubData.address || ''
               },
-              description: clubData.description || 'نادي رياضي متميز',
-              specialization: clubData.type || 'كرة القدم',
+              description: clubData.description || t('dashboard.player.search.defaultDescriptions.club'),
+              specialization: clubData.type || t('dashboard.player.search.defaultSpecializations.football'),
               verified: true, // جميع الأندية المسجلة محققة
               rating: 4.5, // تقييم افتراضي
               reviewsCount: Math.floor(Math.random() * 500) + 100,
               followersCount: (clubData.stats?.players || 0) * 10,
               connectionsCount: clubData.stats?.contracts || 0,
               achievements: clubData.trophies?.map((t: any) => `${t.name} (${t.year})`) || [],
-              services: ['تدريب اللاعبين', 'برامج الناشئين', 'المنافسات الرسمية'],
+              services: [t('dashboard.player.search.services.playerTraining'), t('dashboard.player.search.services.youthPrograms'), t('dashboard.player.search.services.officialCompetitions')],
               established: clubData.founded || '',
-              languages: ['العربية'],
+              languages: [t('dashboard.player.search.languages.arabic')],
               createdAt: new Date(),
               lastActive: new Date(),
               isPremium: true,
@@ -270,7 +285,7 @@ export default function SearchPage() {
             
             const entity: SearchEntity = {
               id: doc.id,
-              name: agentData.full_name || 'وكيل لاعبين',
+              name: agentData.full_name || t('dashboard.player.search.defaultNames.agent'),
               type: 'agent',
               email: agentData.email || '',
               phone: agentData.phone || '',
@@ -282,29 +297,30 @@ export default function SearchPage() {
                 city: agentData.current_location?.split(' - ')[1] || agentData.current_location || '',
                 address: agentData.office_address || ''
               },
-              description: `وكيل لاعبين ${agentData.is_fifa_licensed ? 'معتمد من FIFA' : 'محلي'} - ${agentData.years_of_experience || 0} سنة خبرة`,
-              specialization: agentData.specialization || 'إدارة أعمال اللاعبين',
+              description: agentData.specialization || t('dashboard.player.search.defaultDescriptions.agent'),
+              specialization: agentData.specialization || t('dashboard.player.search.defaultSpecializations.playerAgent'),
               verified: agentData.is_fifa_licensed || false,
               rating: 4.5,
-              reviewsCount: Math.floor(Math.random() * 200) + 50,
-              followersCount: (agentData.stats?.active_players || 0) * 25,
-              connectionsCount: agentData.stats?.completed_deals || 0,
-              achievements: agentData.is_fifa_licensed ? ['وكيل معتمد FIFA', 'خبرة متقدمة'] : ['وكيل محلي', 'خبرة متقدمة'],
-              services: ['التفاوض على العقود', 'الاستشارات القانونية', 'إدارة المسيرة المهنية'],
-              established: agentData.createdAt ? new Date(agentData.createdAt.seconds * 1000).getFullYear().toString() : '',
-              languages: agentData.spoken_languages || ['العربية'],
-              createdAt: agentData.createdAt || new Date(),
-              lastActive: agentData.updatedAt || new Date(),
-              isPremium: agentData.isPremium || false,
+              reviewsCount: Math.floor(Math.random() * 500) + 100,
+              followersCount: (agentData.stats?.players || 0) * 10,
+              connectionsCount: agentData.stats?.contracts || 0,
+              achievements: agentData.is_fifa_licensed ? [t('dashboard.player.search.achievements.fifaLicensed')] : [],
+              services: [t('dashboard.player.search.services.playerRepresentation'), t('dashboard.player.search.services.contractNegotiation')],
+              established: agentData.established || '',
+              languages: agentData.spoken_languages || [t('dashboard.player.search.languages.arabic')],
+              createdAt: new Date(),
+              lastActive: new Date(),
+              isPremium: true,
+              subscriptionType: 'premium',
               contactInfo: {
                 email: agentData.email || '',
                 phone: agentData.phone || '',
                 whatsapp: agentData.phone || ''
               },
               stats: {
-                successfulDeals: agentData.stats?.completed_deals || 0,
-                playersRepresented: agentData.stats?.active_players || 0,
-                activeContracts: agentData.stats?.success_rate || 0
+                successfulDeals: agentData.stats?.contracts || 0,
+                playersRepresented: agentData.stats?.players || 0,
+                activeContracts: agentData.stats?.contracts || 0
               },
               isFollowing: false,
               isConnected: false,
@@ -314,7 +330,7 @@ export default function SearchPage() {
             allEntities.push(entity);
           });
         } catch (error) {
-          console.log('خطأ في جلب بيانات الوكلاء:', error);
+          console.error('خطأ في جلب بيانات الوكلاء:', error);
         }
       }
 
@@ -346,7 +362,7 @@ export default function SearchPage() {
             
             const entity: SearchEntity = {
               id: doc.id,
-              name: academyData.name || 'أكاديمية رياضية',
+              name: academyData.name || t('dashboard.player.search.defaultNames.academy'),
               type: 'academy',
               email: academyData.email || '',
               phone: academyData.phone || '',
@@ -358,17 +374,17 @@ export default function SearchPage() {
                 city: academyData.city || '',
                 address: academyData.address || ''
               },
-              description: academyData.description || 'أكاديمية تدريب رياضي متميزة',
-              specialization: Array.isArray(academyData.programs) ? academyData.programs.join(', ') : 'تدريب الناشئين',
+              description: academyData.description || t('dashboard.player.search.defaultDescriptions.academy'),
+              specialization: Array.isArray(academyData.programs) ? academyData.programs.join(', ') : t('dashboard.player.search.defaultSpecializations.academy'),
               verified: true,
               rating: 4.6,
               reviewsCount: Math.floor(Math.random() * 300) + 100,
               followersCount: (academyData.stats?.students || 0) * 5,
               connectionsCount: academyData.stats?.graduates || 0,
-              achievements: ['أكاديمية معتمدة', 'برامج متميزة'],
-              services: ['تدريب الناشئين', 'برامج متقدمة', 'تطوير المواهب'],
+              achievements: [t('dashboard.player.search.achievements.certified'), t('dashboard.player.search.achievements.advancedPrograms')],
+              services: [t('dashboard.player.search.services.playerTraining'), t('dashboard.player.search.services.advancedPrograms'), t('dashboard.player.search.services.talentDevelopment')],
               established: academyData.established || '',
-              languages: ['العربية'],
+              languages: [t('dashboard.player.search.languages.arabic')],
               createdAt: new Date(),
               lastActive: new Date(),
               isPremium: true,
@@ -426,7 +442,7 @@ export default function SearchPage() {
             
             const entity: SearchEntity = {
               id: doc.id,
-              name: trainerData.full_name || 'مدرب رياضي',
+              name: trainerData.full_name || t('dashboard.player.search.defaultNames.trainer'),
               type: 'trainer',
               email: trainerData.email || '',
               phone: trainerData.phone || '',
@@ -438,20 +454,20 @@ export default function SearchPage() {
                 city: trainerData.current_location?.split(' - ')[1] || trainerData.current_location || '',
                 address: ''
               },
-              description: `مدرب رياضي ${trainerData.is_certified ? 'معتمد' : 'محلي'} - ${trainerData.years_of_experience || 0} سنة خبرة`,
-              specialization: trainerData.specialization || 'تدريب بدني',
+              description: trainerData.specialization || t('dashboard.player.search.defaultDescriptions.trainer'),
+              specialization: trainerData.specialization || t('dashboard.player.search.defaultSpecializations.physicalTraining'),
               verified: trainerData.is_certified || false,
               rating: 4.4,
               reviewsCount: Math.floor(Math.random() * 150) + 30,
-              followersCount: (trainerData.stats?.players_trained || 0) * 20,
+              followersCount: (trainerData.stats?.players || 0) * 20,
               connectionsCount: trainerData.stats?.training_sessions || 0,
-              achievements: trainerData.is_certified ? ['مدرب معتمد', 'خبرة متقدمة'] : ['مدرب محلي', 'خبرة متقدمة'],
-              services: ['تدريب شخصي', 'برامج تأهيل', 'استشارات رياضية'],
-              established: trainerData.createdAt ? new Date(trainerData.createdAt.seconds * 1000).getFullYear().toString() : '',
-              languages: trainerData.spoken_languages || ['العربية'],
-              createdAt: trainerData.createdAt || new Date(),
-              lastActive: trainerData.updatedAt || new Date(),
-              isPremium: trainerData.isPremium || false,
+              achievements: trainerData.is_certified ? [t('dashboard.player.search.achievements.certified'), t('dashboard.player.search.achievements.advancedExperience')] : [t('dashboard.player.search.achievements.local'), t('dashboard.player.search.achievements.advancedExperience')],
+              services: [t('dashboard.player.search.services.personalTraining'), t('dashboard.player.search.services.preparationPrograms'), t('dashboard.player.search.services.sportsConsultations')],
+              established: trainerData.established || '',
+              languages: trainerData.spoken_languages || [t('dashboard.player.search.languages.arabic')],
+              createdAt: new Date(),
+              lastActive: new Date(),
+              isPremium: true,
               contactInfo: {
                 email: trainerData.email || '',
                 phone: trainerData.phone || '',
@@ -459,7 +475,7 @@ export default function SearchPage() {
               },
               stats: {
                 successfulDeals: trainerData.stats?.training_sessions || 0,
-                playersRepresented: trainerData.stats?.players_trained || 0,
+                playersRepresented: trainerData.stats?.players || 0,
                 activeContracts: trainerData.stats?.success_rate || 0
               },
               isFollowing: false,
@@ -483,7 +499,7 @@ export default function SearchPage() {
           allEntities.sort((a, b) => b.followersCount - a.followersCount);
           break;
         case 'alphabetical':
-          allEntities.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+          allEntities.sort((a, b) => a.name.localeCompare(b.name));
           break;
         default:
           // ترتيب افتراضي: الأندية أولاً ثم باقي الأنواع
@@ -529,20 +545,20 @@ export default function SearchPage() {
       const mockEntities: SearchEntity[] = [
         {
           id: '1',
-          name: 'النادي الأهلي',
+          name: t('dashboard.player.search.mockEntities.alahly.name'),
           type: 'club',
           email: 'info@alahly.com',
           phone: '+20223456789',
           website: 'www.alahly.com',
           profileImage: '/clubs/ahly.jpg',
-          location: { country: 'مصر', city: 'القاهرة' },
-          description: 'نادي القرن في أفريقيا، أحد أكبر الأندية في العالم العربي والقارة الأفريقية.',
+          location: { country: t('dashboard.player.search.mockEntities.alahly.location.country'), city: t('dashboard.player.search.mockEntities.alahly.location.city') },
+          description: t('dashboard.player.search.mockEntities.alahly.description'),
           verified: true,
           rating: 4.9,
           reviewsCount: 1200,
           followersCount: 5480000,
           connectionsCount: 1200,
-          achievements: ['دوري أبطال أفريقيا (10 مرات)', 'الدوري المصري (42 مرة)'],
+          achievements: [t('dashboard.player.search.mockEntities.alahly.achievements.afcon'), t('dashboard.player.search.mockEntities.alahly.achievements.egyptianLeague')],
           createdAt: new Date(),
           lastActive: new Date(),
           isPremium: true,
@@ -554,23 +570,23 @@ export default function SearchPage() {
         },
         {
           id: '2',
-          name: 'وكالة النجوم الرياضية',
+          name: t('dashboard.player.search.mockEntities.starsAgency.name'),
           type: 'agent',
           email: 'contact@stars-agency.com',
           phone: '+97145678901',
           website: 'www.stars-agency.com',
           profileImage: '/images/agent-avatar.png',
           coverImage: '/images/hero-1.jpg',
-          location: { country: 'الإمارات', city: 'دبي' },
-          description: 'وكالة رائدة في مجال إدارة أعمال اللاعبين المحترفين في الشرق الأوسط.',
-          specialization: 'لاعبي كرة القدم المحترفين',
+          location: { country: t('dashboard.player.search.mockEntities.starsAgency.location.country'), city: t('dashboard.player.search.mockEntities.starsAgency.location.city') },
+          description: t('dashboard.player.search.mockEntities.starsAgency.description'),
+          specialization: t('dashboard.player.search.mockEntities.starsAgency.specialization'),
           verified: true,
           rating: 4.8,
           reviewsCount: 340,
           followersCount: 89000,
           connectionsCount: 450,
-          achievements: ['أفضل وكيل في الخليج 2023'],
-          services: ['التفاوض على العقود', 'الاستشارات القانونية'],
+          achievements: [t('dashboard.player.search.mockEntities.starsAgency.achievements')],
+          services: [t('dashboard.player.search.mockEntities.starsAgency.services.contractNegotiation'), t('dashboard.player.search.mockEntities.starsAgency.services.legalConsultation')],
           createdAt: new Date(),
           lastActive: new Date(),
           isPremium: true,
@@ -582,23 +598,23 @@ export default function SearchPage() {
         },
         {
           id: '3',
-          name: 'أكاديمية الفيصل الرياضية',
+          name: t('dashboard.player.search.mockEntities.faisalAcademy.name'),
           type: 'academy',
           email: 'info@faisal-academy.com',
           phone: '+966112345678',
           website: 'www.faisal-academy.com',
           profileImage: '/images/club-avatar.png',
           coverImage: '/images/hero-1.jpg',
-          location: { country: 'السعودية', city: 'الرياض' },
-          description: 'أكاديمية رائدة في تدريب الناشئين وتطوير المواهب الرياضية في المملكة.',
-          specialization: 'تدريب الناشئين، كرة القدم',
+          location: { country: t('dashboard.player.search.mockEntities.faisalAcademy.location.country'), city: t('dashboard.player.search.mockEntities.faisalAcademy.location.city') },
+          description: t('dashboard.player.search.mockEntities.faisalAcademy.description'),
+          specialization: t('dashboard.player.search.mockEntities.faisalAcademy.specialization'),
           verified: true,
           rating: 4.7,
           reviewsCount: 250,
           followersCount: 15000,
           connectionsCount: 800,
-          achievements: ['أفضل أكاديمية 2023', 'أكاديمية معتمدة'],
-          services: ['برامج الناشئين', 'تطوير المواهب', 'المعسكرات التدريبية'],
+          achievements: [t('dashboard.player.search.mockEntities.faisalAcademy.achievements.bestAcademy'), t('dashboard.player.search.mockEntities.faisalAcademy.achievements.certified')],
+          services: [t('dashboard.player.search.mockEntities.faisalAcademy.services.youthPrograms'), t('dashboard.player.search.mockEntities.faisalAcademy.services.talentDevelopment'), t('dashboard.player.search.mockEntities.faisalAcademy.services.trainingCamps')],
           established: '2015',
           createdAt: new Date(),
           lastActive: new Date(),
@@ -611,24 +627,24 @@ export default function SearchPage() {
         },
         {
           id: '4',
-          name: 'المدرب أحمد الخبير',
+          name: t('dashboard.player.search.mockEntities.ahmedExpert.name'),
           type: 'trainer',
           email: 'ahmed.expert@trainer.com',
           phone: '+966501234567',
           website: 'www.ahmed-trainer.com',
           profileImage: '/images/user-avatar.svg',
           coverImage: '/images/hero-1.jpg',
-          location: { country: 'السعودية', city: 'جدة' },
-          description: 'مدرب رياضي محترف متخصص في تدريب اللاعبين المحترفين وتطوير الأداء.',
-          specialization: 'تدريب بدني، تأهيل الإصابات',
+          location: { country: t('dashboard.player.search.mockEntities.ahmedExpert.location.country'), city: t('dashboard.player.search.mockEntities.ahmedExpert.location.city') },
+          description: t('dashboard.player.search.mockEntities.ahmedExpert.description'),
+          specialization: t('dashboard.player.search.mockEntities.ahmedExpert.specialization'),
           verified: true,
           rating: 4.5,
           reviewsCount: 180,
           followersCount: 8500,
           connectionsCount: 120,
-          achievements: ['مدرب معتمد', 'شهادة دولية'],
-          services: ['تدريب شخصي', 'برامج تأهيل', 'استشارات رياضية'],
-          established: '8 سنوات خبرة',
+          achievements: [t('dashboard.player.search.mockEntities.ahmedExpert.achievements.certified'), t('dashboard.player.search.mockEntities.ahmedExpert.achievements.internationalCertification')],
+          services: [t('dashboard.player.search.mockEntities.ahmedExpert.services.personalTraining'), t('dashboard.player.search.mockEntities.ahmedExpert.services.preparationPrograms'), t('dashboard.player.search.mockEntities.ahmedExpert.services.sportsConsultations')],
+          established: '8 years experience',
           createdAt: new Date(),
           lastActive: new Date(),
           isPremium: true,
@@ -640,20 +656,20 @@ export default function SearchPage() {
         },
         {
           id: '5',
-          name: 'نادي الزمالك',
+          name: t('dashboard.player.search.mockEntities.zamalek.name'),
           type: 'club',
           email: 'info@zamalek.com',
           phone: '+20223456780',
           website: 'www.zamalek.com',
           profileImage: '/clubs/zamalek.jpg',
-          location: { country: 'مصر', city: 'القاهرة' },
-          description: 'النادي الأبيض، واحد من أعرق الأندية المصرية والعربية.',
+          location: { country: t('dashboard.player.search.mockEntities.zamalek.location.country'), city: t('dashboard.player.search.mockEntities.zamalek.location.city') },
+          description: t('dashboard.player.search.mockEntities.zamalek.description'),
           verified: true,
           rating: 4.8,
           reviewsCount: 980,
           followersCount: 3200000,
           connectionsCount: 850,
-          achievements: ['دوري أبطال أفريقيا (5 مرات)', 'الدوري المصري (14 مرة)'],
+          achievements: [t('dashboard.player.search.mockEntities.zamalek.achievements.afcon'), t('dashboard.player.search.mockEntities.zamalek.achievements.egyptianLeague')],
           createdAt: new Date(),
           lastActive: new Date(),
           isPremium: true,
@@ -669,7 +685,7 @@ export default function SearchPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, filters]);
+  }, [user, filters, t]);
 
   // تأثير لجلب البيانات
   useEffect(() => {
@@ -743,7 +759,7 @@ export default function SearchPage() {
   const handleFollow = async (entityId: string) => {
     if (!user || actionLoading) return;
     
-    setActionLoading(entityId);
+    setActionLoading(`follow-${entityId}`);
     try {
       const entityRef = doc(db, 'entities', entityId);
       const entity = entities.find(e => e.id === entityId);
@@ -794,9 +810,56 @@ export default function SearchPage() {
     router.push(`/dashboard/messages?recipient=${entityId}`);
   };
 
+  // إرسال إشعار مشاهدة الملف الشخصي
+  const sendProfileViewNotification = async (entityId: string, entityType: string) => {
+    if (!user || !userData) return;
+    
+    // لا نرسل إشعار إذا كان المستخدم يشاهد ملفه الشخصي
+    if (user.uid === entityId) {
+      console.log('🚫 لا يتم إرسال إشعار - المستخدم يشاهد ملفه الشخصي');
+      return;
+    }
+
+    try {
+      console.log('📢 إرسال إشعار مشاهدة الملف الشخصي:', {
+        profileOwnerId: entityId,
+        viewerId: user.uid,
+        viewerName: userData.full_name || userData.displayName || userData.name || 'مستخدم',
+        viewerType: userData.accountType || 'player'
+      });
+
+      const response = await fetch('/api/notifications/smart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'profile_view',
+          profileOwnerId: entityId,
+          viewerId: user.uid,
+          viewerName: userData.full_name || userData.displayName || userData.name || 'مستخدم',
+          viewerType: userData.accountType || 'player'
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ تم إرسال إشعار مشاهدة الملف بنجاح:', result);
+      } else {
+        console.error('❌ فشل في إرسال إشعار مشاهدة الملف:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ خطأ في إرسال إشعار مشاهدة الملف:', error);
+    }
+  };
+
   // عرض الملف التفصيلي
   const handleViewProfile = (entity: SearchEntity) => {
     if (!user) return;
+    
+    // إرسال إشعار مشاهدة الملف
+    sendProfileViewNotification(entity.id, entity.type);
+    
     router.push(`/dashboard/player/entity-profile?type=${entity.type}&id=${entity.id}`);
   };
 
@@ -813,13 +876,13 @@ export default function SearchPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {/* نوع الكيان */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">نوع الكيان</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">{t('dashboard.player.search.filters.entityType')}</label>
           <select
             value={filters.type}
             onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value as any }))}
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            <option value="all">جميع الأنواع</option>
+            <option value="all">{t('dashboard.player.search.filters.allTypes')}</option>
             {Object.entries(ENTITY_TYPES).map(([key, value]) => (
               <option key={key} value={key}>{value.label}</option>
             ))}
@@ -828,13 +891,13 @@ export default function SearchPage() {
 
         {/* الدولة */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">الدولة</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">{t('dashboard.player.search.filters.country')}</label>
           <select
             value={filters.country}
             onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">جميع الدول</option>
+            <option value="">{t('dashboard.player.search.filters.allCountries')}</option>
             {COUNTRIES.map(country => (
               <option key={country} value={country}>{country}</option>
             ))}
@@ -843,7 +906,7 @@ export default function SearchPage() {
 
         {/* التقييم الأدنى */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">التقييم الأدنى</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">{t('dashboard.player.search.filters.minRating')}</label>
           <div className="flex gap-2">
             {[0, 3, 3.5, 4, 4.5].map(rating => (
               <Button
@@ -852,7 +915,7 @@ export default function SearchPage() {
                 size="sm"
                 onClick={() => setFilters(prev => ({ ...prev, minRating: rating }))}
               >
-                {rating > 0 ? `${rating}+` : 'الكل'}
+                {rating > 0 ? `${rating}+` : t('dashboard.player.search.filters.all')}
               </Button>
             ))}
           </div>
@@ -860,7 +923,7 @@ export default function SearchPage() {
 
         {/* خيارات إضافية */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">خيارات إضافية</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">{t('dashboard.player.search.filters.additionalOptions')}</label>
           <div className="space-y-2">
             <label className="flex items-center gap-2">
               <input
@@ -872,7 +935,7 @@ export default function SearchPage() {
                 }))}
                 className="rounded border-gray-300 text-blue-600"
               />
-              <span className="text-sm">محقق فقط</span>
+              <span className="text-sm">{t('dashboard.player.search.filters.verifiedOnly')}</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -884,7 +947,7 @@ export default function SearchPage() {
                 }))}
                 className="rounded border-gray-300 text-blue-600"
               />
-              <span className="text-sm">عضوية مميزة فقط</span>
+              <span className="text-sm">{t('dashboard.player.search.filters.premiumOnly')}</span>
             </label>
           </div>
         </div>
@@ -892,14 +955,14 @@ export default function SearchPage() {
 
       {/* ترتيب النتائج */}
       <div className="mt-4 pt-4 border-t border-gray-200">
-        <label className="block text-sm font-medium mb-2 text-gray-700">ترتيب النتائج</label>
+        <label className="block text-sm font-medium mb-2 text-gray-700">{t('dashboard.player.search.filters.sortResults')}</label>
         <div className="flex flex-wrap gap-2">
           {[
-            { key: 'relevance', label: 'الصلة' },
-            { key: 'rating', label: 'الأعلى تقييماً' },
-            { key: 'followers', label: 'الأكثر متابعة' },
-            { key: 'recent', label: 'الأحدث' },
-            { key: 'alphabetical', label: 'أبجدياً' }
+            { key: 'relevance', label: t('dashboard.player.search.sortOptions.relevance') },
+            { key: 'rating', label: t('dashboard.player.search.sortOptions.highestRated') },
+            { key: 'followers', label: t('dashboard.player.search.sortOptions.mostFollowed') },
+            { key: 'recent', label: t('dashboard.player.search.sortOptions.newest') },
+            { key: 'alphabetical', label: t('dashboard.player.search.sortOptions.alphabetical') }
           ].map(sort => (
             <Button
               key={sort.key}
@@ -1004,19 +1067,19 @@ export default function SearchPage() {
               <div className="font-bold text-lg text-gray-900">
                 {formatNumber(entity.followersCount)}
               </div>
-              <div className="text-xs text-gray-500">متابع</div>
+              <div className="text-xs text-gray-500">{t('dashboard.player.search.stats.followers')}</div>
             </div>
             <div>
               <div className="font-bold text-lg text-gray-900">
                 {formatNumber(entity.connectionsCount)}
               </div>
-              <div className="text-xs text-gray-500">اتصال</div>
+              <div className="text-xs text-gray-500">{t('dashboard.player.search.stats.connections')}</div>
             </div>
             <div>
               <div className="font-bold text-lg text-gray-900">
-                {entity.stats?.successfulDeals || 0}
+                {formatNumber(entity.stats?.successfulDeals || 0)}
               </div>
-              <div className="text-xs text-gray-500">صفقة</div>
+              <div className="text-xs text-gray-500">{t('dashboard.player.search.stats.deals')}</div>
             </div>
           </div>
 
@@ -1047,7 +1110,7 @@ export default function SearchPage() {
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
               <Eye className="w-4 h-4 mr-1" />
-              عرض الملف التفصيلي
+              {t('dashboard.player.search.actions.viewProfile')}
             </Button>
             
             <div className="grid grid-cols-2 gap-2">
@@ -1055,20 +1118,20 @@ export default function SearchPage() {
                 variant={entity.isFollowing ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleFollow(entity.id)}
-                disabled={actionLoading === entity.id}
+                disabled={actionLoading === `follow-${entity.id}`}
                 className="flex-1"
               >
-                {actionLoading === entity.id ? (
+                {actionLoading === `follow-${entity.id}` ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : entity.isFollowing ? (
                   <>
                     <UserCheck className="w-4 h-4 mr-1" />
-                    متابَع
+                    {t('dashboard.player.search.actions.following')}
                   </>
                 ) : (
                   <>
                     <UserPlus className="w-4 h-4 mr-1" />
-                    متابعة
+                    {t('dashboard.player.search.actions.follow')}
                   </>
                 )}
               </Button>
@@ -1081,7 +1144,7 @@ export default function SearchPage() {
                   targetUserId={entity.id}
                   targetUserName={entity.name}
                   targetUserType={entity.type as any}
-                  buttonText="رسالة"
+                  buttonText={t('dashboard.player.search.actions.message')}
                   buttonVariant="outline"
                   buttonSize="sm"
                   className="flex-1"
@@ -1099,7 +1162,7 @@ export default function SearchPage() {
                 className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
               >
                 <Mail className="w-4 h-4" />
-                بريد
+                {t('dashboard.player.search.contact.email')}
               </a>
             )}
             {entity.contactInfo.phone && (
@@ -1108,7 +1171,7 @@ export default function SearchPage() {
                 className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
               >
                 <Phone className="w-4 h-4" />
-                هاتف
+                {t('dashboard.player.search.contact.phone')}
               </a>
             )}
             {entity.website && (
@@ -1119,7 +1182,7 @@ export default function SearchPage() {
                 className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
               >
                 <Globe className="w-4 h-4" />
-                موقع
+                {t('dashboard.player.search.contact.website')}
               </a>
             )}
           </div>
@@ -1148,10 +1211,10 @@ export default function SearchPage() {
         {/* العنوان والبحث */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            البحث عن الفرص والأندية
+            {t('dashboard.player.search.title')}
           </h1>
           <p className="text-gray-600 text-lg mb-8">
-            اكتشف الفرص المتاحة مع الأندية والوكلاء والسكاوت والأكاديميات والمدربين والرعاة
+            {t('dashboard.player.search.subtitle')}
           </p>
           
           {/* شريط البحث الرئيسي */}
@@ -1160,7 +1223,7 @@ export default function SearchPage() {
               <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 type="text"
-                placeholder="ابحث عن الأندية، الوكلاء، الأكاديميات، المدربين..."
+                placeholder={t('dashboard.player.search.searchPlaceholder')}
                 value={filters.searchQuery}
                 onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
                 className="w-full pl-4 pr-12 py-4 text-lg rounded-full border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
@@ -1169,7 +1232,7 @@ export default function SearchPage() {
                 onClick={() => fetchEntities(true)}
                 className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full px-6"
               >
-                بحث
+                {t('dashboard.player.search.searchButton')}
               </Button>
             </div>
           </div>
@@ -1184,13 +1247,13 @@ export default function SearchPage() {
               className="flex items-center gap-2"
             >
               <Filter className="w-4 h-4" />
-              مرشحات متقدمة
+              {t('dashboard.player.search.advancedFilters')}
             </Button>
           </div>
 
           {/* عدد النتائج */}
           <div className="text-sm text-gray-600">
-            {totalResults > 0 && `${totalResults} نتيجة`}
+            {totalResults > 0 && tWithVars('dashboard.player.search.resultsCount', { count: totalResults })}
           </div>
         </div>
 
@@ -1220,9 +1283,9 @@ export default function SearchPage() {
           <Card className="p-12 text-center">
             <div className="flex flex-col items-center gap-4">
               <Search size={64} className="text-gray-300" />
-              <h3 className="text-2xl font-bold text-gray-900">لا توجد نتائج</h3>
+              <h3 className="text-2xl font-bold text-gray-900">{t('dashboard.player.search.noResults.title')}</h3>
               <p className="text-gray-500 max-w-md">
-                لم نتمكن من العثور على نتائج مطابقة لبحثك. جرب تغيير الكلمات المفتاحية أو المرشحات.
+                {t('dashboard.player.search.noResults.description')}
               </p>
               <Button
                 onClick={() => setFilters({
@@ -1237,7 +1300,7 @@ export default function SearchPage() {
                 })}
                 className="mt-4"
               >
-                إعادة تعيين المرشحات
+                {t('dashboard.player.search.noResults.resetFilters')}
               </Button>
             </div>
           </Card>
@@ -1260,11 +1323,11 @@ export default function SearchPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      جاري التحميل...
+                      {t('dashboard.player.search.loadingMore')}
                     </>
                   ) : (
                     <>
-                      تحميل المزيد
+                      {t('dashboard.player.search.loadMore')}
                       <ArrowRight className="w-4 h-4 mr-2" />
                     </>
                   )}

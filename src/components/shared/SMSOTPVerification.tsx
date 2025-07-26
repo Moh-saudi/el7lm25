@@ -15,6 +15,8 @@ interface SMSOTPVerificationProps {
   otpExpirySeconds?: number;
   useTemplate?: boolean;
   templateId?: number;
+  language?: string;
+  t?: (key: string) => string;
 }
 
 export default function SMSOTPVerification({
@@ -28,9 +30,11 @@ export default function SMSOTPVerification({
   subtitle = 'تم إرسال رمز التحقق إلى هاتفك',
   otpExpirySeconds = 30,
   useTemplate = false,
-  templateId = 133
+  templateId = 133,
+  language,
+  t,
 }: SMSOTPVerificationProps) {
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']); // إعادة إلى 6 أرقام
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState('');
@@ -113,8 +117,8 @@ export default function SMSOTPVerification({
 
       console.log('📤 Sending OTP to:', normalizedPhone);
       
-      // استخدام API route لإرسال OTP
-      const response = await fetch('/api/sms/send-otp', {
+      // التحقق من وجود OTP مخزن مسبقاً أولاً
+      const checkExistingResponse = await fetch('/api/sms/send-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -127,11 +131,18 @@ export default function SMSOTPVerification({
         })
       });
 
-      const result = await response.json();
+      const result = await checkExistingResponse.json();
       
-      if (response.ok && result.success) {
+      if (checkExistingResponse.ok && result.success) {
         console.log('✅ SMSOTP: OTP sent successfully to:', normalizedPhone);
+        
+        // إذا كان هناك OTP موجود، نعرض رسالة مناسبة
+        if (result.existingOTP) {
+          setMessage('تم إرسال رمز التحقق مسبقاً. يرجى التحقق من هاتفك.');
+        } else {
         setMessage('تم إرسال رمز التحقق إلى هاتفك بنجاح!');
+        }
+        
         setTimeRemaining(otpExpirySeconds);
       } else {
         console.error('❌ SMSOTP: OTP sending failed:', result.error);
@@ -253,7 +264,7 @@ export default function SMSOTPVerification({
     setOtp(newOtp);
     
     // الانتقال للحقل التالي تلقائياً
-    if (value && index < 5) {
+    if (value && index < 5) { // تغيير الشرط من 5 إلى 3
       const nextInput = document.getElementById(`sms-otp-${index + 1}`) as HTMLInputElement;
       if (nextInput) {
         nextInput.focus();
@@ -261,7 +272,7 @@ export default function SMSOTPVerification({
     }
     
     // التحقق التلقائي عند إكمال الرمز
-    if (newOtp.every(digit => digit !== '') && newOtp.join('').length === 6) {
+    if (newOtp.every(digit => digit !== '') && newOtp.join('').length === 6) { // تغيير الشرط من 6 إلى 4
       verifyOTP(newOtp.join(''));
     }
   };
@@ -437,6 +448,18 @@ export default function SMSOTPVerification({
 
   if (!isOpen) return null;
 
+  // استخدم t في كل النصوص:
+  const titleText = t ? t('otp.title') : (title || 'التحقق من رقم الهاتف');
+  const subtitleText = t ? t('otp.subtitle_sms') : (subtitle || 'تم إرسال رمز التحقق إلى هاتفك');
+  const resendText = t ? t('otp.resend') : 'إعادة إرسال الرمز';
+  const sendingText = t ? t('otp.sending') : 'جاري الإرسال...';
+  const cancelText = t ? t('otp.cancel') : 'إلغاء';
+  const inputLabel = t ? t('otp.inputLabel') : 'أدخل رمز التحقق المكون من 6 أرقام';
+  const timeLeftText = t ? t('otp.timeLeft') : 'الوقت المتبقي';
+  const expiredText = t ? t('otp.expired') : 'انتهت صلاحية الرمز';
+  const attemptsLeftText = t ? t('otp.attemptsLeft') : 'المحاولات المتبقية';
+  const helpText = t ? t('otp.helpText') : 'تأكد من أن هاتفك متصل بالإنترنت لاستلام الرسالة';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-xl" dir="rtl">
@@ -446,9 +469,9 @@ export default function SMSOTPVerification({
             <div className="flex justify-center mb-4">
               <Phone className="w-12 h-12 text-blue-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center">{title}</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center">{titleText}</h2>
             <p className="text-gray-600 text-center">
-              {subtitle}
+              {subtitleText}
               <br />
               <span className="font-semibold text-blue-600">{formatPhoneNumber(phoneNumber)}</span>
             </p>
@@ -506,17 +529,17 @@ export default function SMSOTPVerification({
           {timeRemaining > 0 ? (
             <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
               <Clock className="w-4 h-4" />
-              <span>الوقت المتبقي: {formatTime(timeRemaining)}</span>
+              <span>{timeLeftText}: {formatTime(timeRemaining)}</span>
             </div>
           ) : (
             <div className="text-sm text-red-600">
-              انتهت صلاحية الرمز
+              {expiredText}
             </div>
           )}
           
           {attempts > 0 && (
             <div className="text-sm text-orange-600">
-              المحاولات المتبقية: {maxAttempts - attempts}
+              {attemptsLeftText}: {maxAttempts - attempts}
             </div>
           )}
         </div>
@@ -535,12 +558,12 @@ export default function SMSOTPVerification({
             {resendLoading ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                جاري الإرسال...
+                {sendingText}
               </>
             ) : (
               <>
                 <RefreshCw className="w-4 h-4" />
-                إعادة إرسال الرمز
+                {resendText}
               </>
             )}
           </button>
@@ -550,14 +573,14 @@ export default function SMSOTPVerification({
             disabled={loading}
             className="w-full py-3 px-4 text-gray-600 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
           >
-            إلغاء
+            {cancelText}
           </button>
         </div>
 
         {/* Help Text */}
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-500">
-            تأكد من أن هاتفك متصل بالإنترنت لاستلام الرسالة
+            {helpText}
           </p>
         </div>
       </div>

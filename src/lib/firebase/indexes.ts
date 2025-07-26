@@ -1,8 +1,4 @@
-import { getFirestore } from 'firebase/firestore';
-import { app } from './config';
-
-// Get Firestore instance
-const db = getFirestore(app);
+import { db } from './config';
 
 // Define required indexes
 export const REQUIRED_INDEXES = [

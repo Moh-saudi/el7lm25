@@ -44,7 +44,7 @@ const createAcademyData = async () => {
     
     // الإحصائيات
     stats: {
-      totalStudents: 150,
+      totalPlayers: 150,
       activePlayers: 120,
       graduatedPlayers: 45,
       championships: 12,
