@@ -24,7 +24,7 @@ export default function ClubFooter() {
         </div>
 
         {/* روابط التنقل */}
-        <div className="flex gap-6 text-sm">
+      <div className="flex gap-6 text-sm">
           <Link href="/about" className="text-gray-500 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-300 transition-colors">
             {t('club.footer.about')}
           </Link>

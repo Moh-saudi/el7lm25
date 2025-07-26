@@ -144,16 +144,6 @@ export function getAdminDb(): Firestore {
   return firestoreInstance;
 }
 
-// تصدير آمن للـ adminDb
-export const adminDb = (() => {
-  try {
-    return getAdminDb();
-  } catch (error) {
-    console.warn('⚠️ Firebase Admin not available:', error.message);
-    return null;
-  }
-})();
-
 // دالة للتحقق من حالة Firebase Admin
 export function isFirebaseAdminAvailable(): boolean {
   return isInitialized && adminApp !== null && firestoreInstance !== null;
@@ -173,3 +163,13 @@ export function getFirebaseAdminStatus() {
     }
   };
 } 
+
+// تصدير آمن للـ adminDb - تأخير التهيئة
+export const adminDb = (() => {
+  try {
+    return getAdminDb();
+  } catch (error) {
+    console.warn('⚠️ Firebase Admin not available:', error.message);
+    return null;
+  }
+})(); 

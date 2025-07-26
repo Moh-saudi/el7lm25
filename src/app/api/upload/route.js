@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 
 // إعداد Supabase client للخادم
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -16,7 +15,22 @@ if (!supabaseServiceKey) {
 
 // إنشاء client مع fallback للمفتاح
 const effectiveKey = supabaseServiceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'fallback-key';
-const supabase = supabaseUrl ? createClient(supabaseUrl, effectiveKey) : null;
+
+// تأخير import Supabase لتجنب مشاكل البناء
+let supabase = null;
+
+async function getSupabaseClient() {
+  if (!supabase) {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      supabase = supabaseUrl ? createClient(supabaseUrl, effectiveKey) : null;
+    } catch (error) {
+      console.error('Failed to import Supabase:', error);
+      return null;
+    }
+  }
+  return supabase;
+}
 
 // أنواع الملفات المسموحة
 const ALLOWED_IMAGE_TYPES = [
@@ -45,6 +59,9 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export async function POST(request) {
   try {
+    // الحصول على Supabase client
+    const supabase = await getSupabaseClient();
+    
     // التحقق من إعداد Supabase
     if (!supabase) {
       return NextResponse.json(
