@@ -16,17 +16,16 @@ export default function PlayerLayout({ children }: PlayerLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   
-  // إخفاء القائمة الجانبية في صفحة التقارير
+  // إخفاء الهيدر والسايدبار للصفحات التي لا تحتاجها
   const isReportsPage = pathname.includes('/reports');
-  
-  // إخفاء القائمة الجانبية في صفحة عرض الكيانات من البحث
   const isEntityProfilePage = pathname.includes('/search/profile/');
+  const isMainDashboard = pathname === '/dashboard/player' || pathname === '/dashboard/player/';
   
   return (
     <DashboardFontWrapper className="bg-gray-50 dark:bg-gray-900">
-      {/* UnifiedHeader */}
-      {!isReportsPage && !isEntityProfilePage && (
-        <UnifiedHeader 
+      {/* إظهار الهيدر فقط للصفحة الرئيسية */}
+      {isMainDashboard && (
+        <UnifiedHeader
           variant="default"
           showLanguageSwitcher={true}
           showNotifications={true}
@@ -35,14 +34,18 @@ export default function PlayerLayout({ children }: PlayerLayoutProps) {
           logo="/player-avatar.png"
         />
       )}
+      
       <div className="flex flex-1 pt-16">
-        {!isReportsPage && !isEntityProfilePage && (
+        {/* إظهار السايدبار فقط للصفحة الرئيسية */}
+        {isMainDashboard && (
           <PlayerSidebar collapsed={collapsed} setCollapsed={setCollapsed} />
         )}
-        <main className={`flex-1 p-4 ${isReportsPage || isEntityProfilePage ? 'w-full' : ''}`}>
+        
+        <main className={`flex-1 p-4 ${isReportsPage || isEntityProfilePage || !isMainDashboard ? 'w-full' : ''}`}>
           {children}
         </main>
       </div>
+      
       <FloatingChatWidget />
     </DashboardFontWrapper>
   );

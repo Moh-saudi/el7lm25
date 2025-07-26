@@ -1,181 +1,169 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/lib/translations/simple-context';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { 
   Home,
   User,
   MessageSquare,
-  Settings,
-  LogOut,
-  Users,
-  Trophy,
-  Calendar,
   FileText,
-  Bell
+  Search,
+  Video,
+  BarChart3,
+  CreditCard,
+  CheckCircle,
+  LogOut
 } from 'lucide-react';
 
 interface PlayerSidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
+  collapsed: boolean;
+  setCollapsed: (collapsed: boolean) => void;
 }
 
-const PlayerSidebar: React.FC<PlayerSidebarProps> = ({ isOpen, onClose }) => {
+const PlayerSidebar: React.FC<PlayerSidebarProps> = ({ collapsed, setCollapsed }) => {
   const pathname = usePathname();
   const { t } = useTranslation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
     {
-      title: t('sidebar.player.dashboard'),
-      href: '/dashboard/player',
-      icon: Home,
-      description: t('sidebar.player.dashboardDesc')
-    },
-    {
-      title: t('sidebar.player.profile'),
+      title: 'الملف الشخصي',
       href: '/dashboard/player/profile',
       icon: User,
-      description: t('sidebar.player.profileDesc')
+      description: 'إدارة معلوماتك الشخصية'
     },
     {
-      title: t('sidebar.player.messages'),
+      title: 'التقارير',
+      href: '/dashboard/player/reports',
+      icon: FileText,
+      description: 'عرض تقارير الأداء والتقدم'
+    },
+    {
+      title: 'إدارة الفيديوهات',
+      href: '/dashboard/player/videos',
+      icon: Video,
+      description: 'رفع وإدارة الفيديوهات'
+    },
+    {
+      title: 'فيديوهات اللاعبين',
+      href: '/dashboard/player/player-videos',
+      icon: Video,
+      description: 'مشاهدة فيديوهات اللاعبين'
+    },
+    {
+      title: 'البحث عن الفرص والأندية',
+      href: '/dashboard/player/search',
+      icon: Search,
+      description: 'البحث عن فرص جديدة'
+    },
+    {
+      title: 'الإحصائيات',
+      href: '/dashboard/player/statistics',
+      icon: BarChart3,
+      description: 'عرض الإحصائيات والأداء'
+    },
+    {
+      title: 'الرسائل',
       href: '/dashboard/player/messages',
       icon: MessageSquare,
-      description: t('sidebar.player.messagesDesc')
+      description: 'إدارة المحادثات والرسائل'
     },
     {
-      title: t('sidebar.player.connections'),
-      href: '/dashboard/player/connections',
-      icon: Users,
-      description: t('sidebar.player.connectionsDesc')
+      title: 'إدارة الاشتراكات',
+      href: '/dashboard/player/subscriptions',
+      icon: CreditCard,
+      description: 'إدارة اشتراكاتك'
     },
     {
-      title: t('sidebar.player.achievements'),
-      href: '/dashboard/player/achievements',
-      icon: Trophy,
-      description: t('sidebar.player.achievementsDesc')
-    },
-    {
-      title: t('sidebar.player.schedule'),
-      href: '/dashboard/player/schedule',
-      icon: Calendar,
-      description: t('sidebar.player.scheduleDesc')
-    },
-    {
-      title: t('sidebar.player.documents'),
-      href: '/dashboard/player/documents',
-      icon: FileText,
-      description: t('sidebar.player.documentsDesc')
-    },
-    {
-      title: t('sidebar.player.notifications'),
-      href: '/dashboard/player/notifications',
-      icon: Bell,
-      description: t('sidebar.player.notificationsDesc')
+      title: 'حالة الاشتراك',
+      href: '/dashboard/player/subscription-status',
+      icon: CheckCircle,
+      description: 'عرض حالة اشتراكك'
     }
   ];
 
   return (
-    <>
-      {/* Overlay for mobile */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div className={cn(
-        "fixed top-0 left-0 h-full bg-white shadow-lg z-50 transition-transform duration-300 ease-in-out",
-        "lg:relative lg:translate-x-0 lg:shadow-none",
-        isOpen ? "translate-x-0" : "-translate-x-full",
-        isCollapsed ? "w-16" : "w-64"
-      )}>
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            {!isCollapsed && (
+    <div className={cn(
+      "bg-white border-r border-gray-200 transition-all duration-300",
+      collapsed ? "w-16" : "w-64"
+    )}>
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            {!collapsed && (
               <div className="flex items-center gap-2">
-                <img
-                  src="/images/logoclublandingpage/agman.png"
-                  alt="الحلم el7lm"
-                  className="h-8 w-auto"
-                />
-                <span className="font-bold text-lg text-gray-900">اللاعب</span>
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">E</span>
+                </div>
+                <div>
+                  <h2 className="font-bold text-gray-900">El7hm</h2>
+                  <p className="text-xs text-gray-500">KUWAIT CLUB</p>
+                </div>
               </div>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="lg:hidden"
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="p-1 rounded hover:bg-gray-100"
+              aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}
             >
-              <LogOut className="h-4 w-4" />
-            </Button>
+              <div className="w-4 h-4 flex flex-col justify-center items-center">
+                <div className="w-3 h-0.5 bg-gray-600 mb-0.5"></div>
+                <div className="w-3 h-0.5 bg-gray-600 mb-0.5"></div>
+                <div className="w-3 h-0.5 bg-gray-600"></div>
+              </div>
+            </button>
           </div>
+        </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+        {/* Menu Items */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
               
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200",
-                    "hover:bg-gray-100 hover:text-gray-900",
-                    isActive 
-                      ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700" 
-                      : "text-gray-600"
-                  )}
-                >
-                  <Icon className={cn(
-                    "h-5 w-5 flex-shrink-0",
-                    isActive ? "text-blue-700" : "text-gray-500"
-                  )} />
-                  {!isCollapsed && (
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium">{item.title}</div>
-                      <div className="text-xs text-gray-500 truncate">
-                        {item.description}
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                      isActive 
+                        ? "bg-blue-100 text-blue-700" 
+                        : "text-gray-700 hover:bg-gray-100"
+                    )}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    {!collapsed && (
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">{item.title}</div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {item.description}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </Link>
+                    )}
+                  </Link>
+                </li>
               );
             })}
-          </nav>
+          </ul>
+        </nav>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-200">
-            {!isCollapsed && (
-              <div className="space-y-2">
-                <Link href="/dashboard/player/settings">
-                  <Button variant="ghost" size="sm" className="w-full justify-start">
-                    <Settings className="h-4 w-4 mr-2" />
-                    {t('sidebar.settings')}
-                  </Button>
-                </Link>
-                <Button variant="ghost" size="sm" className="w-full justify-start text-red-600 hover:text-red-700">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {t('sidebar.signOut')}
-                </Button>
-              </div>
-            )}
-          </div>
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-200">
+          <Link
+            href="/auth/logout"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            {!collapsed && <span>تسجيل الخروج</span>}
+          </Link>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
