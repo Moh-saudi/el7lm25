@@ -162,7 +162,7 @@ export function getFirebaseAdminStatus() {
       clientEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
     }
   };
-} 
+}
 
 // تصدير آمن للـ adminDb - تأخير التهيئة
 export const adminDb = (() => {
