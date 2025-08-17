@@ -1,0 +1,308 @@
+'use client';
+
+import React, { useEffect, useMemo, useState } from 'react';
+import ReactPlayer from 'react-player/lazy';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { DreamAcademyCategory, DreamAcademyCategoryId, DreamAcademySource } from '@/types/dream-academy';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { getCurrencyRates, getCurrencyInfo, convertCurrency as convertCurrencyLib } from '@/lib/currency-rates';
+import { Play, Video as VideoIcon, Eye, Heart } from 'lucide-react';
+
+interface Props {
+  categoryId: DreamAcademyCategoryId;
+}
+
+export default function DreamAcademyVideosSection({ categoryId }: Props) {
+  const [sources, setSources] = useState<DreamAcademySource[]>([]);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+  const [activePlaylistId, setActivePlaylistId] = useState<string | null>(null);
+  const [category, setCategory] = useState<DreamAcademyCategory | null>(null);
+  const [allCategories, setAllCategories] = useState<DreamAcademyCategory[]>([]);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+
+  // payment selection
+  const [currencyRates, setCurrencyRates] = useState<any>({});
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'geidea'>('geidea');
+  const [fullName, setFullName] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [notes, setNotes] = useState('');
+  const [duration, setDuration] = useState<number>(45);
+  const [sessionCategory, setSessionCategory] = useState<DreamAcademyCategoryId>('english');
+  const [stats, setStats] = useState<Record<string, { views: number; likes: number }>>({});
+  const [liked, setLiked] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const load = async () => {
+      const qs = query(collection(db, 'dream_academy_sources'), where('categoryId', '==', categoryId), where('isActive', '==', true));
+      const snap = await getDocs(qs);
+      const rows: DreamAcademySource[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+      rows.sort((a, b) => (a.order || 0) - (b.order || 0));
+      setSources(rows);
+
+      const catSnap = await getDocs(collection(db, 'dream_academy_categories'));
+      const cats = catSnap.docs.map(d => d.data() as DreamAcademyCategory).filter(c => (c as any).isActive !== false);
+      setAllCategories(cats);
+      const matched = cats.find(c => c.id === categoryId) || null;
+      setCategory(matched);
+      if (matched && (matched as any).currency) {
+        setSelectedCurrency((matched as any).currency as string);
+      }
+      if (matched && Array.isArray(matched.allowedPaymentMethods)) {
+        const allowed = matched.allowedPaymentMethods as Array<'wallet'|'geidea'>;
+        if (!allowed.includes(paymentMethod)) {
+          setPaymentMethod(allowed[0] || 'geidea');
+        }
+      }
+
+      const rates = await getCurrencyRates();
+      setCurrencyRates(rates);
+
+      // Load stats for sources
+      const statsEntries: Record<string, { views: number; likes: number }> = {};
+      await Promise.all(rows.map(async (s) => {
+        if (!s.id) return;
+        const res = await fetch(`/api/dream-academy/stats?sourceId=${s.id}`);
+        const data = await res.json();
+        statsEntries[s.id] = { views: data.views || 0, likes: data.likes || 0 };
+      }));
+      setStats(statsEntries);
+    };
+    load();
+    setSessionCategory(categoryId);
+  }, [categoryId]);
+
+  const priceInSelected = useMemo(() => {
+    if (!category || !currencyRates) return 0;
+    const base = Number(category.basePriceUSD || 0);
+    if (!base) return 0;
+    return Math.round(convertCurrencyLib(base, 'USD', selectedCurrency, currencyRates));
+  }, [category, selectedCurrency, currencyRates]);
+
+  return (
+    <div>
+      {/* Top actions */}
+      <div className="mb-4 flex items-center justify-between">
+        <div></div>
+        <Button
+          onClick={() => setRequestModalOpen(true)}
+          className="text-white px-5 py-3 text-base md:text-lg rounded-xl shadow-md bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-sky-300"
+        >
+          إضافة جلسة خاصة
+        </Button>
+      </div>
+
+      {(activeVideoId || activePlaylistId) && (
+        <div className="mb-6">
+          <ReactPlayer
+            url={activePlaylistId ? `https://www.youtube.com/embed?listType=playlist&list=${activePlaylistId}` : (activeVideoId ? `https://www.youtube.com/watch?v=${activeVideoId}` : undefined)}
+            width="100%"
+            height="420px"
+            controls
+            config={{ youtube: { embedOptions: { host: 'https://www.youtube-nocookie.com' }, playerVars: { rel: 0 } } }}
+          />
+          {/* Increment views for the active source (best-effort) */}
+          {(() => {
+            const activeSource = sources.find(s => (s.sourceType === 'playlist' ? s.playlistId === activePlaylistId : s.videoId === activeVideoId));
+            if (activeSource?.id) {
+              fetch('/api/dream-academy/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sourceId: activeSource.id, action: 'view' }) }).catch(() => {});
+            }
+          })()}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        {sources.map((s) => {
+          const thumb = s.thumbnailUrl || (s.videoId ? `https://img.youtube.com/vi/${s.videoId}/hqdefault.jpg` : undefined);
+          return (
+            <Card key={s.id} className="p-2">
+              <div
+                role="button"
+                tabIndex={0}
+                className="text-left w-full outline-none"
+                onClick={() => {
+                  if (s.sourceType === 'playlist' && s.playlistId) {
+                    setActivePlaylistId(s.playlistId);
+                    setActiveVideoId(null);
+                  } else if (s.videoId) {
+                    setActiveVideoId(s.videoId);
+                    setActivePlaylistId(null);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (s.sourceType === 'playlist' && s.playlistId) {
+                      setActivePlaylistId(s.playlistId);
+                      setActiveVideoId(null);
+                    } else if (s.videoId) {
+                      setActiveVideoId(s.videoId);
+                      setActivePlaylistId(null);
+                    }
+                  }
+                }}
+              >
+                <div className="aspect-video bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                  {thumb ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={thumb} alt={s.title || s.resolvedTitle || 'video'} className="w-full h-full object-cover" />
+                  ) : (
+                    <VideoIcon className="w-8 h-8 text-gray-400" />
+                  )}
+                </div>
+                <div className="mt-2 text-sm line-clamp-2">{s.title || s.resolvedTitle || s.url}</div>
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                <span>{s.sourceType === 'playlist' ? 'Playlist' : 'Video'}</span>
+                {s.id && (
+                  <span className="flex items-center gap-3">
+                    <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{stats[s.id]?.views ?? 0}</span>
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1 ${liked[s.id] ? 'text-red-600' : ''}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const newLiked = !liked[s.id];
+                        setLiked(prev => ({ ...prev, [s.id!]: newLiked }));
+                        fetch('/api/dream-academy/stats', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ sourceId: s.id, action: newLiked ? 'like' : 'unlike' })
+                        }).then(() => {
+                          setStats(prev => ({
+                            ...prev,
+                            [s.id!]: { views: prev[s.id!]?.views || 0, likes: (prev[s.id!]?.likes || 0) + (newLiked ? 1 : -1) }
+                          }));
+                        }).catch(() => {});
+                      }}
+                    >
+                      <Heart className="w-3 h-3" />{stats[s.id]?.likes ?? 0}
+                    </button>
+                  </span>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Request private session modal */}
+      <Dialog open={requestModalOpen} onOpenChange={setRequestModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>طلب جلسة خاصة</DialogTitle>
+            <DialogDescription>
+              أدخل بياناتك وسيتم تجهيز طلب الجلسة بعملة وطريقة الدفع التي تختارها
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            <div>
+              <label className="text-sm">الاسم الكامل</label>
+              <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="الاسم" />
+            </div>
+            <div>
+              <label className="text-sm">واتساب</label>
+              <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="مثال: 2010xxxxxxx+" />
+            </div>
+            <div>
+              <label className="text-sm">المدة (دقيقة)</label>
+              <Input type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value))} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 items-end">
+            <div>
+              <label className="text-sm">نوع الجلسة</label>
+              <Select value={sessionCategory} onValueChange={(v) => setSessionCategory(v as DreamAcademyCategoryId)}>
+                <SelectTrigger><SelectValue placeholder="اختر النوع" /></SelectTrigger>
+                <SelectContent>
+                  {allCategories.map((c) => (
+                    <SelectItem key={c.id} value={c.id as any}>
+                      {(c as any).titleAr || c.title || (c as any).titleEn || c.id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm">العملة</label>
+              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                <SelectTrigger><SelectValue placeholder="Currency" /></SelectTrigger>
+                <SelectContent>
+                  {['USD','EGP','QAR','SAR','AED','EUR'].map(c => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm">طريقة الدفع</label>
+              <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)}>
+                <SelectTrigger><SelectValue placeholder="Payment" /></SelectTrigger>
+                <SelectContent>
+                  {(category?.allowedPaymentMethods?.length ? category.allowedPaymentMethods : ['wallet','geidea']).map((m) => (
+                    <SelectItem key={m} value={m}>{m === 'wallet' ? 'المحفظة' : 'Geidea'}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <div className="text-sm">السعر</div>
+              <div className="text-lg font-semibold">
+                {(!category || Number(category.basePriceUSD || 0) === 0)
+                  ? 'مجاني'
+                  : (<>{priceInSelected} {getCurrencyInfo(selectedCurrency, currencyRates)?.symbol || selectedCurrency}</>)}
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="text-sm">ملاحظات</label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="هدف الجلسة، المستوى، تفضيلات..." />
+          </div>
+
+          <div className="mt-2 flex justify-end">
+            <Button
+              className="text-white px-5 py-2.5 rounded-xl shadow-md bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-sky-300"
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/dream-academy/private-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      name: fullName,
+                      whatsapp,
+                      durationMinutes: duration,
+                      notes,
+                      currency: selectedCurrency,
+                      amount: priceInSelected,
+                      paymentMethod,
+                      categoryId: sessionCategory,
+                    }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data?.error || 'حدث خطأ');
+                  setRequestModalOpen(false);
+                  // تم إرسال الطلب بنجاح
+                } catch (e: any) {
+                  console.error('فشل إرسال الطلب:', e);
+                }
+              }}
+            >
+              <Play className="w-4 h-4 mr-2" />
+              إتمام الطلب
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+

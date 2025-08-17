@@ -1,0 +1,641 @@
+/* ==============================================
+   HAGZZ GO - Main Styles (Optimized & Clean)
+   ============================================== */
+
+/* Cairo Font System for Arabic */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Inter Font System for English */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Font loading optimization */
+@font-face {
+  font-family: 'Cairo';
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+  src: local('Cairo'), url('https://fonts.gstatic.com/s/cairo/v20/SLXVc1nY6HkvangtZmpcWmhzfH5lWWgcQyyS4J0.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+  src: local('Inter'), url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+}
+
+html, body, * {
+  font-family: 'Cairo', sans-serif !important;
+}
+[lang="en"] {
+  font-family: 'Inter', Arial, sans-serif !important;
+}
+[lang="ar"] {
+  font-family: 'Cairo', sans-serif !important;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==============================================
+   1. BASE STYLES & FONT SYSTEM
+   ============================================== */
+
+@layer base {
+  html {
+    font-family: var(--font-cairo), 'Cairo', ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: 'kern' 1, 'liga' 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    /* سيتم تعيين الاتجاه ديناميكياً حسب اللغة */
+  }
+  
+  body {
+    font-family: var(--font-cairo), 'Cairo', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+    /* سيتم تعيين الاتجاه ديناميكياً حسب اللغة */
+  }
+  
+  * {
+    font-family: var(--font-cairo), 'Cairo', sans-serif;
+  }
+  
+  /* دعم الاتجاهات المختلفة */
+  html[dir="rtl"] {
+    direction: rtl;
+  }
+  
+  html[dir="ltr"] {
+    direction: ltr;
+  }
+  
+  /* تخصيص العناصر حسب الاتجاه */
+  html[dir="rtl"] body {
+    direction: rtl;
+    text-align: right;
+  }
+  
+  html[dir="ltr"] body {
+    direction: ltr;
+    text-align: left;
+  }
+
+  /* Language-specific font classes */
+  .font-arabic {
+    font-family: var(--font-cairo), 'Cairo', sans-serif;
+  }
+  
+  .font-english {
+    font-family: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+  
+  /* Auto font switching based on language */
+  [lang="ar"] {
+    font-family: var(--font-cairo), 'Cairo', sans-serif;
+  }
+  
+  [lang="en"] {
+    font-family: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* Font loading states */
+  .fonts-loaded {
+    font-display: swap;
+  }
+
+  /* Fallback fonts for better loading */
+  .font-fallback {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  }
+
+  /* Font loading optimization */
+  .font-loading {
+    font-display: block;
+  }
+
+  .font-loaded {
+    font-display: swap;
+  }
+}
+
+/* ==============================================
+   2. CSS VARIABLES & THEME
+   ============================================== */
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 255, 255, 255;
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #6d28d9;
+  --secondary: #db2777;
+  --accent: #14b8a6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --font-cairo: 'Cairo', sans-serif;
+  --font-inter: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --primary: #8b5cf6;
+    --secondary: #ec4899;
+    --accent: #2dd4bf;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* ==============================================
+   3. ESSENTIAL ANIMATIONS
+   ============================================== */
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-fade-in { animation: fade-in 0.6s ease-out forwards; }
+.animate-loading-bar { animation: loading-bar 2s ease-in-out infinite; }
+
+/* ==============================================
+   4. FONT LOADING OPTIMIZATIONS
+   ============================================== */
+
+/* Font loading indicator */
+.font-loading {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-display: swap;
+  opacity: 0.7;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Font loaded state */
+.fonts-loaded {
+  font-display: swap;
+  font-synthesis: none;
+  opacity: 1;
+}
+
+/* Font fallback for better performance */
+.font-fallback {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-display: swap;
+}
+
+/* Font loading states */
+.fonts-loading {
+  opacity: 0.7;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.fonts-loaded {
+  opacity: 1;
+}
+
+/* ==============================================
+   5. RESPONSIVE DESIGN
+   ============================================== */
+
+/* Mobile First Responsive Design */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+  
+  /* Mobile-specific styles */
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 1rem !important;
+  }
+  
+  /* Mobile sidebar adjustments */
+  .sidebar-mobile {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    z-index: 50 !important;
+    transform: translateX(100%) !important;
+    transition: transform 0.3s ease-in-out !important;
+  }
+  
+  .sidebar-mobile.open {
+    transform: translateX(0) !important;
+  }
+  
+  /* Mobile content adjustments */
+  .content-mobile {
+    margin-right: 0 !important;
+    width: 100% !important;
+    padding: 1rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+  
+  /* Tablet-specific styles */
+  .tablet-hidden {
+    display: none !important;
+  }
+  
+  /* Tablet sidebar adjustments */
+  .sidebar-tablet {
+    width: 64px !important;
+  }
+  
+  .sidebar-tablet.expanded {
+    width: 256px !important;
+  }
+  
+  /* Tablet content adjustments */
+  .content-tablet {
+    margin-right: 64px !important;
+  }
+  
+  .content-tablet.expanded {
+    margin-right: 256px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  /* Desktop tablet breakpoint */
+  .desktop-hidden {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  /* Desktop styles */
+  .desktop-only {
+    display: block !important;
+  }
+  
+  .sidebar-desktop {
+    width: 280px !important;
+  }
+  
+  .sidebar-desktop.collapsed {
+    width: 80px !important;
+  }
+  
+  .content-desktop {
+    margin-right: 280px !important;
+  }
+  
+  .content-desktop.collapsed {
+    margin-right: 80px !important;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch-specific styles */
+  .touch-target {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+  
+  .touch-spacing {
+    margin: 0.5rem 0 !important;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* High DPI optimizations */
+  .high-dpi {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* ==============================================
+   6. ACCESSIBILITY
+   ============================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==============================================
+   7. PRINT STYLES
+   ============================================== */
+
+@media print {
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  
+  a, a:visited {
+    text-decoration: underline;
+  }
+  
+  a[href]:after {
+    content: " (" attr(href) ")";
+  }
+}
+
+/* ==============================================
+   8. UTILITY CLASSES
+   ============================================== */
+
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.text-shadow-lg {
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ==============================================
+   9. SCROLLBAR STYLING
+   ============================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* ==============================================
+   10. FOCUS STYLES
+   ============================================== */
+
+*:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ==============================================
+   11. SELECTION STYLES
+   ============================================== */
+
+::selection {
+  background-color: var(--primary);
+  color: white;
+}
+
+::-moz-selection {
+  background-color: var(--primary);
+  color: white;
+}
+
+/* ==============================================
+   12. COMPONENT UTILITIES
+   ============================================== */
+
+@layer utilities {
+  .btn-primary {
+    @apply px-6 py-3 text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all transform hover:scale-[1.02];
+  }
+  
+  .btn-secondary {
+    @apply px-6 py-3 text-blue-600 bg-white border-2 border-blue-600 rounded-xl hover:bg-blue-50 transition-all;
+  }
+  
+  .card {
+    @apply p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+  
+  .input {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  }
+  
+  .gradient-text {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800;
+  }
+  
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  
+  /* أنماط دعم الترجمة */
+  .rtl {
+    direction: rtl;
+    text-align: right;
+  }
+  
+  .ltr {
+    direction: ltr;
+    text-align: left;
+  }
+  
+  /* تخصيص العناصر حسب الاتجاه */
+  .rtl .text-left {
+    text-align: right;
+  }
+  
+  .rtl .text-right {
+    text-align: left;
+  }
+  
+  .ltr .text-left {
+    text-align: left;
+  }
+  
+  .ltr .text-right {
+    text-align: right;
+  }
+  
+  /* أنماط مبدل اللغة */
+  .language-switcher {
+    @apply relative inline-block;
+  }
+  
+  .language-dropdown {
+    @apply absolute top-full left-0 mt-1 w-48 bg-white border border-gray-300 rounded-lg shadow-lg z-50;
+  }
+  
+  .language-option {
+    @apply w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors;
+  }
+  
+  .language-option.active {
+    @apply bg-blue-50 text-blue-600;
+  }
+
+  /* Font utilities for language switching */
+  .font-auto {
+    font-family: var(--font-cairo), 'Cairo', sans-serif;
+  }
+  
+  .font-auto[lang="en"] {
+    font-family: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+  
+  .font-auto[lang="ar"] {
+    font-family: var(--font-cairo), 'Cairo', sans-serif;
+  }
+}
+
+/* ==============================================
+   13. VIDEO PLAYER OPTIMIZATIONS
+   ============================================== */
+
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+}
+
+.video-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    transparent 100%
+  );
+}
+
+.react-player {
+  pointer-events: none;
+}
+
+.react-player__youtube iframe,
+.react-player__vimeo iframe,
+.react-player__dailymotion iframe {
+  pointer-events: none !important;
+}
+
+/* Hide YouTube/Vimeo/Dailymotion overlays and controls */
+.ytp-endscreen-content,
+.ytp-ce-element,
+.ytp-cards-teaser,
+.ytp-chrome-bottom,
+.vp-overlay,
+.dmp-ui-controlbar {
+  display: none !important;
+}
+
+/* ==============================================
+   14. ERROR HANDLING & FALLBACKS
+   ============================================== */
+
+.development-error {
+  background: #fee;
+  color: #c00;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.loading-spinner {
+  @apply w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin;
+}
+
+/* ==============================================
+   15. LAYOUT COMPONENTS
+   ============================================== */
+
+.sidebar {
+  transition: width 0.3s ease;
+}
+
+.dashboard-card {
+  @apply bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow;
+}
+
+.profile-picture {
+  @apply w-16 h-16 rounded-full object-cover border-2 border-gray-200;
+}
+
+/* ==============================================
+   16. ERROR BOUNDARY STYLES
+   ============================================== */
+
+.error-boundary {
+  @apply min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-pink-50 to-red-50;
+}
+
+.error-content {
+  @apply max-w-md w-full text-center p-8;
+}
+
+.error-icon {
+  @apply w-24 h-24 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce;
+}
+
+.error-title {
+  @apply text-2xl font-bold text-gray-800 mb-3;
+}
+
+.error-message {
+  @apply text-gray-600 mb-6 leading-relaxed;
+}
+
+.error-actions {
+  @apply space-y-3;
+}
+
+/* ==============================================
+   END OF OPTIMIZED STYLES
+   ============================================== */
