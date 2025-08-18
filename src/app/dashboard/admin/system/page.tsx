@@ -339,7 +339,7 @@ export default function SystemMonitoring() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center">
         <div className="text-center">
           <SimpleLoader size="large" color="blue" />
           <p className="mt-4 text-gray-600">{t('actions.loading')}</p>

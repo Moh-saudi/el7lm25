@@ -1,0 +1,1302 @@
+'use client';
+
+import React, { useState, useEffect, createContext, useContext, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/firebase/auth-provider';
+import { useTranslation } from '@/lib/translations/simple-context';
+import { 
+  Home, 
+  User, 
+  Users, 
+  Search, 
+  Video, 
+  FileText, 
+  LogOut, 
+  ChevronLeft, 
+  ChevronRight, 
+  Shield,
+  GraduationCap,
+  Bell,
+  MessageSquare,
+  BarChart3,
+  DollarSign,
+  Handshake,
+  Star,
+  Clock,
+  CreditCard,
+  Target,
+  Settings,
+  Globe,
+  Play,
+  Award,
+  TrendingUp,
+  Zap,
+  Heart,
+  Building,
+  Briefcase,
+  Crown,
+  Menu,
+  X,
+  UserPlus,
+  BookOpen,
+  Calendar,
+  MapPin,
+  Headphones,
+  Database,
+  HardDrive,
+  UserCheck,
+  UserCog,
+  ChevronDown,
+  ChevronUp,
+  ShoppingBag,
+  Brain
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { useMediaQuery } from 'react-responsive';
+
+// ===== Context للتحكم في التخطيط =====
+interface LayoutContextType {
+  isSidebarOpen: boolean;
+  isSidebarCollapsed: boolean;
+  isMobile: boolean;
+  isTablet: boolean;
+  isDesktop: boolean;
+  isClient: boolean;
+  toggleSidebar: () => void;
+  toggleSidebarCollapse: () => void;
+  closeSidebar: () => void;
+  openSidebar: () => void;
+}
+
+const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
+
+export const useLayout = () => {
+  const context = useContext(LayoutContext);
+  if (!context) {
+    throw new Error('useLayout must be used within a LayoutProvider');
+  }
+  return context;
+};
+
+// ===== Provider للتحكم في التخطيط =====
+interface LayoutProviderProps {
+  children: React.ReactNode;
+}
+
+export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  
+  // استخدام react-responsive للكشف عن حجم الشاشة
+  const isMobile = useMediaQuery({ maxWidth: 767 });
+  const isTablet = useMediaQuery({ minWidth: 768, maxWidth: 1023 });
+  const isDesktop = useMediaQuery({ minWidth: 1024 });
+
+  // التأكد من أن المكون يعمل على العميل فقط
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // إدارة حالة السايدبار حسب حجم الشاشة
+  useEffect(() => {
+    if (!isClient) return; // لا نطبق التغييرات حتى يعمل على العميل
+    
+    if (isMobile) {
+      setIsSidebarOpen(false);
+      setIsSidebarCollapsed(false);
+    } else if (isTablet) {
+      setIsSidebarOpen(true);
+      setIsSidebarCollapsed(false); // تغيير من true إلى false
+    } else {
+      setIsSidebarOpen(true);
+      setIsSidebarCollapsed(false);
+    }
+  }, [isMobile, isTablet, isDesktop, isClient]);
+
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setIsSidebarOpen(!isSidebarOpen);
+    } else {
+      setIsSidebarCollapsed(!isSidebarCollapsed);
+      // تأكد من أن السايدبار مفتوح على الشاشات الكبيرة
+      if (isSidebarCollapsed) {
+        setIsSidebarOpen(true);
+      }
+    }
+  };
+
+  const toggleSidebarCollapse = () => {
+    if (!isMobile) {
+      setIsSidebarCollapsed(!isSidebarCollapsed);
+    }
+  };
+
+  const closeSidebar = () => {
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    } else {
+      setIsSidebarCollapsed(true);
+    }
+  };
+
+  const openSidebar = () => {
+    if (isMobile) {
+      setIsSidebarOpen(true);
+    } else {
+      setIsSidebarCollapsed(false);
+    }
+  };
+
+  const value: LayoutContextType = {
+    isSidebarOpen,
+    isSidebarCollapsed,
+    isMobile,
+    isTablet,
+    isDesktop,
+    isClient,
+    toggleSidebar,
+    toggleSidebarCollapse,
+    closeSidebar,
+    openSidebar,
+  };
+
+  return (
+    <LayoutContext.Provider value={value}>
+      {children}
+    </LayoutContext.Provider>
+  );
+};
+
+// ===== مكون السايدبار المحسن =====
+interface ResponsiveSidebarProps {
+  accountType?: string;
+}
+
+const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'player' }) => {
+  const { user, userData, logout } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { t, direction } = useTranslation();
+  const { 
+    isSidebarOpen, 
+    isSidebarCollapsed, 
+    isMobile, 
+    isTablet, 
+    isDesktop,
+    isClient,
+    toggleSidebar,
+    closeSidebar 
+  } = useLayout();
+
+  const [activeItem, setActiveItem] = useState('dashboard');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['main']));
+
+  // معلومات أنواع الحسابات
+  const ACCOUNT_TYPE_INFO = {
+    player: {
+      title: 'منصة اللاعب',
+      subtitle: 'لاعب',
+      icon: User,
+      color: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      textColor: 'text-blue-600',
+      emoji: '⚽'
+    },
+    club: {
+      title: 'منصة النادي',
+      subtitle: 'نادي',
+      icon: Building,
+      color: 'from-green-500 to-green-600',
+      bgColor: 'bg-green-50',
+      textColor: 'text-green-600',
+      emoji: '🏢'
+    },
+    admin: {
+      title: 'منصة الإدارة',
+      subtitle: 'مدير',
+      icon: Shield,
+      color: 'from-red-500 to-red-600',
+      bgColor: 'bg-red-50',
+      textColor: 'text-red-600',
+      emoji: '👑'
+    },
+    agent: {
+      title: 'منصة الوكيل',
+      subtitle: 'وكيل',
+      icon: Briefcase,
+      color: 'from-orange-500 to-orange-600',
+      bgColor: 'bg-orange-50',
+      textColor: 'text-orange-600',
+      emoji: '💼'
+    },
+    academy: {
+      title: 'منصة الأكاديمية',
+      subtitle: 'أكاديمية',
+      icon: GraduationCap,
+      color: 'from-indigo-500 to-indigo-600',
+      bgColor: 'bg-indigo-50',
+      textColor: 'text-indigo-600',
+      emoji: '🎓'
+    },
+    trainer: {
+      title: 'منصة المدرب',
+      subtitle: 'مدرب',
+      icon: Target,
+      color: 'from-pink-500 to-pink-600',
+      bgColor: 'bg-pink-50',
+      textColor: 'text-pink-600',
+      emoji: '🎯'
+    }
+  };
+
+  const accountInfo = ACCOUNT_TYPE_INFO[accountType as keyof typeof ACCOUNT_TYPE_INFO] || ACCOUNT_TYPE_INFO.player;
+  const IconComponent = accountInfo.icon;
+
+  // تحديد عرض السايدبار - أحجام مصغرة
+  const getSidebarWidth = () => {
+    if (isMobile) return 'w-72';
+    if (isSidebarCollapsed) {
+      if (isTablet) return 'w-14';
+      return 'w-16';
+    }
+    if (isTablet) return 'w-56';
+    return 'w-64';
+  };
+
+  // تحديد ما إذا كان يجب إظهار النصوص
+  const shouldShowText = () => {
+    if (isMobile) return true;
+    if (isTablet) return !isSidebarCollapsed;
+    return !isSidebarCollapsed;
+  };
+
+  // الحصول على مجموعات القائمة
+  const getMenuGroups = () => {
+    const baseGroup = {
+      id: 'main',
+      title: 'القائمة الرئيسية',
+      icon: Home,
+      items: [
+        {
+          id: 'dashboard',
+          label: 'الرئيسية',
+          icon: Home,
+          href: `/dashboard/${accountType}`,
+          color: 'text-blue-600',
+          bgColor: 'bg-blue-50'
+        },
+        {
+          id: 'profile',
+          label: 'الملف الشخصي',
+          icon: User,
+          href: `/dashboard/${accountType}/profile`,
+          color: 'text-green-600',
+          bgColor: 'bg-green-50'
+        },
+        {
+          id: 'messages',
+          label: 'الرسائل',
+          icon: MessageSquare,
+          href: `/dashboard/${accountType}/messages`,
+          color: 'text-cyan-600',
+          bgColor: 'bg-cyan-50'
+        }
+      ]
+    };
+
+    const subscriptionGroup = {
+      id: 'subscription',
+      title: 'الاشتراكات والمدفوعات',
+      icon: CreditCard,
+      items: [
+        {
+          id: 'subscription-status',
+          label: 'حالة الاشتراك',
+          icon: Star,
+          href: `/dashboard/subscription`,
+          color: 'text-yellow-600',
+          bgColor: 'bg-yellow-50'
+        },
+        {
+          id: 'payment',
+          label: 'الدفع',
+          icon: CreditCard,
+          href: accountType === 'admin' ? `/dashboard/admin/payments` : `/dashboard/${accountType}/bulk-payment`,
+          color: 'text-purple-600',
+          bgColor: 'bg-purple-50'
+        }
+      ]
+    };
+
+    const academyGroup = {
+      id: 'academy',
+      title: 'التدريب والتعليم',
+      icon: GraduationCap,
+      items: [
+        {
+          id: 'dream-academy',
+          label: 'أكاديمية الحلم',
+          icon: GraduationCap,
+          href: `/dashboard/dream-academy`,
+          color: 'text-indigo-600',
+          bgColor: 'bg-indigo-50'
+        }
+      ]
+    };
+
+    // إضافة قوائم مخصصة حسب نوع الحساب - الصفحات الموجودة فعلياً
+    const accountSpecificGroups = [];
+
+    // قائمة اللاعب - إعادة ترتيب منطقي
+    if (accountType === 'player') {
+      accountSpecificGroups.push({
+        id: 'player-content',
+        title: 'المحتوى الشخصي',
+        icon: Video,
+        items: [
+          {
+            id: 'player-videos',
+            label: 'فيديوهاتي',
+            icon: Video,
+            href: `/dashboard/player/videos`,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-50'
+          },
+          {
+            id: 'player-stats',
+            label: 'إحصائياتي',
+            icon: BarChart3,
+            href: `/dashboard/player/stats`,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50'
+          },
+          {
+            id: 'player-reports',
+            label: 'تقاريري',
+            icon: FileText,
+            href: `/dashboard/player/reports`,
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-50'
+          }
+        ]
+      });
+
+      accountSpecificGroups.push({
+        id: 'player-services',
+        title: 'الخدمات',
+        icon: ShoppingBag,
+        items: [
+          {
+            id: 'player-academy',
+            label: 'الأكاديمية',
+            icon: GraduationCap,
+            href: `/dashboard/player/academy`,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50'
+          },
+          {
+            id: 'player-store',
+            label: 'المتجر',
+            icon: ShoppingBag,
+            href: `/dashboard/player/store`,
+            color: 'text-pink-600',
+            bgColor: 'bg-pink-50'
+          },
+          {
+            id: 'player-search',
+            label: 'البحث',
+            icon: Search,
+            href: `/dashboard/player/search`,
+            color: 'text-indigo-600',
+            bgColor: 'bg-indigo-50'
+          }
+        ]
+      });
+
+      accountSpecificGroups.push({
+        id: 'player-financial',
+        title: 'المالية',
+        icon: DollarSign,
+        items: [
+          {
+            id: 'player-billing',
+            label: 'الفواتير',
+            icon: CreditCard,
+            href: `/dashboard/player/billing`,
+            color: 'text-yellow-600',
+            bgColor: 'bg-yellow-50'
+          },
+          {
+            id: 'player-referrals',
+            label: 'الإحالات',
+            icon: Users,
+            href: `/dashboard/player/referrals`,
+            color: 'text-teal-600',
+            bgColor: 'bg-teal-50'
+          }
+        ]
+      });
+    }
+
+    // قائمة النادي - إعادة ترتيب منطقي
+    if (accountType === 'club') {
+      accountSpecificGroups.push({
+        id: 'club-players',
+        title: 'إدارة اللاعبين',
+        icon: Users,
+        items: [
+          {
+            id: 'club-players-list',
+            label: 'قائمة اللاعبين',
+            icon: Users,
+            href: `/dashboard/club/players`,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-50'
+          },
+          {
+            id: 'club-search-players',
+            label: 'البحث عن لاعبين',
+            icon: Search,
+            href: `/dashboard/club/search-players`,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50'
+          },
+          {
+            id: 'club-player-videos',
+            label: 'فيديوهات اللاعبين',
+            icon: Video,
+            href: `/dashboard/club/player-videos`,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50'
+          },
+          {
+            id: 'club-player-evaluation',
+            label: 'تقييم اللاعبين',
+            icon: Target,
+            href: `/dashboard/club/player-evaluation`,
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-50'
+          }
+        ]
+      });
+
+      accountSpecificGroups.push({
+        id: 'club-business',
+        title: 'الأعمال التجارية',
+        icon: Handshake,
+        items: [
+          {
+            id: 'club-contracts',
+            label: 'العقود',
+            icon: FileText,
+            href: `/dashboard/club/contracts`,
+            color: 'text-indigo-600',
+            bgColor: 'bg-indigo-50'
+          },
+          {
+            id: 'club-negotiations',
+            label: 'المفاوضات',
+            icon: Handshake,
+            href: `/dashboard/club/negotiations`,
+            color: 'text-teal-600',
+            bgColor: 'bg-teal-50'
+          },
+          {
+            id: 'club-market-values',
+            label: 'القيم السوقية',
+            icon: DollarSign,
+            href: `/dashboard/club/market-values`,
+            color: 'text-yellow-600',
+            bgColor: 'bg-yellow-50'
+          }
+        ]
+      });
+
+      accountSpecificGroups.push({
+        id: 'club-marketing',
+        title: 'التسويق والتحليل',
+        icon: TrendingUp,
+        items: [
+          {
+            id: 'club-marketing-tools',
+            label: 'التسويق',
+            icon: TrendingUp,
+            href: `/dashboard/club/marketing`,
+            color: 'text-pink-600',
+            bgColor: 'bg-pink-50'
+          },
+          {
+            id: 'club-ai-analysis',
+            label: 'تحليل الذكاء الاصطناعي',
+            icon: Brain,
+            href: `/dashboard/club/ai-analysis`,
+            color: 'text-red-600',
+            bgColor: 'bg-red-50'
+          }
+        ]
+      });
+    }
+
+    // قائمة المدرب - إعادة ترتيب منطقي
+    if (accountType === 'trainer') {
+      accountSpecificGroups.push({
+        id: 'trainer-players',
+        title: 'إدارة اللاعبين',
+        icon: Users,
+        items: [
+          {
+            id: 'trainer-players-list',
+            label: 'قائمة لاعبي',
+            icon: Users,
+            href: `/dashboard/trainer/players`,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50'
+          },
+          {
+            id: 'trainer-search-players',
+            label: 'البحث عن لاعبين',
+            icon: Search,
+            href: `/dashboard/trainer/search-players`,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50'
+          },
+          {
+            id: 'trainer-player-videos',
+            label: 'فيديوهات اللاعبين',
+            icon: Video,
+            href: `/dashboard/trainer/player-videos`,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-50'
+          }
+        ]
+      });
+    }
+
+    // قائمة الأكاديمية - إعادة ترتيب منطقي
+    if (accountType === 'academy') {
+      accountSpecificGroups.push({
+        id: 'academy-players',
+        title: 'إدارة اللاعبين',
+        icon: Users,
+        items: [
+          {
+            id: 'academy-players-list',
+            label: 'لاعبي الأكاديمية',
+            icon: Users,
+            href: `/dashboard/academy/players`,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50'
+          },
+          {
+            id: 'academy-search-players',
+            label: 'البحث عن لاعبين',
+            icon: Search,
+            href: `/dashboard/academy/search-players`,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50'
+          },
+          {
+            id: 'academy-player-videos',
+            label: 'فيديوهات اللاعبين',
+            icon: Video,
+            href: `/dashboard/academy/player-videos`,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-50'
+          }
+        ]
+      });
+    }
+
+    // قائمة الوكيل - إعادة ترتيب منطقي
+    if (accountType === 'agent') {
+      accountSpecificGroups.push({
+        id: 'agent-players',
+        title: 'إدارة اللاعبين',
+        icon: Users,
+        items: [
+          {
+            id: 'agent-players-list',
+            label: 'قائمة لاعبي',
+            icon: Users,
+            href: `/dashboard/agent/players`,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50'
+          },
+          {
+            id: 'agent-search-players',
+            label: 'البحث عن لاعبين',
+            icon: Search,
+            href: `/dashboard/agent/search-players`,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50'
+          },
+          {
+            id: 'agent-player-videos',
+            label: 'فيديوهات اللاعبين',
+            icon: Video,
+            href: `/dashboard/agent/player-videos`,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-50'
+          }
+        ]
+      });
+    }
+
+    // قائمة الإدارة - إعادة ترتيب منطقي
+    if (accountType === 'admin') {
+      accountSpecificGroups.push({
+        id: 'admin-users',
+        title: 'إدارة المستخدمين',
+        icon: Users,
+        items: [
+          {
+            id: 'admin-users-management',
+            label: 'إدارة المستخدمين',
+            icon: Users,
+            href: `/dashboard/admin/users`,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50'
+          },
+          {
+            id: 'admin-employees',
+            label: 'الموظفين',
+            icon: UserCheck,
+            href: `/dashboard/admin/employees`,
+            color: 'text-teal-600',
+            bgColor: 'bg-teal-50'
+          }
+        ]
+      });
+
+      accountSpecificGroups.push({
+        id: 'admin-financial',
+        title: 'الإدارة المالية',
+        icon: DollarSign,
+        items: [
+          {
+            id: 'admin-payments',
+            label: 'المدفوعات',
+            icon: CreditCard,
+            href: `/dashboard/admin/payments`,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-50'
+          },
+          {
+            id: 'admin-subscriptions',
+            label: 'الاشتراكات',
+            icon: Star,
+            href: `/dashboard/admin/subscriptions`,
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-50'
+          },
+          {
+            id: 'admin-invoices',
+            label: 'الفواتير',
+            icon: FileText,
+            href: `/dashboard/admin/invoices`,
+            color: 'text-indigo-600',
+            bgColor: 'bg-indigo-50'
+          }
+        ]
+      });
+
+      accountSpecificGroups.push({
+        id: 'admin-operations',
+        title: 'العمليات',
+        icon: Settings,
+        items: [
+          {
+            id: 'admin-reports',
+            label: 'التقارير',
+            icon: FileText,
+            href: `/dashboard/admin/reports`,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50'
+          },
+          {
+            id: 'admin-careers',
+            label: 'الوظائف',
+            icon: Briefcase,
+            href: `/dashboard/admin/careers`,
+            color: 'text-pink-600',
+            bgColor: 'bg-pink-50'
+          },
+          {
+            id: 'admin-support',
+            label: 'الدعم الفني',
+            icon: Headphones,
+            href: `/dashboard/admin/support`,
+            color: 'text-yellow-600',
+            bgColor: 'bg-yellow-50'
+          },
+          {
+            id: 'admin-system',
+            label: 'النظام',
+            icon: Settings,
+            href: `/dashboard/admin/system`,
+            color: 'text-red-600',
+            bgColor: 'bg-red-50'
+          }
+        ]
+      });
+
+      accountSpecificGroups.push({
+        id: 'admin-marketing',
+        title: 'التسويق والإعلانات',
+        icon: TrendingUp,
+        items: [
+          {
+            id: 'admin-ads',
+            label: 'إدارة الإعلانات',
+            icon: TrendingUp,
+            href: `/dashboard/admin/ads`,
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-50'
+          }
+        ]
+      });
+
+      accountSpecificGroups.push({
+        id: 'admin-academy',
+        title: 'أكاديمية الحلم',
+        icon: GraduationCap,
+        items: [
+          {
+            id: 'admin-dream-academy',
+            label: 'إدارة الأكاديمية',
+            icon: GraduationCap,
+            href: `/dashboard/admin/dream-academy`,
+            color: 'text-cyan-600',
+            bgColor: 'bg-cyan-50'
+          }
+        ]
+      });
+    }
+
+    // قائمة المسوق - إعادة ترتيب منطقي
+    if (accountType === 'marketer') {
+      accountSpecificGroups.push({
+        id: 'marketer-dashboard',
+        title: 'لوحة التسويق',
+        icon: TrendingUp,
+        items: [
+          {
+            id: 'marketer-main',
+            label: 'لوحة التسويق',
+            icon: BarChart3,
+            href: `/dashboard/marketer`,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50'
+          }
+        ]
+      });
+    }
+
+    // قائمة الوالد - إعادة ترتيب منطقي
+    if (accountType === 'parent') {
+      accountSpecificGroups.push({
+        id: 'parent-dashboard',
+        title: 'لوحة الوالد',
+        icon: User,
+        items: [
+          {
+            id: 'parent-main',
+            label: 'لوحة الوالد',
+            icon: BarChart3,
+            href: `/dashboard/parent`,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50'
+          }
+        ]
+      });
+    }
+
+    return [baseGroup, subscriptionGroup, academyGroup, ...accountSpecificGroups];
+  };
+
+  const menuGroups = useMemo(() => getMenuGroups(), [accountType, t]);
+  const showText = useMemo(() => shouldShowText(), [isMobile, isTablet, isSidebarCollapsed]);
+  const sidebarWidth = useMemo(() => getSidebarWidth(), [isMobile, isTablet, isSidebarCollapsed]);
+
+  const getUserAvatar = () => {
+    if (userData?.photoURL) return userData.photoURL;
+    if (userData?.avatar) return userData.avatar;
+    if (userData?.profileImage) return userData.profileImage;
+    return null;
+  };
+
+  const getUserDisplayName = () => {
+    return userData?.displayName || userData?.name || user?.displayName || user?.email?.split('@')[0] || 'مستخدم';
+  };
+
+  const handleNavigation = (href: string, id: string) => {
+    setActiveItem(id);
+    router.push(href);
+    if (isMobile) {
+      closeSidebar();
+    }
+  };
+
+  const handleLogout = async () => {
+    const confirmed = window.confirm('هل أنت متأكد من تسجيل الخروج؟');
+    if (confirmed) {
+      await logout();
+      router.push('/');
+    }
+  };
+
+  const toggleGroup = (groupId: string) => {
+    const newExpandedGroups = new Set(expandedGroups);
+    if (newExpandedGroups.has(groupId)) {
+      newExpandedGroups.delete(groupId);
+    } else {
+      newExpandedGroups.add(groupId);
+    }
+    setExpandedGroups(newExpandedGroups);
+  };
+
+  // تحديد العنصر النشط
+  useEffect(() => {
+    for (const group of menuGroups) {
+      const currentItem = group.items.find(item => item.href === pathname);
+      if (currentItem) {
+        setActiveItem(currentItem.id);
+        setExpandedGroups(prev => new Set([...prev, group.id]));
+        break;
+      }
+    }
+  }, [pathname, menuGroups]);
+
+  // لا تعرض السايدبار حتى يتم تحميل المكون على العميل
+  if (!isClient) {
+    return null;
+  }
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && isMobile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={closeSidebar}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar */}
+      <motion.div
+        initial={isMobile ? { x: '100%' } : { width: isSidebarCollapsed ? 64 : 256 }}
+        animate={isMobile ? { x: isSidebarOpen ? 0 : '100%' } : { width: isSidebarCollapsed ? (isTablet ? 56 : 64) : (isTablet ? 224 : 256) }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className={`fixed top-0 right-0 h-full bg-gradient-to-b ${accountInfo.color} z-50 shadow-xl backdrop-blur-xl border-l border-white/20 ${
+          isMobile ? 'w-72' : sidebarWidth
+        }`}
+        dir={direction}
+      >
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between p-3 border-b border-white/20">
+            <div className="flex items-center gap-2">
+              <div className={`p-1.5 rounded-lg ${accountInfo.bgColor}`}>
+                <IconComponent className={`w-5 h-5 ${accountInfo.textColor}`} />
+              </div>
+              <AnimatePresence>
+                {showText && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="flex flex-col"
+                  >
+                    <h2 className="text-white font-bold text-base">{accountInfo.title}</h2>
+                    <p className="text-white/70 text-xs">{accountInfo.subtitle}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {!isMobile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleSidebar}
+                  className="text-white hover:bg-white/20"
+                >
+                  {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                </Button>
+              )}
+              {isMobile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={closeSidebar}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* User Profile */}
+          <div className="p-3 border-b border-white/20">
+            <div className="flex items-center gap-2">
+              <Avatar className="w-10 h-10 ring-2 ring-white/30">
+                <AvatarImage src={getUserAvatar() || '/default-avatar.png'} alt={getUserDisplayName()} />
+                <AvatarFallback className={`${accountInfo.bgColor} ${accountInfo.textColor} font-bold text-sm`}>
+                  {getUserDisplayName().slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              
+              <AnimatePresence>
+                {showText && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="flex-1 min-w-0"
+                  >
+                    <h3 className="text-white font-semibold truncate text-sm">{getUserDisplayName()}</h3>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="secondary" className={`${accountInfo.bgColor} ${accountInfo.textColor} border-0 text-xs px-1.5 py-0.5`}>
+                        {accountInfo.emoji} {accountInfo.subtitle}
+                      </Badge>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto py-3">
+            <div className="px-3 space-y-1">
+              {menuGroups.map((group, groupIndex) => {
+                const isGroupExpanded = expandedGroups.has(group.id);
+                const GroupIcon = group.icon;
+                
+                return (
+                  <motion.div
+                    key={group.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: groupIndex * 0.05 }}
+                    className="space-y-1"
+                  >
+                    {/* Group Header */}
+                    <Button
+                      variant="ghost"
+                      onClick={() => toggleGroup(group.id)}
+                      className={`w-full justify-between h-8 px-2 text-white hover:bg-white/20 ${
+                        group.id === 'main' ? 'font-semibold' : 'font-medium'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <GroupIcon className="w-3.5 h-3.5" />
+                        <AnimatePresence>
+                          {showText && (
+                            <motion.span
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -10 }}
+                              className="text-xs"
+                            >
+                              {group.title}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                      
+                      <AnimatePresence>
+                        {showText && (
+                          <motion.div
+                            initial={{ opacity: 0, rotate: 0 }}
+                            animate={{ opacity: 1, rotate: isGroupExpanded ? 180 : 0 }}
+                            exit={{ opacity: 0, rotate: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </Button>
+
+                    {/* Group Items */}
+                    <AnimatePresence>
+                      {isGroupExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3, ease: 'easeInOut' }}
+                          className="overflow-hidden"
+                        >
+                          <div className="space-y-1 pr-3">
+                            {group.items.map((item, itemIndex) => {
+                              const isActive = activeItem === item.id;
+                              const IconComponent = item.icon;
+                              
+                              return (
+                                <motion.div
+                                  key={item.id}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: itemIndex * 0.05 }}
+                                >
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => handleNavigation(item.href, item.id)}
+                                    className={`w-full justify-start gap-2 h-8 px-2 transition-all duration-200 ${
+                                      isActive
+                                        ? 'bg-white text-gray-900 shadow-lg'
+                                        : 'text-white hover:bg-white/20'
+                                    }`}
+                                  >
+                                    <div className={`p-1 rounded-md transition-colors ${
+                                      isActive ? item.bgColor : 'bg-white/10'
+                                    }`}>
+                                      <IconComponent className={`w-3 h-3 ${
+                                        isActive ? item.color : 'text-white'
+                                      }`} />
+                                    </div>
+                                    
+                                    <AnimatePresence>
+                                      {showText && (
+                                        <motion.span
+                                          initial={{ opacity: 0, x: -10 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          exit={{ opacity: 0, x: -10 }}
+                                          className="text-xs font-medium"
+                                        >
+                                          {item.label}
+                                        </motion.span>
+                                      )}
+                                    </AnimatePresence>
+                                    
+                                    {isActive && (
+                                      <motion.div
+                                        layoutId="activeIndicator"
+                                        className="absolute left-0 w-1 h-5 bg-white rounded-r-full"
+                                      />
+                                    )}
+                                  </Button>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </nav>
+
+          {/* Footer */}
+          <div className="p-3 border-t border-white/20">
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="w-full justify-start gap-2 h-10 px-3 text-white hover:bg-red-600/20 hover:text-red-200"
+            >
+              <div className="p-1.5 rounded-md bg-red-600/20">
+                <LogOut className="w-3.5 h-3.5 text-red-200" />
+              </div>
+              
+              <AnimatePresence>
+                {showText && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="font-medium text-sm"
+                  >
+                    {t('sidebar.common.logout')}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    </>
+  );
+};
+
+// ===== مكون الهيدر المحسن =====
+const ResponsiveHeader: React.FC = () => {
+  const { user, userData } = useAuth();
+  const { toggleSidebar, isMobile, isTablet, isDesktop, isSidebarCollapsed, isClient } = useLayout();
+
+  const getUserDisplayName = () => {
+    return userData?.displayName || userData?.name || user?.displayName || user?.email?.split('@')[0] || 'مستخدم';
+  };
+
+  // تحديد margin للهيدر ليتناسق مع السايدبار - أحجام مصغرة
+  const getHeaderMargin = () => {
+    if (!isClient) return ''; // لا نطبق margin في الـ server
+    if (isMobile) return '';
+    if (isSidebarCollapsed) {
+      if (isTablet) return 'mr-14'; // 56px - يتطابق مع motion.div
+      return 'mr-16'; // 64px - يتطابق مع motion.div
+    }
+    if (isTablet) return 'mr-56'; // 224px - يتطابق مع motion.div
+    return 'mr-64'; // 256px - يتطابق مع motion.div
+  };
+
+  return (
+    <header className={`bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30 transition-all duration-300 ease-in-out ${getHeaderMargin()}`}>
+      <div className="flex items-center justify-between px-4 py-3 lg:px-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="hover:bg-gray-100"
+            title={isMobile ? "إظهار القائمة الجانبية" : (isSidebarCollapsed ? "إظهار القائمة الجانبية" : "إخفاء القائمة الجانبية")}
+          >
+            {isMobile ? <Menu className="w-5 h-5" /> : (isSidebarCollapsed ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />)}
+          </Button>
+          
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">لوحة التحكم</h1>
+            <p className="text-sm text-gray-600">مرحباً بك في منصة الحلم</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Avatar className="w-8 h-8">
+            <AvatarImage src={userData?.photoURL || '/default-avatar.png'} alt={getUserDisplayName()} />
+            <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
+              {getUserDisplayName().slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+// ===== مكون الفوتر المحسن =====
+const ResponsiveFooter: React.FC = () => {
+  const { isMobile, isTablet, isDesktop, isSidebarCollapsed, isClient } = useLayout();
+
+  // تحديد margin للفوتر ليتناسق مع السايدبار - أحجام مصغرة
+  const getFooterMargin = () => {
+    if (!isClient) return ''; // لا نطبق margin في الـ server
+    if (isMobile) return '';
+    if (isSidebarCollapsed) {
+      if (isTablet) return 'mr-14'; // 56px - يتطابق مع motion.div
+      return 'mr-16'; // 64px - يتطابق مع motion.div
+    }
+    if (isTablet) return 'mr-56'; // 224px - يتطابق مع motion.div
+    return 'mr-64'; // 256px - يتطابق مع motion.div
+  };
+
+  return (
+    <footer className={`bg-white border-t border-gray-200 py-4 px-4 lg:px-6 transition-all duration-300 ease-in-out ${getFooterMargin()}`}>
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-600">
+          © 2024 منصة الحلم. جميع الحقوق محفوظة.
+        </div>
+        <div className="flex items-center gap-4 text-sm text-gray-600">
+          <span>الإصدار 1.0.0</span>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+// ===== المكون الرئيسي للتخطيط =====
+interface ResponsiveLayoutProps {
+  children: React.ReactNode;
+  accountType?: string;
+  showSidebar?: boolean;
+  showHeader?: boolean;
+  showFooter?: boolean;
+}
+
+const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
+  children,
+  accountType = 'player',
+  showSidebar = true,
+  showHeader = true,
+  showFooter = true
+}) => {
+  const { isSidebarOpen, isSidebarCollapsed, isMobile, isTablet, isDesktop, isClient } = useLayout();
+
+  // تحديد margin للمحتوى الرئيسي - أحجام مصغرة
+  const getMainContentMargin = () => {
+    if (!isClient) return '';
+    if (!showSidebar) return '';
+    if (isMobile) return '';
+    if (isSidebarCollapsed) {
+      if (isTablet) return 'mr-14'; // 56px - يتطابق مع motion.div
+      return 'mr-16'; // 64px - يتطابق مع motion.div
+    }
+    if (isTablet) return 'mr-56'; // 224px - يتطابق مع motion.div
+    return 'mr-64'; // 256px - يتطابق مع motion.div
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header */}
+      {showHeader && <ResponsiveHeader />}
+      
+      {/* Main Content */}
+      <div className="flex flex-1 min-h-0">
+        {/* Sidebar */}
+        {showSidebar && <ResponsiveSidebar accountType={accountType} />}
+        
+        {/* Content */}
+        <main 
+          className={`flex-1 min-h-0 overflow-auto transition-all duration-300 ease-in-out ${getMainContentMargin()}`}
+          style={{ direction: 'rtl' }}
+        >
+          <div className="p-4 lg:p-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {children}
+            </motion.div>
+          </div>
+        </main>
+      </div>
+      
+      {/* Footer */}
+      {showFooter && <ResponsiveFooter />}
+    </div>
+  );
+};
+
+// ===== المكون الرئيسي المصدر =====
+interface ResponsiveLayoutWrapperProps {
+  children: React.ReactNode;
+  accountType?: string;
+  showSidebar?: boolean;
+  showHeader?: boolean;
+  showFooter?: boolean;
+}
+
+export const ResponsiveLayoutWrapper: React.FC<ResponsiveLayoutWrapperProps> = (props) => {
+  return (
+    <LayoutProvider>
+      <ResponsiveLayout {...props} />
+    </LayoutProvider>
+  );
+};
+
+export default ResponsiveLayoutWrapper;

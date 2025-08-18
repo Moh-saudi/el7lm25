@@ -19,6 +19,7 @@ import {
   Users,
   Settings
 } from 'lucide-react';
+import { PublicResponsiveLayoutWrapper } from '@/components/layout/PublicResponsiveLayout';
 
 export default function SupportPage() {
   const [activeTab, setActiveTab] = useState('contact');
@@ -87,8 +88,9 @@ export default function SupportPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4">
-      <div className="max-w-6xl mx-auto">
+    <PublicResponsiveLayoutWrapper>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4">
+        <div className="max-w-6xl mx-auto">
         {/* العنوان الرئيسي */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">مركز الدعم الفني</h1>
@@ -314,6 +316,6 @@ export default function SupportPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </PublicResponsiveLayoutWrapper>
   );
 }

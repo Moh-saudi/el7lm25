@@ -24,7 +24,10 @@ import {
   Bell,
   MessageSquare,
   KeyRound,
-  Play
+  Play,
+  GraduationCap,
+  Package,
+  CheckCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -315,6 +318,70 @@ const Sidebar = () => {
     }
   ];
 
+  // قائمة المسوق مع الترجمة
+  const marketerMenuItems = [
+    {
+      title: t('sidebar.marketer.home'),
+      icon: <Home className="w-5 h-5" />, 
+      path: '/dashboard/marketer'
+    },
+    {
+      title: t('sidebar.marketer.profile'),
+      icon: <User className="w-5 h-5" />, 
+      path: '/dashboard/marketer/profile'
+    },
+    {
+      title: t('sidebar.marketer.players'),
+      icon: <Users className="w-5 h-5" />, 
+      path: '/dashboard/marketer/players'
+    },
+    {
+      title: t('sidebar.marketer.search'),
+      icon: <Search className="w-5 h-5" />, 
+      path: '/dashboard/marketer/search'
+    },
+    {
+      title: t('sidebar.marketer.videos'),
+      icon: <VideoIcon className="w-5 h-5" />, 
+      path: '/dashboard/marketer/videos'
+    },
+    {
+      title: t('sidebar.marketer.dreamAcademy'),
+      icon: <GraduationCap className="w-5 h-5" />, 
+      path: '/dashboard/marketer/dream-academy'
+    },
+    {
+      title: t('sidebar.marketer.payment'),
+      icon: <CreditCard className="w-5 h-5" />, 
+      path: '/dashboard/marketer/payment'
+    },
+    {
+      title: t('sidebar.marketer.subscription'),
+      icon: <Package className="w-5 h-5" />, 
+      path: '/dashboard/marketer/subscription'
+    },
+    {
+      title: t('sidebar.marketer.notifications'),
+      icon: <Bell className="w-5 h-5" />, 
+      path: '/dashboard/marketer/notifications'
+    },
+    {
+      title: t('sidebar.marketer.subscriptionStatus'),
+      icon: <CheckCircle className="w-5 h-5" />, 
+      path: '/dashboard/marketer/subscription-status'
+    },
+    {
+      title: t('sidebar.marketer.billing'),
+      icon: <DollarSign className="w-5 h-5" />, 
+      path: '/dashboard/marketer/billing'
+    },
+    {
+      title: t('sidebar.marketer.messages'),
+      icon: <MessageSquare className="w-5 h-5" />, 
+      path: '/dashboard/marketer/messages'
+    }
+  ];
+
   // تحديد القائمة المناسبة حسب نوع الحساب
   const getMenuItems = () => {
     if (!user) return playerMenuItems;
@@ -332,7 +399,7 @@ const Sidebar = () => {
       case 'trainer':
         return trainerMenuItems;
       case 'marketer':
-        return playerMenuItems; // استخدام قائمة اللاعب للمسوق مؤقتاً
+        return marketerMenuItems; // استخدام قائمة المسوق المخصصة
       default:
         return playerMenuItems;
     }

@@ -1,206 +1,328 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Home, 
-  User, 
-  MessageSquare, 
-  Users, 
-  Search, 
-  Video, 
-  FileText, 
-  LogOut, 
-  ChevronLeft, 
+  X, 
   ChevronRight, 
-  Shield,
-  GraduationCap,
+  ChevronLeft,
+  Home,
+  User,
+  FileText,
+  Video,
+  Search,
+  BarChart3,
+  MessageSquare,
+  CreditCard,
+  Settings,
+  LogOut,
   Bell,
-  X
+  Star,
+  Trophy,
+  Users,
+  Calendar,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Shield,
+  Target,
+  TrendingUp
 } from 'lucide-react';
-import { useAuth } from '@/lib/firebase/auth-provider';
+import { useRouter, usePathname } from 'next/navigation';
+import { useSidebar } from '@/lib/context/SidebarContext';
 import { useMobileSidebar } from './MobileSidebarManager';
 
 interface EnhancedSidebarProps {
-  accountType: string;
-  collapsed: boolean;
-  setCollapsed: (collapsed: boolean) => void;
-  userData?: any;
+  accountType?: string;
 }
 
-const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({
-  accountType,
-  collapsed,
-  setCollapsed,
-  userData
-}) => {
-  const [activeItem, setActiveItem] = useState('dashboard');
-  const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
-  const { logout } = useAuth();
-  const { isMobileSidebarOpen, closeMobileSidebar } = useMobileSidebar();
+export default function EnhancedSidebar({ accountType = 'player' }: EnhancedSidebarProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { isCollapsed, isMobileOpen, setIsCollapsed, closeMobileSidebar } = useSidebar();
+  const { isMobileSidebarOpen, toggleMobileSidebar } = useMobileSidebar();
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
 
-  // كشف حجم الشاشة تلقائياً
-  React.useEffect(() => {
-    const handleResize = () => {
+  // كشف نوع الجهاز
+  useEffect(() => {
+    const checkDevice = () => {
       const width = window.innerWidth;
-      if (width < 768) {
-        setScreenSize('mobile');
-      } else if (width < 1024) {
-        setScreenSize('tablet');
-      } else {
-        setScreenSize('desktop');
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+    };
+
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
+  // معلومات الحساب حسب النوع
+  const getAccountInfo = () => {
+    const accountConfigs = {
+      player: {
+        title: 'اللاعب',
+        subtitle: 'لوحة التحكم',
+        bgGradient: 'from-blue-600 to-blue-800',
+        icon: User,
+        color: 'text-blue-400'
+      },
+      parent: {
+        title: 'ولي الأمر',
+        subtitle: 'إدارة الأبناء',
+        bgGradient: 'from-green-600 to-green-800',
+        icon: Users,
+        color: 'text-green-400'
+      },
+      coach: {
+        title: 'المدرب',
+        subtitle: 'إدارة الفريق',
+        bgGradient: 'from-purple-600 to-purple-800',
+        icon: Target,
+        color: 'text-purple-400'
+      },
+      club: {
+        title: 'النادي',
+        subtitle: 'إدارة النادي',
+        bgGradient: 'from-red-600 to-red-800',
+        icon: Trophy,
+        color: 'text-red-400'
+      },
+      academy: {
+        title: 'الأكاديمية',
+        subtitle: 'إدارة الأكاديمية',
+        bgGradient: 'from-indigo-600 to-indigo-800',
+        icon: Star,
+        color: 'text-indigo-400'
+      },
+      agent: {
+        title: 'الوكيل',
+        subtitle: 'إدارة اللاعبين',
+        bgGradient: 'from-orange-600 to-orange-800',
+        icon: TrendingUp,
+        color: 'text-orange-400'
+      },
+      admin: {
+        title: 'المدير',
+        subtitle: 'إدارة النظام',
+        bgGradient: 'from-gray-600 to-gray-800',
+        icon: Shield,
+        color: 'text-gray-400'
       }
     };
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      const confirmed = window.confirm('هل أنت متأكد من تسجيل الخروج؟');
-      if (confirmed) {
-        await logout();
-      }
-    } catch (error) {
-      console.error('خطأ في تسجيل الخروج:', error);
-    }
+    return accountConfigs[accountType as keyof typeof accountConfigs] || accountConfigs.player;
   };
 
-  // تحديد عناصر القائمة حسب نوع الحساب - باستخدام الصفحات الحقيقية فقط
+  const accountInfo = getAccountInfo();
+
+  // القوائم حسب نوع الحساب
   const getMenuItems = () => {
     const baseItems = [
-      { id: 'dashboard', label: 'الرئيسية', icon: Home, href: `/dashboard/${accountType}` },
-      { id: 'profile', label: 'الملف الشخصي', icon: User, href: `/dashboard/${accountType}/profile` },
-      { id: 'messages', label: 'الرسائل', icon: MessageSquare, href: `/dashboard/${accountType}/messages` },
+      {
+        title: 'الرئيسية',
+        icon: Home,
+        href: '/dashboard',
+        color: 'text-blue-400'
+      }
     ];
 
-    switch (accountType) {
-      case 'player':
-        return [
-          ...baseItems,
-          { id: 'reports', label: 'التقارير', icon: FileText, href: `/dashboard/player/reports` },
-          { id: 'videos', label: 'الفيديوهات', icon: Video, href: `/dashboard/player/videos` },
-          { id: 'player-videos', label: 'فيديوهات اللاعبين', icon: ChevronLeft, href: `/dashboard/player/player-videos` },
-          { id: 'search', label: 'البحث', icon: Search, href: `/dashboard/player/search` },
-          { id: 'stats', label: 'الإحصائيات', icon: ChevronLeft, href: `/dashboard/player/stats` },
-          { id: 'bulk-payment', label: 'الدفع الجماعي', icon: ChevronLeft, href: `/dashboard/player/bulk-payment` },
-          { id: 'referrals', label: 'الإحالات والمكافآت', icon: Users, href: `/dashboard/player/referrals` },
-          { id: 'dream-academy', label: 'أكاديمية الحلم', icon: GraduationCap, href: `/dashboard/dream-academy` },
-        ];
-      
-      case 'club':
-        return [
-          ...baseItems,
-          { id: 'players', label: 'اللاعبين', icon: Users, href: `/dashboard/club/players` },
-          { id: 'search-players', label: 'البحث عن اللاعبين', icon: Search, href: `/dashboard/club/search-players` },
-          { id: 'player-videos', label: 'فيديوهات اللاعبين', icon: Video, href: `/dashboard/club/player-videos` },
-          { id: 'contracts', label: 'العقود', icon: FileText, href: `/dashboard/club/contracts` },
-          { id: 'marketing', label: 'التسويق', icon: ChevronLeft, href: `/dashboard/club/marketing` },
-          { id: 'ai-analysis', label: 'تحليل الذكاء الاصطناعي', icon: ChevronLeft, href: `/dashboard/club/ai-analysis` },
-          { id: 'market-values', label: 'قيم السوق', icon: ChevronLeft, href: `/dashboard/club/market-values` },
-          { id: 'negotiations', label: 'المفاوضات', icon: ChevronLeft, href: `/dashboard/club/negotiations` },
-          { id: 'player-evaluation', label: 'تقييم اللاعبين', icon: ChevronLeft, href: `/dashboard/club/player-evaluation` },
-          { id: 'notifications', label: 'الإشعارات', icon: ChevronLeft, href: `/dashboard/club/notifications` },
-          { id: 'bulk-payment', label: 'الدفع الجماعي', icon: ChevronLeft, href: `/dashboard/club/bulk-payment` },
-          { id: 'billing', label: 'الفواتير', icon: ChevronLeft, href: `/dashboard/club/billing` },
-          { id: 'change-password', label: 'تغيير كلمة المرور', icon: ChevronLeft, href: `/dashboard/club/change-password` },
-          { id: 'referrals', label: 'الإحالات والمكافآت', icon: Users, href: `/dashboard/club/referrals` },
-          { id: 'dream-academy', label: 'أكاديمية الحلم', icon: GraduationCap, href: `/dashboard/dream-academy` },
-        ];
-      
-      case 'academy':
-        return [
-          ...baseItems,
-          { id: 'players', label: 'اللاعبين', icon: Users, href: `/dashboard/academy/players` },
-          { id: 'search-players', label: 'البحث عن اللاعبين', icon: Search, href: `/dashboard/academy/search-players` },
-          { id: 'player-videos', label: 'فيديوهات اللاعبين', icon: Video, href: `/dashboard/academy/player-videos` },
-          { id: 'bulk-payment', label: 'الدفع الجماعي', icon: ChevronLeft, href: `/dashboard/academy/bulk-payment` },
-          { id: 'billing', label: 'الفواتير', icon: ChevronLeft, href: `/dashboard/academy/billing` },
-          { id: 'referrals', label: 'الإحالات والمكافآت', icon: Users, href: `/dashboard/academy/referrals` },
-          { id: 'dream-academy', label: 'أكاديمية الحلم', icon: GraduationCap, href: `/dashboard/dream-academy` },
-        ];
-      
-      case 'trainer':
-        return [
-          ...baseItems,
-          { id: 'players', label: 'اللاعبين', icon: Users, href: `/dashboard/trainer/players` },
-          { id: 'search-players', label: 'البحث عن اللاعبين', icon: Search, href: `/dashboard/trainer/search-players` },
-          { id: 'player-videos', label: 'فيديوهات اللاعبين', icon: Video, href: `/dashboard/trainer/player-videos` },
-          { id: 'bulk-payment', label: 'الدفع الجماعي', icon: ChevronLeft, href: `/dashboard/trainer/bulk-payment` },
-          { id: 'billing', label: 'الفواتير', icon: ChevronLeft, href: `/dashboard/trainer/billing` },
-          { id: 'referrals', label: 'الإحالات والمكافآت', icon: Users, href: `/dashboard/trainer/referrals` },
-          { id: 'dream-academy', label: 'أكاديمية الحلم', icon: GraduationCap, href: `/dashboard/dream-academy` },
-        ];
-      
-      case 'agent':
-        return [
-          ...baseItems,
-          { id: 'players', label: 'اللاعبين', icon: Users, href: `/dashboard/agent/players` },
-          { id: 'search-players', label: 'البحث عن اللاعبين', icon: Search, href: `/dashboard/agent/search-players` },
-          { id: 'player-videos', label: 'فيديوهات اللاعبين', icon: Video, href: `/dashboard/agent/player-videos` },
-          { id: 'bulk-payment', label: 'الدفع الجماعي', icon: ChevronLeft, href: `/dashboard/agent/bulk-payment` },
-          { id: 'billing', label: 'الفواتير', icon: ChevronLeft, href: `/dashboard/agent/billing` },
-          { id: 'referrals', label: 'الإحالات والمكافآت', icon: Users, href: `/dashboard/agent/referrals` },
-          { id: 'dream-academy', label: 'أكاديمية الحلم', icon: GraduationCap, href: `/dashboard/dream-academy` },
-        ];
-      
-      case 'admin':
-        return [
-          ...baseItems,
-          { id: 'users', label: 'المستخدمين', icon: Users, href: `/dashboard/admin/users` },
-          { id: 'employees', label: 'الموظفين', icon: User, href: `/dashboard/admin/employees` },
-          { id: 'notifications', label: 'إدارة الإشعارات', icon: Bell, href: `/dashboard/admin/notifications` },
-          { id: 'careers', label: 'طلبات التوظيف', icon: FileText, href: `/dashboard/admin/careers` },
-          { id: 'reports', label: 'التقارير', icon: ChevronLeft, href: `/dashboard/admin/reports` },
-          { id: 'payments', label: 'المدفوعات', icon: ChevronLeft, href: `/dashboard/admin/payments` },
-          { id: 'subscriptions', label: 'الاشتراكات', icon: ChevronLeft, href: `/dashboard/admin/subscriptions` },
-          { id: 'support', label: 'الدعم الفني', icon: Shield, href: `/dashboard/admin/support` },
-          { id: 'system', label: 'النظام', icon: ChevronLeft, href: `/dashboard/admin/system` },
-          { id: 'email-migration', label: 'ترحيل البريد الإلكتروني', icon: ChevronLeft, href: `/dashboard/admin/email-migration` },
-          { id: 'dream-academy-videos', label: 'إدارة أكاديمية الحلم', icon: GraduationCap, href: `/dashboard/admin/dream-academy/videos` },
-          { id: 'dream-academy-categories', label: 'فئات الأكاديمية (ديناميكي)', icon: GraduationCap, href: `/dashboard/admin/dream-academy/categories` },
-          { id: 'dream-academy-settings', label: 'إعدادات أكاديمية الحلم', icon: GraduationCap, href: `/dashboard/admin/dream-academy/settings` },
-          { id: 'dream-academy', label: 'أكاديمية الحلم', icon: GraduationCap, href: `/dashboard/dream-academy` },
-          { id: 'referrals', label: 'الإحالات والمكافآت', icon: Users, href: `/dashboard/admin/referrals` },
-        ];
-      
-      default:
-        return baseItems;
-    }
+    const accountSpecificItems = {
+      player: [
+        {
+          title: 'الملف الشخصي',
+          icon: User,
+          href: '/dashboard/player/profile',
+          color: 'text-green-400'
+        },
+        {
+          title: 'التقارير',
+          icon: FileText,
+          href: '/dashboard/player/reports',
+          color: 'text-purple-400'
+        },
+        {
+          title: 'البحث عن الفرص',
+          icon: Search,
+          href: '/dashboard/player/search',
+          color: 'text-orange-400'
+        },
+        {
+          title: 'الرسائل',
+          icon: MessageSquare,
+          href: '/dashboard/player/messages',
+          color: 'text-pink-400'
+        },
+        {
+          title: 'الفيديوهات',
+          icon: Video,
+          href: '/dashboard/player/videos',
+          color: 'text-red-400'
+        },
+        {
+          title: 'الإحصائيات',
+          icon: BarChart3,
+          href: '/dashboard/player/stats',
+          color: 'text-indigo-400'
+        }
+      ],
+      parent: [
+        {
+          title: 'الأبناء',
+          icon: Users,
+          href: '/dashboard/parent/children',
+          color: 'text-green-400'
+        },
+        {
+          title: 'التقارير',
+          icon: FileText,
+          href: '/dashboard/parent/reports',
+          color: 'text-purple-400'
+        },
+        {
+          title: 'الرسائل',
+          icon: MessageSquare,
+          href: '/dashboard/parent/messages',
+          color: 'text-pink-400'
+        }
+      ],
+      coach: [
+        {
+          title: 'الفريق',
+          icon: Users,
+          href: '/dashboard/coach/team',
+          color: 'text-green-400'
+        },
+        {
+          title: 'التدريبات',
+          icon: Target,
+          href: '/dashboard/coach/training',
+          color: 'text-blue-400'
+        },
+        {
+          title: 'المباريات',
+          icon: Trophy,
+          href: '/dashboard/coach/matches',
+          color: 'text-purple-400'
+        },
+        {
+          title: 'التقارير',
+          icon: FileText,
+          href: '/dashboard/coach/reports',
+          color: 'text-orange-400'
+        }
+      ],
+      club: [
+        {
+          title: 'اللاعبين',
+          icon: Users,
+          href: '/dashboard/club/players',
+          color: 'text-green-400'
+        },
+        {
+          title: 'المباريات',
+          icon: Trophy,
+          href: '/dashboard/club/matches',
+          color: 'text-purple-400'
+        },
+        {
+          title: 'التقارير',
+          icon: FileText,
+          href: '/dashboard/club/reports',
+          color: 'text-orange-400'
+        },
+        {
+          title: 'الإحصائيات',
+          icon: BarChart3,
+          href: '/dashboard/club/stats',
+          color: 'text-indigo-400'
+        }
+      ],
+      academy: [
+        {
+          title: 'الطلاب',
+          icon: Users,
+          href: '/dashboard/academy/students',
+          color: 'text-green-400'
+        },
+        {
+          title: 'البرامج',
+          icon: Target,
+          href: '/dashboard/academy/programs',
+          color: 'text-blue-400'
+        },
+        {
+          title: 'التقارير',
+          icon: FileText,
+          href: '/dashboard/academy/reports',
+          color: 'text-purple-400'
+        }
+      ],
+      agent: [
+        {
+          title: 'اللاعبين',
+          icon: Users,
+          href: '/dashboard/agent/players',
+          color: 'text-green-400'
+        },
+        {
+          title: 'العقود',
+          icon: FileText,
+          href: '/dashboard/agent/contracts',
+          color: 'text-purple-400'
+        },
+        {
+          title: 'الفرص',
+          icon: TrendingUp,
+          href: '/dashboard/agent/opportunities',
+          color: 'text-orange-400'
+        }
+      ],
+      admin: [
+        {
+          title: 'المستخدمين',
+          icon: Users,
+          href: '/dashboard/admin/users',
+          color: 'text-green-400'
+        },
+        {
+          title: 'النظام',
+          icon: Settings,
+          href: '/dashboard/admin/system',
+          color: 'text-purple-400'
+        },
+        {
+          title: 'التقارير',
+          icon: FileText,
+          href: '/dashboard/admin/reports',
+          color: 'text-orange-400'
+        }
+      ]
+    };
+
+    return [...baseItems, ...(accountSpecificItems[accountType as keyof typeof accountSpecificItems] || [])];
   };
 
   const menuItems = getMenuItems();
 
-  // الحصول على صورة المستخدم
-  const getUserAvatar = () => {
-    if (userData?.photoURL) {
-      return userData.photoURL;
+  // إغلاق القائمة الجانبية في الموبايل
+  const handleItemClick = (href: string) => {
+    if (isMobile) {
+      closeMobileSidebar();
     }
-    if (userData?.avatar) {
-      return userData.avatar;
-    }
-    if (userData?.profileImage) {
-      return userData.profileImage;
-    }
-    return null;
+    router.push(href);
   };
 
-  const userAvatar = getUserAvatar();
-
   // إظهار القائمة الجانبية فقط إذا كانت مفتوحة أو في الديسكتوب/التابلت
-  if (screenSize === 'mobile' && !isMobileSidebarOpen) {
+  if (isMobile && !isMobileOpen) {
     return null;
   }
-
-  // في الموبايل، نريد أن تظهر القائمة الجانبية خارج الشاشة افتراضياً
-  const mobileTransform = screenSize === 'mobile' && !isMobileSidebarOpen ? 'translateX(100%)' : 'translateX(0)';
 
   return (
     <>
       {/* Overlay للموبايل */}
-      {screenSize === 'mobile' && isMobileSidebarOpen && (
+      {isMobile && isMobileOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -211,170 +333,154 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({
       )}
       
       <motion.div
-        initial={{ x: screenSize === 'mobile' ? '100%' : 0 }}
+        initial={{ x: isMobile ? '100%' : 0 }}
         animate={{ 
-          x: screenSize === 'mobile' ? (isMobileSidebarOpen ? 0 : '100%') : 0 
+          x: isMobile ? (isMobileOpen ? 0 : '100%') : 0 
         }}
-        exit={{ x: screenSize === 'mobile' ? '100%' : 0 }}
+        exit={{ x: isMobile ? '100%' : 0 }}
         className={`fixed top-16 bottom-20 right-0 bg-gradient-to-br from-[#1e40af] via-[#2563eb] to-[#3b82f6] z-40 shadow-2xl backdrop-blur-sm border-l border-white/10 transition-all duration-300 ease-in-out ${
           // تصميم متجاوب للقائمة الجانبية
-          screenSize === 'mobile' ? 'w-80' : // في الموبايل عرض كامل
-          screenSize === 'tablet' ? (collapsed ? 'w-16' : 'w-64') : // في التابلت
-          collapsed ? 'w-20' : 'w-64' // في الديسكتوب
+          isMobile ? 'w-80' : // في الموبايل عرض كامل
+          isTablet ? (isCollapsed ? 'w-16' : 'w-64') : // في التابلت
+          isCollapsed ? 'w-20' : 'w-64' // في الديسكتوب
         }`}
         data-sidebar
-        style={{
-          transform: mobileTransform
-        }}
       >
-      {/* أزرار التحكم - تصميم عصري */}
-      <div className="flex justify-between items-center p-4 bg-white/5 backdrop-blur-sm">
-        {/* زر إغلاق للموبايل */}
-        {screenSize === 'mobile' && (
-          <motion.button
-            whileHover={{ scale: 1.05, backgroundColor: 'rgba(255, 255, 255, 0.15)' }}
-            whileTap={{ scale: 0.95 }}
-            onClick={closeMobileSidebar}
-            className="p-3 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all duration-200 backdrop-blur-sm border border-white/20"
-          >
-            <X size={18} />
-          </motion.button>
-        )}
-        
-        {/* زر التطويق/التوسع */}
-        <motion.button
-          whileHover={{ scale: 1.05, backgroundColor: 'rgba(255, 255, 255, 0.15)' }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-3 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all duration-200 backdrop-blur-sm border border-white/20"
-          data-sidebar-toggle
-        >
-          <AnimatePresence mode="wait">
-            {collapsed ? (
-              <motion.div
-                key="chevron-right"
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: 90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronRight size={18} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="chevron-left"
-                initial={{ rotate: 90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: -90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronLeft size={18} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
-      </div>
+        {/* أزرار التحكم - تصميم عصري */}
+        <div className="flex justify-between items-center p-4 bg-white/5 backdrop-blur-sm">
+          {/* زر إغلاق للموبايل */}
+          {isMobile && (
+            <motion.button
+              whileHover={{ scale: 1.05, backgroundColor: 'rgba(255, 255, 255, 0.15)' }}
+              whileTap={{ scale: 0.95 }}
+              onClick={closeMobileSidebar}
+              className="p-3 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all duration-200 backdrop-blur-sm border border-white/20 touch-target"
+            >
+              <X size={18} />
+            </motion.button>
+          )}
+          
+          {/* زر التطويق/التوسع */}
+          {!isMobile && (
+            <motion.button
+              whileHover={{ scale: 1.05, backgroundColor: 'rgba(255, 255, 255, 0.15)' }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-3 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all duration-200 backdrop-blur-sm border border-white/20 touch-target"
+            >
+              {isCollapsed ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+            </motion.button>
+          )}
+        </div>
 
-      {/* قائمة العناصر مع التمرير - تصميم عصري */}
-      <div className="flex flex-col h-full">
-        <nav className="flex-1 overflow-y-auto px-4 py-4">
-          <ul className="space-y-2">
+        {/* معلومات الحساب */}
+        <div className="p-4 border-b border-white/10">
+          <div className="flex items-center space-x-3">
+            <div className={`w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20`}>
+              <accountInfo.icon className={`w-5 h-5 md:w-6 md:h-6 ${accountInfo.color}`} />
+            </div>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm md:text-base font-semibold text-white truncate">
+                  {accountInfo.title}
+                </h3>
+                <p className="text-xs md:text-sm text-white/70 truncate">
+                  {accountInfo.subtitle}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* القائمة الرئيسية */}
+        <div className="flex-1 overflow-y-auto py-4">
+          <nav className="space-y-2 px-4">
             {menuItems.map((item, index) => (
-              <motion.li
-                key={item.id}
+              <motion.div
+                key={item.href}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.1 }}
               >
-                <motion.a
-                  href={item.href}
-                  whileHover={{ 
-                    scale: 1.02, 
-                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                  }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`flex items-center px-4 py-3 rounded-xl text-white transition-all duration-200 backdrop-blur-sm border border-white/10 ${
-                    activeItem === item.id 
-                      ? 'bg-white/20 shadow-lg border-white/30' 
-                      : 'hover:bg-white/10 hover:border-white/20'
+                <button
+                  onClick={() => handleItemClick(item.href)}
+                  className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 touch-target ${
+                    pathname === item.href ? 'bg-white/20 border-white/30' : ''
                   }`}
-                  onClick={() => setActiveItem(item.id)}
                 >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 mr-3 rtl:ml-3">
-                    <item.icon size={18} className="flex-shrink-0" />
+                  <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center bg-white/10 group-hover:bg-white/20 transition-all duration-200`}>
+                    <item.icon className={`w-4 h-4 md:w-5 md:h-5 ${item.color}`} />
                   </div>
-                  <AnimatePresence>
-                    {!collapsed && (
-                      <motion.span
-                        initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: 'auto' }}
-                        exit={{ opacity: 0, width: 0 }}
-                        className="font-medium text-sm"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.a>
-              </motion.li>
+                  {!isCollapsed && (
+                    <span className="text-sm md:text-base font-medium text-white group-hover:text-white/90 transition-colors">
+                      {item.title}
+                    </span>
+                  )}
+                </button>
+              </motion.div>
             ))}
-          </ul>
-        </nav>
-
-        {/* أزرار تسجيل الخروج والمساعدة - تصميم عصري */}
-        <div className="p-4 border-t border-white/10 space-y-3 bg-white/5 backdrop-blur-sm">
-          {/* زر المساعدة */}
-          <motion.button
-            whileHover={{ scale: 1.02, backgroundColor: 'rgba(59, 130, 246, 0.3)' }}
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center w-full px-4 py-3 rounded-xl text-white bg-blue-500/20 hover:bg-blue-500/30 transition-all duration-200 backdrop-blur-sm border border-blue-400/30"
-          >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/30 mr-3 rtl:ml-3">
-              <Shield size={16} className="flex-shrink-0" />
-            </div>
-            <AnimatePresence>
-              {!collapsed && (
-                <motion.span
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: 'auto' }}
-                  exit={{ opacity: 0, width: 0 }}
-                  className="font-medium text-sm"
-                >
-                  المساعدة
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </motion.button>
-          
-          {/* زر تسجيل الخروج */}
-          <motion.button
-            whileHover={{ scale: 1.02, backgroundColor: 'rgba(239, 68, 68, 0.3)' }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleSignOut}
-            className="flex items-center w-full px-4 py-3 rounded-xl text-white bg-red-500/20 hover:bg-red-500/30 transition-all duration-200 backdrop-blur-sm border border-red-400/30"
-          >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-red-500/30 mr-3 rtl:ml-3">
-              <LogOut size={16} className="flex-shrink-0" />
-            </div>
-            <AnimatePresence>
-              {!collapsed && (
-                <motion.span
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: 'auto' }}
-                  exit={{ opacity: 0, width: 0 }}
-                  className="font-medium text-sm"
-                >
-                  تسجيل الخروج
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </motion.button>
+          </nav>
         </div>
-      </div>
-    </motion.div>
+
+        {/* القائمة السفلية */}
+        <div className="p-4 border-t border-white/10">
+          <div className="space-y-2">
+            {/* الإشعارات */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 touch-target"
+            >
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center bg-white/10 group-hover:bg-white/20 transition-all duration-200 relative">
+                <Bell className="w-4 h-4 md:w-5 md:h-5 text-yellow-400" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+              </div>
+              {!isCollapsed && (
+                <span className="text-sm md:text-base font-medium text-white group-hover:text-white/90 transition-colors">
+                  الإشعارات
+                </span>
+              )}
+            </motion.button>
+
+            {/* الإعدادات */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleItemClick('/dashboard/settings')}
+              className="w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 touch-target"
+            >
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center bg-white/10 group-hover:bg-white/20 transition-all duration-200">
+                <Settings className="w-4 h-4 md:w-5 md:h-5 text-gray-400" />
+              </div>
+              {!isCollapsed && (
+                <span className="text-sm md:text-base font-medium text-white group-hover:text-white/90 transition-colors">
+                  الإعدادات
+                </span>
+              )}
+            </motion.button>
+
+            {/* تسجيل الخروج */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                // إضافة منطق تسجيل الخروج هنا
+                router.push('/auth/login');
+              }}
+              className="w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 group hover:bg-red-500/20 backdrop-blur-sm border border-transparent hover:border-red-500/30 touch-target"
+            >
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center bg-red-500/20 group-hover:bg-red-500/30 transition-all duration-200">
+                <LogOut className="w-4 h-4 md:w-5 md:h-5 text-red-400" />
+              </div>
+              {!isCollapsed && (
+                <span className="text-sm md:text-base font-medium text-white group-hover:text-red-300 transition-colors">
+                  تسجيل الخروج
+                </span>
+              )}
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
     </>
   );
-};
-
-export default EnhancedSidebar; 
+} 

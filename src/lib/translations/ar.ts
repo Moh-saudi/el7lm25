@@ -21,7 +21,9 @@ const ar = {
     about: 'حول',
     contact: 'اتصل بنا',
     login: 'تسجيل الدخول',
-    register: 'إنشاء حساب'
+    register: 'إنشاء حساب',
+    careers: 'الوظائف',
+    support: 'الدعم'
   },
 
   // ============================================
@@ -1656,6 +1658,8 @@ const ar = {
       reports: 'التقارير'
     },
     common: {
+      home: 'الرئيسية',
+      profile: 'الملف الشخصي',
       messages: 'الرسائل',
       notifications: 'الإشعارات',
       changePassword: 'تغيير كلمة السر',
@@ -1689,7 +1693,31 @@ const ar = {
     egypt: "مصر",
     allRightsReserved: "جميع الحقوق محفوظة",
     poweredBy: "مدعوم بواسطة",
-    version: "الإصدار"
+    version: "الإصدار",
+    // مفاتيح الفوتر المفقودة
+    company: {
+      title: "الشركة",
+      about: "من نحن",
+      careers: "الوظائف",
+      contact: "اتصل بنا",
+      support: "الدعم"
+    },
+    services: {
+      title: "الخدمات",
+      players: "اللاعبين",
+      clubs: "الأندية",
+      academies: "الأكاديميات",
+      agents: "الوكلاء"
+    },
+    legal: {
+      title: "القانونية",
+      privacy: "الخصوصية",
+      terms: "الشروط والأحكام",
+      cookies: "ملفات تعريف الارتباط"
+    },
+    contact: {
+      title: "اتصل بنا"
+    }
   },
 
   // ============================================

@@ -186,7 +186,10 @@ export default function AdminDreamAcademyVideosPage() {
         const snap = await getDocs(query(collection(db, 'dream_academy_categories')));
         const cats = snap.docs.map(d => d.data() as any).filter(c => c.isActive !== false);
         const mapped = cats.map((c:any) => ({ id: c.id as DreamAcademyCategoryId, title: c.title as string }));
-        if (mapped.length > 0) setDynamicCategories(mapped);
+        if (mapped.length > 0) {
+          const unique = Array.from(new Map(mapped.map((c:any) => [c.id, c])).values());
+          setDynamicCategories(unique as any);
+        }
       } catch {}
     })();
   }, []);
@@ -457,6 +460,11 @@ export default function AdminDreamAcademyVideosPage() {
     }) as any);
   };
 
+  // قائمة فئات فريدة لتجنّب مفاتيح مكررة داخل عناصر Select
+  const uniqueCategories = useMemo(() => {
+    return Array.from(new Map(dynamicCategories.map(c => [c.id, c])).values());
+  }, [dynamicCategories]);
+
   return (
     <AccountTypeProtection allowedTypes={["admin"]}>
     <div className="container mx-auto p-6">
@@ -495,7 +503,7 @@ export default function AdminDreamAcademyVideosPage() {
             <Select value={draft.categoryId} onValueChange={(v) => setDraft((d) => ({ ...d, categoryId: v as DreamAcademyCategoryId }))}>
               <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
               <SelectContent>
-                 {dynamicCategories.map(c => (
+                 {uniqueCategories.map(c => (
                   <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
                 ))}
               </SelectContent>
@@ -586,7 +594,7 @@ export default function AdminDreamAcademyVideosPage() {
               <SelectTrigger className="w-64"><SelectValue placeholder="كل الفئات" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">كل الفئات</SelectItem>
-                {dynamicCategories.map(c => (
+                {uniqueCategories.map(c => (
                   <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
                 ))}
               </SelectContent>
@@ -605,7 +613,7 @@ export default function AdminDreamAcademyVideosPage() {
               <Select onValueChange={(v) => bulkChangeCategory(v as any)}>
                 <SelectTrigger className="w-56"><SelectValue placeholder="نقل المحدد إلى فئة" /></SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map(c => (
+                  {uniqueCategories.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
                   ))}
                 </SelectContent>

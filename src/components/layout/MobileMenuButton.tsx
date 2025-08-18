@@ -38,3 +38,4 @@ const MobileMenuButton: React.FC<MobileMenuButtonProps> = ({ className = '' }) =
 };
 
 export default MobileMenuButton;
+

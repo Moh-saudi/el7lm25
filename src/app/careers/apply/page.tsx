@@ -3,6 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import { CheckCircle2, ArrowRight, Phone, PartyPopper } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import PublicResponsiveLayoutWrapper from '@/components/layout/PublicResponsiveLayout';
 
 function ApplyForm() {
   const searchParams = useSearchParams();
@@ -79,7 +80,8 @@ function ApplyForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
+    <PublicResponsiveLayoutWrapper>
+      <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold">نموذج التقديم</h1>
@@ -184,6 +186,7 @@ function ApplyForm() {
         </form>
       </div>
     </div>
+    </PublicResponsiveLayoutWrapper>
   );
 }
 

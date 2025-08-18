@@ -253,59 +253,51 @@ export default function RegisterPage() {
     setError('');
     if (!validateForm()) return;
 
-    console.log('🚀 Starting registration process...');
+    console.log('🚀 Starting registration process (OTP disabled)...');
     setLoading(true);
     
     try {
-      // إرسال OTP أولاً
+      // تخطي إرسال OTP وإنشاء الحساب مباشرة
       const formattedPhone = normalizePhone(formData.countryCode, formData.phone);
       
-      console.log('📱 Sending OTP to:', formattedPhone);
+      console.log('⏭️ OTP verification disabled, creating account directly...');
       
-      const otpResponse = await fetch('/api/notifications/smart-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phone: formattedPhone,
-          name: formData.name,
-          country: formData.country,
-          countryCode: formData.countryCode
-        })
-      });
-
-      const otpData = await otpResponse.json();
+      // توليد بريد إلكتروني مؤقت آمن لـ Firebase
+      const cleanPhone = formattedPhone.replace(/[^0-9]/g, '');
+      const cleanCountryCode = formData.countryCode.replace(/[^0-9]/g, '');
+      const timestamp = Date.now();
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const firebaseEmail = `user_${cleanCountryCode}_${cleanPhone}_${timestamp}_${randomSuffix}@el7hm.com`;
       
-      if (!otpResponse.ok || !otpData.success) {
-        throw new Error(otpData.error || 'فشل في إرسال رمز التحقق');
-      }
-
-      console.log('✅ OTP sent successfully:', otpData);
-      
-      // حفظ بيانات التسجيل المعلقة
-      const pendingData = {
+      const registrationData = {
+        full_name: formData.name,
         phone: formattedPhone,
-        name: formData.name,
-        password: formData.password,
-        accountType: formData.accountType,
         country: formData.country,
         countryCode: formData.countryCode,
         currency: formData.currency,
-        currencySymbol: formData.currencySymbol,
-        otp: otpData.otp,
-        method: otpData.method
+        currencySymbol: formData.currencySymbol
       };
       
-      localStorage.setItem('pendingRegistration', JSON.stringify(pendingData));
-      localStorage.setItem('pendingPhoneVerification', formattedPhone);
+      // إنشاء الحساب مباشرة
+      const userData = await registerUser(
+        firebaseEmail,
+        formData.password, 
+        formData.accountType as UserRole,
+        {
+          ...registrationData,
+          phone: formattedPhone,
+          originalEmail: formattedPhone.trim() || null,
+          firebaseEmail: firebaseEmail
+        }
+      );
       
-      // إظهار نافذة التحقق من OTP
-      setPendingPhone(formattedPhone);
-      setShowPhoneVerification(true);
+      console.log('✅ Account created successfully (OTP disabled):', userData);
+      
       setLoading(false);
       
-      setMessage(`✅ تم إنشاء رمز التحقق (كود احتياطي للإدارة: 123456). يرجى إدخال الرمز للاستمرار.`);
+      // إعادة التوجيه إلى لوحة التحكم
+      const dashboardRoute = getDashboardRoute(formData.accountType);
+      router.push(dashboardRoute);
       
     } catch (error: unknown) {
       console.error('❌ Registration failed:', error);
@@ -325,6 +317,76 @@ export default function RegisterPage() {
     localStorage.removeItem('pendingPhoneVerification');
     localStorage.removeItem('pendingRegistration');
     setError(t('register.messages.verificationCancelled'));
+  };
+
+  // دالة تخطي OTP للعملاء الجدد
+  const handleSkipOTP = async () => {
+    console.log('⏭️ Skipping OTP verification for new customers');
+    setLoading(true);
+    
+    try {
+      // استرجاع بيانات التسجيل المعلقة
+      const pendingDataStr = localStorage.getItem('pendingRegistration');
+      if (!pendingDataStr) {
+        throw new Error('بيانات التسجيل غير موجودة');
+      }
+      
+      const pendingData = JSON.parse(pendingDataStr);
+      
+      console.log('✅ Skipping OTP, creating account directly...');
+      
+      // توليد بريد إلكتروني مؤقت آمن لـ Firebase
+      const cleanPhone = (pendingData.phone || '').replace(/[^0-9]/g, '');
+      const cleanCountryCode = (pendingData.countryCode || '').replace(/[^0-9]/g, '');
+      const timestamp = Date.now();
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const firebaseEmail = `user_${cleanCountryCode}_${cleanPhone}_${timestamp}_${randomSuffix}@el7hm.com`;
+      
+      const registrationData = {
+        full_name: pendingData.name,
+        phone: pendingData.phone,
+        country: pendingData.country,
+        countryCode: pendingData.countryCode,
+        currency: pendingData.currency,
+        currencySymbol: pendingData.currencySymbol
+      };
+      
+      // إنشاء الحساب
+      const userData = await registerUser(
+        firebaseEmail,
+        pendingData.password, 
+        pendingData.accountType as UserRole,
+        {
+          ...registrationData,
+          phone: pendingData.phone,
+          originalEmail: pendingData.phone.trim() || null,
+          firebaseEmail: firebaseEmail
+        }
+      );
+      
+      console.log('✅ Account created successfully (OTP skipped):', userData);
+      
+      // تنظيف البيانات المعلقة
+      localStorage.removeItem('pendingRegistration');
+      localStorage.removeItem('pendingPhoneVerification');
+      
+      // إغلاق نافذة التحقق
+      setShowPhoneVerification(false);
+      setPendingPhone(null);
+      
+      // إعادة التوجيه إلى لوحة التحكم
+      const dashboardRoute = getDashboardRoute(pendingData.accountType);
+      router.push(dashboardRoute);
+      
+    } catch (error: unknown) {
+      console.error('❌ Account creation failed:', error);
+      if (error instanceof Error) {
+        setError(error.message || 'حدث خطأ أثناء إنشاء الحساب.');
+      } else {
+        setError('حدث خطأ غير متوقع أثناء إنشاء الحساب.');
+      }
+      setLoading(false);
+    }
   };
 
   const handleOTPVerification = async (otp: string) => {
@@ -706,15 +768,43 @@ export default function RegisterPage() {
           <div className="bg-white rounded-xl p-8 max-w-lg w-full mx-4">
             <div className="text-center mb-6">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                التحقق من رقم الهاتف
+                التحقق من رقم الهاتف (معطل مؤقتاً)
               </h2>
               <p className="text-gray-600 text-lg">
-                تم إنشاء رمز التحقق للحساب {pendingPhone}
+                تم إنشاء الحساب بنجاح! التحقق من رقم الهاتف معطل مؤقتاً
               </p>
-              <p className="text-sm text-blue-600 mt-2">
-                💡 كود التحقق: <strong>123456</strong> (كود احتياطي للإدارة)
+              <p className="text-sm text-green-600 mt-2">
+                ✅ الحساب جاهز للاستخدام مباشرة
               </p>
-      </div>
+              
+              {/* زر تخطي التحقق للعملاء الجدد */}
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800 mb-2">
+                  ✅ <strong>التحقق معطل مؤقتاً:</strong>
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSkipOTP}
+                  disabled={loading}
+                  className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      جاري إنشاء الحساب...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      إنشاء الحساب مباشرة (بدون تحقق)
+                    </>
+                  )}
+                </button>
+                <p className="text-xs text-green-700 mt-2">
+                  ⚡ التحقق من رقم الهاتف معطل مؤقتاً
+                </p>
+              </div>
+            </div>
 
       <UnifiedOTPVerification
               phoneNumber={pendingPhone}

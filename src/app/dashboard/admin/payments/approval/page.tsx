@@ -283,7 +283,7 @@ export default function PaymentApprovalPage() {
   }, [statusFilter, searchTerm, dateRange]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
+          <div className="p-6" dir="rtl">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-6">

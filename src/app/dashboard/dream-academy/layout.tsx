@@ -7,6 +7,5 @@ interface DreamAcademyLayoutProps {
 }
 
 export default function DreamAcademyLayout({ children }: DreamAcademyLayoutProps) {
-  // استخدام layout اللاعب مباشرة بدون تكرار
   return <>{children}</>;
 } 

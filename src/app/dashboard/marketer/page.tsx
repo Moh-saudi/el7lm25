@@ -1,9 +1,9 @@
 'use client';
 
-import React, { memo } from 'react';
+import React from 'react';
 import { useTranslation } from '@/lib/translations/simple-context';
 
-const WelcomeHero = memo(() => {
+export default function MarketerDashboard() {
   const { t } = useTranslation();
   
   return (
@@ -59,10 +59,4 @@ const WelcomeHero = memo(() => {
       </div>
     </div>
   );
-});
-
-WelcomeHero.displayName = 'WelcomeHero';
-
-export default function MarketerDashboard() {
-  return <WelcomeHero />;
 } 

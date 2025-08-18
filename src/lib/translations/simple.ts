@@ -21,8 +21,13 @@ export const translations = {
     // الخدمات
     'home.sections.services.title': 'خدماتنا',
     'home.sections.services.performanceAnalysis.title': 'تحليل الأداء',
-    'home.sections.services.performanceAnalysis.description': 'تقييم شامل لأداء اللاعب والتحليلات',
+    'home.sections.services.performanceAnalysis.description': 'تقييم شامل ومتقدم لأداء اللاعب مع تحليلات مفصلة',
     'home.sections.services.performanceAnalysis.button': 'اعرف المزيد',
+    'home.sections.services.learnMore': 'اعرف المزيد',
+    'home.sections.services.teamExposure.title': 'عرض الفرق',
+    'home.sections.services.teamExposure.description': 'عرض ملفك الشخصي لأفضل الفرق العالمية',
+    'home.sections.services.globalNetwork.title': 'الشبكة العالمية',
+    'home.sections.services.globalNetwork.description': 'الوصول لشبكة عالمية من الأندية والكشافة',
     'home.sections.services.professionalOffers.title': 'العروض الاحترافية',
     'home.sections.services.professionalOffers.description': 'تواصل مع أفضل الأندية والفرص الاحترافية',
     'home.sections.services.professionalOffers.button': 'اعرف المزيد',
@@ -415,6 +420,19 @@ export const translations = {
     'sidebar.trainer.videos': 'الفيديوهات',
     'sidebar.trainer.programs': 'البرامج',
     'sidebar.trainer.stats': 'الإحصائيات',
+
+    'sidebar.marketer.home': 'الرئيسية',
+    'sidebar.marketer.profile': 'الملف الشخصي',
+    'sidebar.marketer.players': 'اللاعبين التابعين',
+    'sidebar.marketer.search': 'البحث عن اللاعبين',
+    'sidebar.marketer.videos': 'فيديوهات اللاعبين',
+    'sidebar.marketer.dreamAcademy': 'أكاديمية الحلم',
+    'sidebar.marketer.payment': 'الدفع',
+    'sidebar.marketer.subscription': 'الاشتراكات',
+    'sidebar.marketer.notifications': 'الإشعارات',
+    'sidebar.marketer.subscriptionStatus': 'حالة الاشتراك',
+    'sidebar.marketer.billing': 'الفواتير والمدفوعات',
+    'sidebar.marketer.messages': 'الرسائل',
 
     'sidebar.common.messages': 'الرسائل',
     'sidebar.common.logout': 'تسجيل الخروج',
@@ -1244,6 +1262,19 @@ export const translations = {
     'sidebar.trainer.programs': 'Programs',
     'sidebar.trainer.stats': 'Statistics',
 
+    'sidebar.marketer.home': 'Home',
+    'sidebar.marketer.profile': 'Profile',
+    'sidebar.marketer.players': 'Affiliated Players',
+    'sidebar.marketer.search': 'Player Search',
+    'sidebar.marketer.videos': 'Player Videos',
+    'sidebar.marketer.dreamAcademy': 'Dream Academy',
+    'sidebar.marketer.payment': 'Payment',
+    'sidebar.marketer.subscription': 'Subscriptions',
+    'sidebar.marketer.notifications': 'Notifications',
+    'sidebar.marketer.subscriptionStatus': 'Subscription Status',
+    'sidebar.marketer.billing': 'Billing & Payments',
+    'sidebar.marketer.messages': 'Messages',
+
     'sidebar.common.messages': 'Messages',
     'sidebar.common.logout': 'Logout',
     'sidebar.common.notifications': 'Notifications',
@@ -1742,7 +1773,31 @@ export const translations = {
     'home.packages.package3.features.analysis': 'تحليل احترافي شامل',
     'home.packages.package3.features.exposure': 'عرض احترافي متميز',
     'home.packages.package3.features.tests': 'اختبارات احترافية',
-    'home.packages.package3.features.support': 'دعم احترافي شامل'
+    'home.packages.package3.features.support': 'دعم احترافي شامل',
+
+    // التنقل - مفاتيح مفقودة
+    'nav.home': 'الرئيسية',
+    'nav.about': 'من نحن',
+    'nav.careers': 'الوظائف',
+    'nav.contact': 'اتصل بنا',
+    'nav.support': 'الدعم',
+
+    // الفوتر - مفاتيح مفقودة
+    'footer.company.title': 'الشركة',
+    'footer.company.about': 'من نحن',
+    'footer.company.careers': 'الوظائف',
+    'footer.company.contact': 'اتصل بنا',
+    'footer.company.support': 'الدعم',
+    'footer.contact.title': 'اتصل بنا',
+    'footer.services.title': 'الخدمات',
+    'footer.services.players': 'اللاعبين',
+    'footer.services.clubs': 'الأندية',
+    'footer.services.academies': 'الأكاديميات',
+    'footer.services.agents': 'الوكلاء',
+    'footer.legal.title': 'القانونية',
+    'footer.legal.privacy': 'الخصوصية',
+    'footer.legal.terms': 'الشروط والأحكام',
+    'footer.legal.cookies': 'ملفات تعريف الارتباط'
   },
   en: {
     // Jobs
@@ -1778,7 +1833,46 @@ export const translations = {
     'home.packages.package3.features.analysis': 'Comprehensive Professional Analysis',
     'home.packages.package3.features.exposure': 'Global Professional Exposure',
     'home.packages.package3.features.tests': 'Professional Tests',
-    'home.packages.package3.features.support': '24/7 Professional Support'
+    'home.packages.package3.features.support': '24/7 Professional Support',
+
+    // Services - English translations for new keys
+    'home.sections.services.learnMore': 'Learn More',
+    'home.sections.services.teamExposure.title': 'Team Exposure',
+    'home.sections.services.teamExposure.description': 'Showcase your profile to the best global teams',
+    'home.sections.services.globalNetwork.title': 'Global Network',
+    'home.sections.services.globalNetwork.description': 'Access to a global network of clubs and scouts',
+
+    // Branches - English translations for missing keys
+    'home.sections.branches.locations.uae': 'United Arab Emirates',
+    'home.sections.branches.addresses.dubai': 'Sheikh Zayed Street, Dubai',
+    'home.sections.branches.locations.qatar': 'Qatar',
+    'home.sections.branches.addresses.doha': 'Corniche Street, Doha',
+    'home.sections.branches.locations.egypt': 'Egypt',
+    'home.sections.branches.addresses.cairo': 'Nile Street, Cairo',
+
+    // Navigation - Missing keys
+    'nav.home': 'Home',
+    'nav.about': 'About Us',
+    'nav.careers': 'Careers',
+    'nav.contact': 'Contact Us',
+    'nav.support': 'Support',
+
+    // Footer - Missing keys
+    'footer.company.title': 'Company',
+    'footer.company.about': 'About Us',
+    'footer.company.careers': 'Careers',
+    'footer.company.contact': 'Contact Us',
+    'footer.company.support': 'Support',
+    'footer.contact.title': 'Contact Us',
+    'footer.services.title': 'Services',
+    'footer.services.players': 'Players',
+    'footer.services.clubs': 'Clubs',
+    'footer.services.academies': 'Academies',
+    'footer.services.agents': 'Agents',
+    'footer.legal.title': 'Legal',
+    'footer.legal.privacy': 'Privacy Policy',
+    'footer.legal.terms': 'Terms & Conditions',
+    'footer.legal.cookies': 'Cookies'
   }
 };
 

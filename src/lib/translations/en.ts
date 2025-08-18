@@ -1706,6 +1706,8 @@ const en = {
       reports: 'Reports'
     },
     common: {
+      home: 'Home',
+      profile: 'Profile',
       messages: 'Messages',
       notifications: 'Notifications',
       changePassword: 'Change Password',

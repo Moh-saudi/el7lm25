@@ -482,3 +482,4 @@ function getAccountTypeLabel(accountType: string): string {
   
   return labels[accountType as keyof typeof labels] || 'مستخدم';
 }
+

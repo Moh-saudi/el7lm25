@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Users, Target, Award, Globe } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import PublicResponsiveLayoutWrapper from '@/components/layout/PublicResponsiveLayout';
 
 export default function AboutPage() {
   const router = useRouter();
@@ -16,27 +17,8 @@ export default function AboutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white" dir="rtl">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container px-4 py-4 mx-auto">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="flex gap-2 items-center">
-              <img src="/el7hm-logo.png" alt="Logo" className="w-auto h-10" />
-              <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
-                El7hm
-              </span>
-            </Link>
-            <Link
-              href="/"
-              className="flex gap-2 items-center px-4 py-2 text-blue-600 transition-colors duration-200 hover:text-blue-800"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              العودة للرئيسية
-            </Link>
-          </div>
-        </div>
-      </header>
+    <PublicResponsiveLayoutWrapper>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white" dir="rtl">
 
       {/* Main Content */}
       <main className="container px-4 py-12 mx-auto">
@@ -153,12 +135,7 @@ export default function AboutPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="py-8 text-white bg-gray-900">
-        <div className="container px-4 mx-auto text-center">
-          <p>&copy; 2024 El7hm. جميع الحقوق محفوظة.</p>
-        </div>
-      </footer>
     </div>
+    </PublicResponsiveLayoutWrapper>
   );
 } 

@@ -62,3 +62,4 @@ export const SimpleSidebarProvider = ({ children }: SimpleSidebarProviderProps) 
     </SimpleSidebarContext.Provider>
   );
 };
+

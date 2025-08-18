@@ -946,7 +946,7 @@ export default function UsersManagement() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="bg-gray-50">
         <AdminHeader />
         <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
           <div className="text-center">
@@ -960,7 +960,7 @@ export default function UsersManagement() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="flex flex-col bg-gray-50">
       <AdminHeader />
       
       <main className="flex-1 container mx-auto px-6 py-8">
