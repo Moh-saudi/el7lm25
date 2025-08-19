@@ -21,15 +21,13 @@ import {
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth-provider';
 
-// HeroUI Components
-import { Button, Card, CardBody, Input, Badge, Avatar, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/react';
-
-// Shadcn/ui Components
-import { Button as ShadcnButton } from '@/components/ui/button';
-import { Card as ShadcnCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input as ShadcnInput } from '@/components/ui/input';
-import { Badge as ShadcnBadge } from '@/components/ui/badge';
-import { Avatar as ShadcnAvatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+// UI Components
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // ===== CONTEXT للتحكم في التخطيط =====
 interface LayoutContextType {
@@ -194,11 +192,9 @@ export default function EnhancedMobileLayout({
                 </div>
               </div>
               <Button
-                isIconOnly
-                variant="light"
-                color="default"
+                variant="ghost"
                 onClick={closeAll}
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 p-2"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -235,12 +231,11 @@ export default function EnhancedMobileLayout({
             {/* Footer */}
             <div className="p-4 border-t border-white/20">
               <Button
-                variant="light"
-                color="danger"
-                startContent={<LogOut className="w-5 h-5" />}
+                variant="ghost"
                 onClick={handleSignOut}
                 className="w-full text-white hover:bg-red-500/20"
               >
+                <LogOut className="w-5 h-5 mr-2" />
                 تسجيل الخروج
               </Button>
             </div>
@@ -260,11 +255,9 @@ export default function EnhancedMobileLayout({
         {/* Left */}
         <div className="flex items-center space-x-3">
           <Button
-            isIconOnly
-            variant="light"
-            color="default"
+            variant="ghost"
             onClick={toggleSidebar}
-            className="touch-target"
+            className="touch-target p-2"
             title="القائمة الجانبية"
           >
             <Menu className="w-5 h-5" />
@@ -272,11 +265,9 @@ export default function EnhancedMobileLayout({
           
           {showBackButton && (
             <Button
-              isIconOnly
-              variant="light"
-              color="default"
+              variant="ghost"
               onClick={onBackClick || (() => router.back())}
-              className="touch-target"
+              className="touch-target p-2"
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
@@ -302,40 +293,36 @@ export default function EnhancedMobileLayout({
           
           {showAddButton && (
             <Button
-              isIconOnly
-              color="primary"
+              variant="default"
               onClick={onAddClick}
-              className="touch-target"
+              className="touch-target p-2 bg-blue-600 hover:bg-blue-700"
               title="إضافة جديد"
             >
               <Plus className="w-5 h-5" />
             </Button>
           )}
           
-          <Dropdown>
-            <DropdownTrigger>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button
-                isIconOnly
-                variant="light"
-                color="default"
-                className="touch-target"
+                variant="ghost"
+                className="touch-target p-2"
                 title="الملف الشخصي"
               >
-                <Avatar
-                  src={user?.photoURL || undefined}
-                  name={getUserDisplayName()}
-                  size="sm"
-                />
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={user?.photoURL || undefined} />
+                  <AvatarFallback>{getUserDisplayName()}</AvatarFallback>
+                </Avatar>
               </Button>
-            </DropdownTrigger>
-            <DropdownMenu aria-label="User menu">
-              <DropdownItem key="profile">الملف الشخصي</DropdownItem>
-              <DropdownItem key="settings">الإعدادات</DropdownItem>
-              <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>الملف الشخصي</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>الإعدادات</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut} color="red">
                 تسجيل الخروج
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -349,14 +336,14 @@ export default function EnhancedMobileLayout({
             className="border-t border-gray-200 bg-white"
           >
             <div className="p-4">
-              <Input
-                placeholder="البحث..."
-                startContent={<Search className="w-4 h-4 text-gray-400" />}
-                variant="bordered"
-                size="lg"
-                autoFocus
-                className="w-full"
-              />
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="البحث..."
+                  autoFocus
+                  className="w-full pl-10"
+                />
+              </div>
             </div>
           </motion.div>
         )}

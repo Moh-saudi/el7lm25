@@ -316,6 +316,7 @@ export default function SupportPage() {
           </Card>
         </div>
       </div>
+    </div>
     </PublicResponsiveLayoutWrapper>
   );
 }

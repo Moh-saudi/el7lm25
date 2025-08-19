@@ -25,8 +25,13 @@ import {
   Zap
 } from 'lucide-react';
 
-// HeroUI Components
-import { Button, Card, CardBody, Input, Badge, Avatar, Progress, Chip, Divider } from '@heroui/react';
+// UI Components
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
 
 // Enhanced Mobile Layout
 import EnhancedMobileLayout, { EnhancedMobileLayoutProvider } from '@/components/layout/EnhancedMobileLayout';
@@ -51,13 +56,13 @@ const EnhancedStatCard = ({ icon: Icon, title, value, change, color = 'primary' 
 
   return (
     <Card className="w-full">
-      <CardBody className="p-4">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${colorClasses[color]}`}>
             <Icon className="w-6 h-6" />
           </div>
           {change && (
-            <Badge color={change.startsWith('+') ? 'success' : 'danger'} variant="flat">
+            <Badge variant={change.startsWith('+') ? 'default' : 'destructive'} className={change.startsWith('+') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
               {change}
             </Badge>
           )}
@@ -66,7 +71,7 @@ const EnhancedStatCard = ({ icon: Icon, title, value, change, color = 'primary' 
           <p className="text-2xl font-bold text-gray-900">{value}</p>
           <p className="text-sm text-gray-600">{title}</p>
         </div>
-      </CardBody>
+      </CardContent>
     </Card>
   );
 };
@@ -98,7 +103,7 @@ const EnhancedActivityCard = ({
 
   return (
     <Card className="w-full">
-      <CardBody className="p-4">
+      <CardContent className="p-4">
         <div className="flex items-start space-x-3">
           {image && (
             <Avatar
@@ -111,9 +116,9 @@ const EnhancedActivityCard = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900 truncate">{title}</h3>
-              <Chip color={typeColors[type]} variant="flat" size="sm">
-                {type}
-              </Chip>
+                              <Badge variant="outline" className="text-xs">
+                  {type}
+                </Badge>
             </div>
             <p className="text-sm text-gray-600 mt-1 line-clamp-2">{description}</p>
             <div className="flex items-center justify-between mt-3">
@@ -131,7 +136,7 @@ const EnhancedActivityCard = ({
             </div>
           </div>
         </div>
-      </CardBody>
+      </CardContent>
     </Card>
   );
 };
@@ -145,7 +150,7 @@ const EnhancedProgressCard = ({ title, description, progress, color = 'primary' 
 }) => {
   return (
     <Card className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-      <CardBody className="p-4">
+      <CardContent className="p-4">
         <div className="flex items-center space-x-3 mb-3">
           <Target className="w-6 h-6" />
           <h3 className="font-semibold">{title}</h3>
@@ -160,11 +165,11 @@ const EnhancedProgressCard = ({ title, description, progress, color = 'primary' 
         </div>
         <Progress
           value={progress}
-          color={color}
+                      className={color}
           className="w-full"
           size="sm"
         />
-      </CardBody>
+      </CardContent>
     </Card>
   );
 };
@@ -263,7 +268,7 @@ export default function TestEnhancedPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">الإحصائيات السريعة</h2>
-            <Button variant="light" color="primary" size="sm">
+            <Button variant="ghost" className="text-blue-600 hover:bg-blue-50">
               عرض الكل
             </Button>
           </div>
@@ -285,7 +290,7 @@ export default function TestEnhancedPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">النشاطات الأخيرة</h2>
-            <Button variant="light" color="primary" size="sm">
+            <Button variant="ghost" className="text-blue-600 hover:bg-blue-50">
               عرض الكل
             </Button>
           </div>
@@ -311,7 +316,7 @@ export default function TestEnhancedPage() {
             title="تحسين مهارات التسديد"
             description="العمل على تحسين دقة التسديد من مسافات مختلفة"
             progress={75}
-            color="success"
+            className="bg-green-500"
           />
         </div>
 
@@ -319,15 +324,13 @@ export default function TestEnhancedPage() {
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">المباريات القادمة</h2>
           <Card className="w-full">
-            <CardBody className="p-4">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3">
-                  <Avatar
-                    src="/images/team/logo.png"
-                    name="T"
-                    size="lg"
-                    className="bg-blue-100"
-                  />
+                  <Avatar className="w-12 h-12 bg-blue-100">
+                    <AvatarImage src="/images/team/logo.png" />
+                    <AvatarFallback>T</AvatarFallback>
+                  </Avatar>
                   <div>
                     <h3 className="font-semibold text-gray-900">فريقنا vs الهلال</h3>
                     <p className="text-sm text-gray-600">دوري المحترفين</p>
@@ -338,7 +341,7 @@ export default function TestEnhancedPage() {
                   <p className="text-xs text-gray-600">8:00 م</p>
                 </div>
               </div>
-              <Divider className="my-3" />
+              {/* <Divider className="my-3" /> */}
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <div className="flex items-center space-x-1">
                   <Calendar className="w-4 h-4" />
@@ -349,7 +352,7 @@ export default function TestEnhancedPage() {
                   <span>ملعب الملك فهد</span>
                 </div>
               </div>
-            </CardBody>
+            </CardContent>
           </Card>
         </div>
 
@@ -360,11 +363,8 @@ export default function TestEnhancedPage() {
           whileTap={{ scale: 0.95 }}
         >
           <Button
-            isIconOnly
-            color="primary"
-            size="lg"
+            className="bg-blue-600 hover:bg-blue-700 w-14 h-14 shadow-lg rounded-full"
             onClick={handleAddNew}
-            className="w-14 h-14 shadow-lg"
           >
             <Plus className="w-6 h-6" />
           </Button>

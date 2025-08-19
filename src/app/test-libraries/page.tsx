@@ -13,8 +13,13 @@ import {
   Activity
 } from 'lucide-react';
 
-// HeroUI Components
-import { Button, Card, CardBody, Input, Badge, Avatar, Progress, Chip, Divider } from '@heroui/react';
+// UI Components
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
 
 export default function TestLibrariesPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,12 +52,12 @@ export default function TestLibrariesPage() {
             transition={{ delay: 0.1 }}
           >
             <Card className="w-full">
-              <CardBody className="p-4">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-blue-100">
                     <Trophy className="w-6 h-6 text-blue-600" />
                   </div>
-                  <Badge color="success" variant="flat">
+                  <Badge variant="default" className="bg-green-100 text-green-800">
                     +3
                   </Badge>
                 </div>
@@ -60,7 +65,7 @@ export default function TestLibrariesPage() {
                   <p className="text-2xl font-bold text-gray-900">12</p>
                   <p className="text-sm text-gray-600">المباريات</p>
                 </div>
-              </CardBody>
+              </CardContent>
             </Card>
           </motion.div>
 
@@ -70,12 +75,12 @@ export default function TestLibrariesPage() {
             transition={{ delay: 0.2 }}
           >
             <Card className="w-full">
-              <CardBody className="p-4">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-green-100">
                     <Target className="w-6 h-6 text-green-600" />
                   </div>
-                  <Badge color="success" variant="flat">
+                  <Badge variant="default" className="bg-green-100 text-green-800">
                     +2
                   </Badge>
                 </div>
@@ -83,7 +88,7 @@ export default function TestLibrariesPage() {
                   <p className="text-2xl font-bold text-gray-900">8</p>
                   <p className="text-sm text-gray-600">الأهداف</p>
                 </div>
-              </CardBody>
+              </CardContent>
             </Card>
           </motion.div>
 
@@ -93,12 +98,12 @@ export default function TestLibrariesPage() {
             transition={{ delay: 0.3 }}
           >
             <Card className="w-full">
-              <CardBody className="p-4">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-purple-100">
                     <TrendingUp className="w-6 h-6 text-purple-600" />
                   </div>
-                  <Badge color="success" variant="flat">
+                  <Badge variant="default" className="bg-green-100 text-green-800">
                     +5
                   </Badge>
                 </div>
@@ -106,7 +111,7 @@ export default function TestLibrariesPage() {
                   <p className="text-2xl font-bold text-gray-900">24</p>
                   <p className="text-sm text-gray-600">النقاط</p>
                 </div>
-              </CardBody>
+              </CardContent>
             </Card>
           </motion.div>
 
@@ -116,12 +121,12 @@ export default function TestLibrariesPage() {
             transition={{ delay: 0.4 }}
           >
             <Card className="w-full">
-              <CardBody className="p-4">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-yellow-100">
                     <Activity className="w-6 h-6 text-yellow-600" />
                   </div>
-                  <Badge color="success" variant="flat">
+                  <Badge variant="default" className="bg-green-100 text-green-800">
                     +2%
                   </Badge>
                 </div>
@@ -129,7 +134,7 @@ export default function TestLibrariesPage() {
                   <p className="text-2xl font-bold text-gray-900">95%</p>
                   <p className="text-sm text-gray-600">النشاط</p>
                 </div>
-              </CardBody>
+              </CardContent>
             </Card>
           </motion.div>
         </div>
@@ -142,20 +147,18 @@ export default function TestLibrariesPage() {
           className="mb-8"
         >
           <Card className="w-full">
-            <CardBody className="p-4">
+            <CardContent className="p-4">
               <div className="flex items-start space-x-3">
-                <Avatar
-                  src="https://via.placeholder.com/150x150/2563eb/ffffff?text=Player"
-                  name="اللاعب"
-                  size="lg"
-                  className="w-16 h-16"
-                />
+                <Avatar className="w-16 h-16">
+                  <AvatarImage src="https://via.placeholder.com/150x150/2563eb/ffffff?text=Player" />
+                  <AvatarFallback>اللاعب</AvatarFallback>
+                </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-gray-900 truncate">مباراة ضد فريق النصر</h3>
-                    <Chip color="success" variant="flat" size="sm">
+                    <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
                       نجح
-                    </Chip>
+                    </Badge>
                   </div>
                   <p className="text-sm text-gray-600 mt-1">أداء ممتاز في المباراة الأخيرة مع تسجيل هدفين</p>
                   <div className="flex items-center justify-between mt-3">
@@ -173,7 +176,7 @@ export default function TestLibrariesPage() {
                   </div>
                 </div>
               </div>
-            </CardBody>
+            </CardContent>
           </Card>
         </motion.div>
 
@@ -185,7 +188,7 @@ export default function TestLibrariesPage() {
           className="mb-8"
         >
           <Card className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-            <CardBody className="p-4">
+            <CardContent className="p-4">
               <div className="flex items-center space-x-3 mb-3">
                 <Target className="w-6 h-6" />
                 <h3 className="font-semibold">تحسين مهارات التسديد</h3>
@@ -200,11 +203,9 @@ export default function TestLibrariesPage() {
               </div>
               <Progress
                 value={75}
-                color="success"
                 className="w-full"
-                size="sm"
               />
-            </CardBody>
+            </CardContent>
           </Card>
         </motion.div>
 
@@ -215,10 +216,10 @@ export default function TestLibrariesPage() {
             whileTap={{ scale: 0.95 }}
           >
             <Button
-              color="primary"
-              startContent={<Plus className="w-4 h-4" />}
-              size="lg"
+              variant="default"
+              className="bg-blue-600 hover:bg-blue-700"
             >
+              <Plus className="w-4 h-4 mr-2" />
               إضافة جديد
             </Button>
           </motion.div>
@@ -228,11 +229,10 @@ export default function TestLibrariesPage() {
             whileTap={{ scale: 0.95 }}
           >
             <Button
-              variant="bordered"
-              color="secondary"
-              startContent={<Search className="w-4 h-4" />}
-              size="lg"
+              variant="outline"
+              className="border-purple-600 text-purple-600 hover:bg-purple-50"
             >
+              <Search className="w-4 h-4 mr-2" />
               البحث
             </Button>
           </motion.div>
@@ -242,11 +242,10 @@ export default function TestLibrariesPage() {
             whileTap={{ scale: 0.95 }}
           >
             <Button
-              variant="flat"
-              color="success"
-              startContent={<Heart className="w-4 h-4" />}
-              size="lg"
+              variant="default"
+              className="bg-green-600 hover:bg-green-700"
             >
+              <Heart className="w-4 h-4 mr-2" />
               الإعجاب
             </Button>
           </motion.div>
