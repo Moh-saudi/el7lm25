@@ -251,6 +251,15 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
       bgColor: 'bg-pink-50',
       textColor: 'text-pink-600',
       emoji: '🎯'
+    },
+    'dream-academy': {
+      title: 'أكاديمية الحلم',
+      subtitle: 'أكاديمية الحلم',
+      icon: GraduationCap,
+      color: 'from-purple-500 to-purple-600',
+      bgColor: 'bg-purple-50',
+      textColor: 'text-purple-600',
+      emoji: '🎓'
     }
   };
 
@@ -711,6 +720,14 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
         icon: Settings,
         items: [
           {
+            id: 'admin-notifications',
+            label: 'الإشعارات',
+            icon: Bell,
+            href: `/dashboard/admin/notifications`,
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-50'
+          },
+          {
             id: 'admin-reports',
             label: 'التقارير',
             icon: FileText,
@@ -1137,6 +1154,8 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
 // ===== مكون الهيدر المحسن =====
 const ResponsiveHeader: React.FC = () => {
   const { user, userData } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
   const { toggleSidebar, isMobile, isTablet, isDesktop, isSidebarCollapsed, isClient } = useLayout();
 
   const getUserDisplayName = () => {
@@ -1153,6 +1172,32 @@ const ResponsiveHeader: React.FC = () => {
     }
     if (isTablet) return 'mr-56'; // 224px - يتطابق مع motion.div
     return 'mr-64'; // 256px - يتطابق مع motion.div
+  };
+
+  // الحصول على نوع الحساب من المسار
+  const getAccountTypeFromPath = () => {
+    const pathSegments = pathname.split('/');
+    if (pathSegments.length >= 3 && pathSegments[1] === 'dashboard') {
+      return pathSegments[2];
+    }
+    return 'player';
+  };
+
+  const accountType = getAccountTypeFromPath();
+
+  // التنقل إلى صفحة الرسائل
+  const navigateToMessages = () => {
+    router.push(`/dashboard/${accountType}/messages`);
+  };
+
+  // التنقل إلى صفحة الإشعارات (للإدارة فقط)
+  const navigateToNotifications = () => {
+    if (accountType === 'admin') {
+      router.push('/dashboard/admin/notifications');
+    } else {
+      // يمكن إضافة صفحة إشعارات عامة للمستخدمين الآخرين
+      router.push(`/dashboard/${accountType}/notifications`);
+    }
   };
 
   return (
@@ -1176,6 +1221,36 @@ const ResponsiveHeader: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-3">
+          {/* أيقونة الرسائل */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={navigateToMessages}
+            className="relative hover:bg-gray-100"
+            title="الرسائل"
+          >
+            <MessageSquare className="w-5 h-5 text-gray-600" />
+            {/* مؤشر الرسائل الجديدة */}
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+          </Button>
+
+          {/* أيقونة الإشعارات */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={navigateToNotifications}
+            className="relative hover:bg-gray-100"
+            title={accountType === 'admin' ? 'إدارة الإشعارات' : 'الإشعارات'}
+          >
+            <Bell className="w-5 h-5 text-gray-600" />
+            {/* مؤشر الإشعارات الجديدة */}
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+          </Button>
+
+          {/* فاصل */}
+          <div className="w-px h-6 bg-gray-300"></div>
+
+          {/* صورة المستخدم */}
           <Avatar className="w-8 h-8">
             <AvatarImage src={userData?.photoURL || '/default-avatar.png'} alt={getUserDisplayName()} />
             <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">

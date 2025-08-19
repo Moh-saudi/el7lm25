@@ -1,6 +1,6 @@
 'use client';
 import { useTranslation } from '@/lib/translations/simple-context';
-import ResponsiveMessageCenter from '@/components/messaging/ResponsiveMessageCenter';
+import WorkingMessageCenter from '@/components/messaging/WorkingMessageCenter';
 import ClientOnlyToaster from '@/components/ClientOnlyToaster';
 
 export default function PlayerMessagesPage() {
@@ -9,7 +9,7 @@ export default function PlayerMessagesPage() {
   return (
     <>
       <ClientOnlyToaster position="top-center" />
-      <ResponsiveMessageCenter />
+      <WorkingMessageCenter />
     </>
   );
 } 

@@ -453,10 +453,9 @@ export default function TestBeOnAPIPage() {
               {testPhoneNumbers.map((phone, index) => (
                 <Button
                   key={index}
-                  variant="outline"
                   size="sm"
                   onClick={() => setPhoneNumber(phone)}
-                  className="border-white/30 text-white hover:bg-white/10"
+                  className="bg-transparent border-2 border-white/30 text-white hover:bg-white/10 transition-all duration-300"
                 >
                   {phone}
                 </Button>
@@ -531,18 +530,16 @@ export default function TestBeOnAPIPage() {
                 <div className="flex gap-2">
                   <Button
                     onClick={exportResults}
-                    variant="outline"
                     size="sm"
-                    className="border-white/30 text-white hover:bg-white/10"
+                    className="bg-transparent border-2 border-white/30 text-white hover:bg-white/10 transition-all duration-300"
                   >
                     <Copy className="w-4 h-4 mr-2" />
                     تصدير النتائج
                   </Button>
                   <Button
                     onClick={clearResults}
-                    variant="outline"
                     size="sm"
-                    className="border-white/30 text-white hover:bg-white/10"
+                    className="bg-transparent border-2 border-white/30 text-white hover:bg-white/10 transition-all duration-300"
                   >
                     مسح النتائج
                   </Button>

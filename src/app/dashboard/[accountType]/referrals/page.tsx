@@ -304,29 +304,29 @@ export default function SharedReferralsPage() {
                   className="text-center text-lg font-mono bg-white/20 border-white/30 text-white"
                 />
               </div>
-              <Button onClick={copyReferralCode} variant="outline" className="border-white/30 text-white hover:bg-white/20">
+              <Button onClick={copyReferralCode} className="bg-transparent border-2 border-white/30 text-white hover:bg-white/20 transition-all duration-300">
                 <Copy className="w-4 h-4" />
               </Button>
             </div>
             
             <div className="flex flex-wrap gap-2">
-              <Button onClick={copyReferralLink} variant="outline" className="border-white/30 text-white hover:bg-white/20">
+              <Button onClick={copyReferralLink} className="bg-transparent border-2 border-white/30 text-white hover:bg-white/20 transition-all duration-300">
                 <Copy className="w-4 h-4 mr-2" />
                 نسخ الرابط
               </Button>
-              <Button onClick={shareViaWhatsApp} variant="outline" className="border-white/30 text-white hover:bg-white/20">
+              <Button onClick={shareViaWhatsApp} className="bg-transparent border-2 border-white/30 text-white hover:bg-white/20 transition-all duration-300">
                 <MessageCircle className="w-4 h-4 mr-2" />
                 واتساب
               </Button>
-              <Button onClick={shareViaSMS} variant="outline" className="border-white/30 text-white hover:bg-white/20">
+              <Button onClick={shareViaSMS} className="bg-transparent border-2 border-white/30 text-white hover:bg-white/20 transition-all duration-300">
                 <Phone className="w-4 h-4 mr-2" />
                 SMS
               </Button>
-              <Button onClick={shareViaEmail} variant="outline" className="border-white/30 text-white hover:bg-white/20">
+              <Button onClick={shareViaEmail} className="bg-transparent border-2 border-white/30 text-white hover:bg-white/20 transition-all duration-300">
                 <Mail className="w-4 h-4 mr-2" />
                 إيميل
               </Button>
-              <Button onClick={() => setShowQR(!showQR)} variant="outline" className="border-white/30 text-white hover:bg-white/20">
+              <Button onClick={() => setShowQR(!showQR)} className="bg-transparent border-2 border-white/30 text-white hover:bg-white/20 transition-all duration-300">
                 <QrCode className="w-4 h-4 mr-2" />
                 QR Code
               </Button>

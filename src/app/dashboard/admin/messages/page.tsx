@@ -1,20 +1,15 @@
 'use client';
-import MessageCenter from '@/components/messaging/MessageCenter';
+import { useTranslation } from '@/lib/translations/simple-context';
+import WorkingMessageCenter from '@/components/messaging/WorkingMessageCenter';
 import ClientOnlyToaster from '@/components/ClientOnlyToaster';
 
 export default function AdminMessagesPage() {
+  const { t } = useTranslation();
+  
   return (
     <>
       <ClientOnlyToaster position="top-center" />
-      <div className="container mx-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-red-700">مركز الرسائل - الإدارة</h1>
-          <p className="text-gray-600 mt-2">مراقبة وإدارة جميع المحادثات في النظام</p>
-        </div>
-      </div>
-      <div className="container mx-auto px-0 pb-8">
-        <MessageCenter />
-      </div>
+      <WorkingMessageCenter />
     </>
   );
 } 
