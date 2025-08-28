@@ -1,3 +1,5 @@
+'use client';
+
 import { PlayerFormData, Achievement } from '@/types/player';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ar';
