@@ -33,7 +33,10 @@ function ApplyForm() {
     { key: 'accountants', label: 'المحاسبين' },
     { key: 'performanceAnalysts', label: 'محللي الأداء' },
     { key: 'nextjsDevelopers', label: 'مبرمجين Next.js' },
-    { key: 'callCenter', label: 'كول سنتر' }
+    { key: 'callCenter', label: 'كول سنتر' },
+    { key: 'videoPhotographer', label: 'مصور فيديو' },
+    { key: 'directSales', label: 'مبيعات مباشرة' },
+    { key: 'directCustomerCare', label: 'رعاية عملاء مباشرة' }
   ];
   const [selectedRoles, setSelectedRoles] = useState<string[]>(() => {
     const candidate = roleFromQuery.trim();

@@ -4,7 +4,6 @@ import React, { useState, useEffect, createContext, useContext, useMemo } from '
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth-provider';
-import { useTranslation } from '@/lib/translations/simple-context';
 import { 
   Menu,
   X,
@@ -23,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useMediaQuery } from 'react-responsive';
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+// تم إلغاء LanguageSwitcher مؤقتاً
 
 // ===== Context للتحكم في التخطيط العام =====
 interface PublicLayoutContextType {
@@ -94,7 +93,6 @@ export const PublicLayoutProvider: React.FC<PublicLayoutProviderProps> = ({ chil
 const PublicResponsiveHeader: React.FC = () => {
   const { user, userData, logout } = useAuth();
   const router = useRouter();
-  const { t, direction } = useTranslation();
   const { isMobile, isTablet, isDesktop, isClient, isMenuOpen, toggleMenu, closeMenu } = usePublicLayout();
 
   const getUserDisplayName = () => {
@@ -110,11 +108,12 @@ const PublicResponsiveHeader: React.FC = () => {
   };
 
   const navigationItems = [
-    { href: '/', label: t('nav.home') },
-    { href: '/about', label: t('nav.about') },
-    { href: '/careers', label: t('nav.careers') },
-    { href: '/contact', label: t('nav.contact') },
-    { href: '/support', label: t('nav.support') }
+    { href: '#hero', label: 'الرئيسية', scrollTo: 'hero' },
+    { href: '#about', label: 'من نحن', scrollTo: 'about' },
+    { href: '#jobs', label: 'الوظائف', scrollTo: 'jobs' },
+    { href: '#services', label: 'الخدمات', scrollTo: 'services' },
+    { href: '#contact', label: 'اتصل بنا', scrollTo: 'contact' },
+    { href: '/support', label: 'الدعم', scrollTo: null }
   ];
 
   return (
@@ -135,30 +134,58 @@ const PublicResponsiveHeader: React.FC = () => {
           </div>
 
           {/* Desktop Navigation */}
-          {isDesktop && (
-            <nav className="hidden lg:flex items-center space-x-8 space-x-reverse">
-              {navigationItems.map((item) => (
-                <button
+          <nav className="hidden lg:flex items-center space-x-8 space-x-reverse">
+            {navigationItems.map((item) => (
+                              <button
                   key={item.href}
-                  onClick={() => router.push(item.href)}
-                  className="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
+                  onClick={() => {
+                    console.log('Navigating to:', item.href, 'scrollTo:', item.scrollTo);
+                    if (item.scrollTo) {
+                      // التنقل الداخلي - أولاً نذهب للصفحة الرئيسية
+                      if (window.location.pathname !== '/') {
+                        router.push('/');
+                        // ننتظر قليلاً ثم ننتقل للقسم
+                        setTimeout(() => {
+                          const element = document.getElementById(item.scrollTo);
+                          if (element) {
+                            element.scrollIntoView({ 
+                              behavior: 'smooth',
+                              block: 'start'
+                            });
+                          }
+                        }, 100);
+                      } else {
+                        // نحن في الصفحة الرئيسية - ننتقل مباشرة للقسم
+                        const element = document.getElementById(item.scrollTo);
+                        if (element) {
+                          element.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start'
+                          });
+                        }
+                      }
+                    } else {
+                      // التنقل إلى صفحة منفصلة
+                      router.push(item.href);
+                    }
+                  }}
+                  className="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium cursor-pointer px-3 py-2 rounded-md hover:bg-gray-100"
                 >
                   {item.label}
                 </button>
-              ))}
-            </nav>
-          )}
+            ))}
+          </nav>
 
           {/* Right Side */}
           <div className="flex items-center space-x-4 space-x-reverse">
             {/* Language Switcher */}
-            <LanguageSwitcher />
+            {/* تم إلغاء مبدل اللغة مؤقتاً */}
 
             {/* User Menu / Auth Buttons */}
             {user ? (
               <div className="flex items-center space-x-3 space-x-reverse">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={userData?.photoURL || '/default-avatar.png'} alt={getUserDisplayName()} />
+                  <AvatarImage src="/default-avatar.png" alt={getUserDisplayName()} />
                   <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
                     {getUserDisplayName().slice(0, 2).toUpperCase()}
                   </AvatarFallback>
@@ -198,7 +225,7 @@ const PublicResponsiveHeader: React.FC = () => {
             )}
 
             {/* Mobile Menu Button */}
-            {!isDesktop && (
+            {isClient && !isDesktop && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -214,7 +241,7 @@ const PublicResponsiveHeader: React.FC = () => {
 
       {/* Mobile Menu */}
       <AnimatePresence>
-        {isMenuOpen && !isDesktop && (
+        {isClient && isMenuOpen && !isDesktop && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -227,7 +254,35 @@ const PublicResponsiveHeader: React.FC = () => {
                 <button
                   key={item.href}
                   onClick={() => {
-                    router.push(item.href);
+                    console.log('Mobile navigating to:', item.href, 'scrollTo:', item.scrollTo);
+                    if (item.scrollTo) {
+                      // التنقل الداخلي - أولاً نذهب للصفحة الرئيسية
+                      if (window.location.pathname !== '/') {
+                        router.push('/');
+                        // ننتظر قليلاً ثم ننتقل للقسم
+                        setTimeout(() => {
+                          const element = document.getElementById(item.scrollTo);
+                          if (element) {
+                            element.scrollIntoView({ 
+                              behavior: 'smooth',
+                              block: 'start'
+                            });
+                          }
+                        }, 100);
+                      } else {
+                        // نحن في الصفحة الرئيسية - ننتقل مباشرة للقسم
+                        const element = document.getElementById(item.scrollTo);
+                        if (element) {
+                          element.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start'
+                          });
+                        }
+                      }
+                    } else {
+                      // التنقل إلى صفحة منفصلة
+                      router.push(item.href);
+                    }
                     closeMenu();
                   }}
                   className="block w-full text-right text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium py-2"
@@ -245,35 +300,34 @@ const PublicResponsiveHeader: React.FC = () => {
 
 // ===== مكون الفوتر العام المتجاوب =====
 const PublicResponsiveFooter: React.FC = () => {
-  const { t } = useTranslation();
   const { isMobile, isTablet, isDesktop } = usePublicLayout();
 
   const footerLinks = {
     company: [
-      { label: t('footer.company.about'), href: '/about' },
-      { label: t('footer.company.careers'), href: '/careers' },
-      { label: t('footer.company.contact'), href: '/contact' },
-      { label: t('footer.company.support'), href: '/support' }
+      { label: 'من نحن', href: '/about' },
+      { label: 'الوظائف', href: '/careers' },
+      { label: 'اتصل بنا', href: '/contact' },
+      { label: 'الدعم', href: '/support' }
     ],
     services: [
-      { label: t('footer.services.players'), href: '/services/players' },
-      { label: t('footer.services.clubs'), href: '/services/clubs' },
-      { label: t('footer.services.academies'), href: '/services/academies' },
-      { label: t('footer.services.agents'), href: '/services/agents' }
+      { label: 'اللاعبين', href: '/services/players' },
+      { label: 'الأندية', href: '/services/clubs' },
+      { label: 'الأكاديميات', href: '/services/academies' },
+      { label: 'الوكلاء', href: '/services/agents' }
     ],
     legal: [
-      { label: t('footer.legal.privacy'), href: '/privacy' },
-      { label: t('footer.legal.terms'), href: '/terms' },
-      { label: t('footer.legal.cookies'), href: '/cookies' }
+      { label: 'سياسة الخصوصية', href: '/privacy' },
+      { label: 'شروط الاستخدام', href: '/terms' },
+      { label: 'ملفات تعريف الارتباط', href: '/cookies' }
     ]
   };
 
   const socialLinks = [
-    { icon: Facebook, href: '#', label: 'Facebook' },
-    { icon: Twitter, href: '#', label: 'Twitter' },
-    { icon: Instagram, href: '#', label: 'Instagram' },
-    { icon: Linkedin, href: '#', label: 'LinkedIn' },
-    { icon: Youtube, href: '#', label: 'YouTube' }
+    { icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61577797509887', label: 'فيسبوك' },
+    { icon: Twitter, href: 'https://twitter.com/el7lm', label: 'تويتر' },
+    { icon: Instagram, href: 'https://www.instagram.com/hagzzel7lm/', label: 'إنستغرام' },
+    { icon: Linkedin, href: 'https://www.linkedin.com/company/hagzz', label: 'لينكد إن' },
+    { icon: Youtube, href: 'https://www.youtube.com/@el7lm', label: 'يوتيوب' }
   ];
 
   return (
@@ -296,6 +350,8 @@ const PublicResponsiveFooter: React.FC = () => {
                 <a
                   key={social.label}
                   href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-gray-400 hover:text-white transition-colors duration-200"
                   aria-label={social.label}
                 >
@@ -307,7 +363,7 @@ const PublicResponsiveFooter: React.FC = () => {
 
           {/* Company Links */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">{t('footer.company.title')}</h3>
+            <h3 className="text-lg font-semibold">الشركة</h3>
             <ul className="space-y-2">
               {footerLinks.company.map((link) => (
                 <li key={link.href}>
@@ -324,7 +380,7 @@ const PublicResponsiveFooter: React.FC = () => {
 
           {/* Services Links */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">{t('footer.services.title')}</h3>
+            <h3 className="text-lg font-semibold">الخدمات</h3>
             <ul className="space-y-2">
               {footerLinks.services.map((link) => (
                 <li key={link.href}>
@@ -341,11 +397,11 @@ const PublicResponsiveFooter: React.FC = () => {
 
           {/* Contact Info */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">{t('footer.contact.title')}</h3>
+            <h3 className="text-lg font-semibold">معلومات التواصل</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3 space-x-reverse">
                 <Phone className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-400 text-sm">+966 50 123 4567</span>
+                <span className="text-gray-400 text-sm">+974 72 053 188</span>
               </div>
               <div className="flex items-center space-x-3 space-x-reverse">
                 <Mail className="w-4 h-4 text-gray-400" />
@@ -353,7 +409,7 @@ const PublicResponsiveFooter: React.FC = () => {
               </div>
               <div className="flex items-center space-x-3 space-x-reverse">
                 <MapPin className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-400 text-sm">الرياض، المملكة العربية السعودية</span>
+                <span className="text-gray-400 text-sm">الدوحة، قطر</span>
               </div>
             </div>
           </div>

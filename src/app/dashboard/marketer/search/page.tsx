@@ -101,7 +101,7 @@ export default function MarketerSearchPage() {
           البحث عن اللاعبين
         </h1>
         <p className="text-gray-600">
-          ابحث عن لاعبين موهوبين وانضمهم لحسابك
+          ابحث عن لاعبين موهوبين وانضمهم لوكالتك
         </p>
       </div>
 

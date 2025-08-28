@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useTranslation } from '@/lib/translations/simple-context';
 
 interface FontProviderProps {
   children: React.ReactNode;
@@ -9,13 +8,13 @@ interface FontProviderProps {
 }
 
 export default function FontProvider({ children, className = '' }: FontProviderProps) {
-  const { language } = useTranslation();
+  const locale = 'ar';
   
   // تحديد الخط حسب اللغة
-  const fontClass = language === 'en' ? 'font-english' : 'font-arabic';
+  const fontClass = locale === 'en' ? 'font-english' : 'font-arabic';
   
   return (
-    <div className={`${fontClass} ${className}`} lang={language}>
+    <div className={`${fontClass} ${className}`} lang={locale}>
       {children}
     </div>
   );
@@ -31,13 +30,13 @@ export function FontHeading({
   level?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'; 
   className?: string;
 }) {
-  const { language } = useTranslation();
-  const fontClass = language === 'en' ? 'font-english' : 'font-arabic';
+  const locale = 'ar';
+  const fontClass = locale === 'en' ? 'font-english' : 'font-arabic';
   
   const Tag = level as keyof JSX.IntrinsicElements;
   
   return (
-    <Tag className={`${fontClass} ${className}`} lang={language}>
+    <Tag className={`${fontClass} ${className}`} lang={locale}>
       {children}
     </Tag>
   );
@@ -51,11 +50,11 @@ export function FontText({
   children: React.ReactNode; 
   className?: string;
 }) {
-  const { language } = useTranslation();
-  const fontClass = language === 'en' ? 'font-english' : 'font-arabic';
+  const locale = 'ar';
+  const fontClass = locale === 'en' ? 'font-english' : 'font-arabic';
   
   return (
-    <span className={`${fontClass} ${className}`} lang={language}>
+    <span className={`${fontClass} ${className}`} lang={locale}>
       {children}
     </span>
   );
@@ -71,11 +70,11 @@ export function FontButton({
   className?: string;
   [key: string]: any;
 }) {
-  const { language } = useTranslation();
-  const fontClass = language === 'en' ? 'font-english' : 'font-arabic';
+  const locale = 'ar';
+  const fontClass = locale === 'en' ? 'font-english' : 'font-arabic';
   
   return (
-    <button className={`${fontClass} ${className}`} lang={language} {...props}>
+    <button className={`${fontClass} ${className}`} lang={locale} {...props}>
       {children}
     </button>
   );
@@ -89,11 +88,11 @@ export function FontInput({
   className?: string;
   [key: string]: any;
 }) {
-  const { language } = useTranslation();
-  const fontClass = language === 'en' ? 'font-english' : 'font-arabic';
+  const locale = 'ar';
+  const fontClass = locale === 'en' ? 'font-english' : 'font-arabic';
   
   return (
-    <input className={`${fontClass} ${className}`} lang={language} {...props} />
+    <input className={`${fontClass} ${className}`} lang={locale} {...props} />
   );
 }
 

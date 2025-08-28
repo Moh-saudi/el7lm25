@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTranslation } from '@/lib/translations/simple-context';
 import { cn } from '@/lib/utils';
 import { 
   Home,
@@ -32,7 +31,9 @@ interface PlayerSidebarProps {
 
 const PlayerSidebar: React.FC<PlayerSidebarProps> = ({ collapsed, setCollapsed }) => {
   const pathname = usePathname();
-  const { t } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
 
   const menuItems = [
     {

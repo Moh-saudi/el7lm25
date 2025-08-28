@@ -6,7 +6,6 @@ import { auth } from '@/lib/firebase/config';
 import { signInWithEmailAndPassword, updatePassword } from 'firebase/auth';
 import { Shield, Phone, CheckCircle, AlertTriangle, Loader2, ArrowLeft, Check, X } from 'lucide-react';
 import UnifiedOTPVerification from '@/components/shared/UnifiedOTPVerification';
-import { useTranslation } from '@/lib/translations/simple-context';
 import Link from 'next/link';
 
 // قائمة الدول مع أكوادها
@@ -30,7 +29,9 @@ const countries = [
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const { t, language } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
   const [formData, setFormData] = useState({
     phone: '',
     country: '',
@@ -673,7 +674,7 @@ export default function ForgotPasswordPage() {
         subtitle={`تم إرسال رمز التحقق عبر ${formData.country === 'مصر' ? 'SMS' : 'WhatsApp'}`}
         otpExpirySeconds={30}
         maxAttempts={3}
-        language={language}
+        language={locale}
         t={t}
       />
     </>

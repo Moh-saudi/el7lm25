@@ -6,10 +6,8 @@ import Image from 'next/image';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
-import { useTranslation } from '@/lib/translations/simple-context';
 
 export default function Footer() {
-  const { t, language } = useTranslation();
   const currentYear = new Date().getFullYear();
   const [user] = useAuthState(auth);
   const [userProfileImage, setUserProfileImage] = useState('/default-avatar.png');
@@ -39,7 +37,7 @@ export default function Footer() {
             } else if (userData?.name) {
               displayName = userData.name;
             }
-            setUserName(displayName || t('footer.defaultPlayerName'));
+            setUserName(displayName || 'اللاعب');
           }
         } catch (error) {
           setUserProfileImage('/default-avatar.png');
@@ -47,18 +45,16 @@ export default function Footer() {
       };
       fetchUserData();
     }
-  }, [user, t]);
-
-  const dir = language === 'ar' ? 'rtl' : 'ltr';
+  }, [user]);
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-white to-gray-50 border-t border-gray-200 py-4 shadow-lg" style={{ direction: dir }}>
+    <footer className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-white to-gray-50 border-t border-gray-200 py-4 shadow-lg" style={{ direction: 'rtl' }}>
       <div className="flex items-center justify-between px-4 mx-auto max-w-7xl">
         {/* Logo and Company Info */}
         <div className="flex items-center space-x-3 space-x-reverse">
           <Image 
             src="/el7hm-logo.png" 
-            alt={t('footer.logoAlt')} 
+            alt="شعار الحلم" 
             width={48} 
             height={48} 
             className="h-12 w-auto drop-shadow-sm" 
@@ -66,14 +62,9 @@ export default function Footer() {
             loading="eager"
           />
           <div className="flex flex-col">
-            <span className="font-bold text-gray-800 text-lg">{t('footer.companyName')}</span>
+            <span className="font-bold text-gray-800 text-lg">الحلم</span>
             <span className="text-sm text-gray-600">
-              {(() => {
-                const text = t('footer.copyright', { year: currentYear });
-                return text && typeof text === 'string' && text.trim().length > 0
-                  ? text
-                  : `© ${currentYear}`;
-              })()}
+              © {currentYear}
             </span>
           </div>
         </div>
@@ -84,19 +75,19 @@ export default function Footer() {
             href="/about" 
             className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium"
           >
-            {t('footer.about')}
+            من نحن
           </Link>
           <Link 
             href="/contact" 
             className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium"
           >
-            {t('footer.contact')}
+            اتصل بنا
           </Link>
           <Link 
             href="/privacy" 
             className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium"
           >
-            {t('footer.privacy')}
+            الخصوصية
           </Link>
         </div>
 
@@ -107,11 +98,11 @@ export default function Footer() {
             target="_blank" 
             rel="noopener noreferrer"
             className="text-gray-600 hover:text-blue-600 transition-colors p-2 rounded-full hover:bg-blue-50"
-            title={t('footer.facebook')}
+            title="فيسبوك"
           >
             <img 
               src="/images/medialogo/facebook.svg" 
-              alt={t('footer.facebook')} 
+              alt="فيسبوك" 
               width={24} 
               height={24} 
               className="md:w-7 md:h-7 drop-shadow-sm"
@@ -122,11 +113,11 @@ export default function Footer() {
             target="_blank" 
             rel="noopener noreferrer"
             className="text-gray-600 hover:text-pink-600 transition-colors p-2 rounded-full hover:bg-pink-50"
-            title={t('footer.instagram')}
+            title="إنستغرام"
           >
             <img 
               src="/images/medialogo/instagram.svg" 
-              alt={t('footer.instagram')} 
+              alt="إنستغرام" 
               width={24} 
               height={24} 
               className="md:w-7 md:h-7 drop-shadow-sm"
@@ -137,11 +128,11 @@ export default function Footer() {
             target="_blank" 
             rel="noopener noreferrer"
             className="text-gray-600 hover:text-blue-700 transition-colors p-2 rounded-full hover:bg-blue-50"
-            title={t('footer.linkedin')}
+            title="لينكد إن"
           >
             <img 
               src="/images/medialogo/linkedin.svg" 
-              alt={t('footer.linkedin')} 
+              alt="لينكد إن" 
               width={24} 
               height={24} 
               className="md:w-7 md:h-7 drop-shadow-sm"

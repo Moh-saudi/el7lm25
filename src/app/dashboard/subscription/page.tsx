@@ -58,7 +58,7 @@ import { referralService } from '@/lib/referral/referral-service';
 import { POINTS_CONVERSION, BADGES } from '@/types/referral';
 
 // استخدام التخطيط الجديد
-const PlayerModernSidebar = dynamic(() => import('@/components/layout/PlayerModernSidebar'), {
+const ResponsiveLayoutWrapper = dynamic(() => import('@/components/layout/ResponsiveLayout'), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center min-h-screen">
@@ -290,7 +290,7 @@ function SubscriptionStatusContent() {
   const [currentCurrency, setCurrentCurrency] = useState('USD');
   const [playerRewards, setPlayerRewards] = useState<PlayerRewards | null>(null);
   const [referralStats, setReferralStats] = useState<ReferralStats | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
 
   useEffect(() => {
     let isMounted = true;
@@ -953,96 +953,81 @@ function SubscriptionStatusContent() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <div className="hidden md:block w-64 border-l border-gray-200 bg-white">
-          <PlayerModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
-        </div>
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center text-gray-500">جاري التحميل...</div>
-        </main>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center text-gray-500">جاري التحميل...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <div className="hidden md:block w-64 border-l border-gray-200 bg-white">
-          <PlayerModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
-        </div>
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto p-6">
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <AlertCircle className="mx-auto h-16 w-16 text-red-500 mb-6" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">خطأ في تحميل البيانات</h2>
-              <p className="text-gray-600 mb-6 text-lg">{error}</p>
-              <div className="space-y-4">
-                <button
-                  onClick={() => window.location.reload()}
-                  className="inline-flex items-center justify-center w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  <RefreshCw className="w-5 h-5 mr-2" />
-                  إعادة المحاولة
-                </button>
-                <Link
-                  href="/dashboard/player/bulk-payment"
-                  className="inline-flex items-center justify-center w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                >
-                  <CreditCard className="w-5 h-5 mr-2" />
-                  الذهاب لصفحة الدفع
-                </Link>
-              </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <AlertCircle className="mx-auto h-16 w-16 text-red-500 mb-6" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">خطأ في تحميل البيانات</h2>
+            <p className="text-gray-600 mb-6 text-lg">{error}</p>
+            <div className="space-y-4">
+              <button
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center justify-center w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                <RefreshCw className="w-5 h-5 mr-2" />
+                إعادة المحاولة
+              </button>
+              <Link
+                href="/dashboard/shared/bulk-payment"
+                className="inline-flex items-center justify-center w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                <CreditCard className="w-5 h-5 mr-2" />
+                الذهاب لصفحة الدفع
+              </Link>
             </div>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
 
   if (!subscription) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <div className="hidden md:block w-64 border-l border-gray-200 bg-white">
-          <PlayerModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
-        </div>
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto p-6">
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <AlertCircle className="mx-auto h-16 w-16 text-yellow-500 mb-6" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">لا توجد اشتراكات نشطة</h2>
-              <p className="text-gray-600 mb-6 text-lg">
-                لم يتم العثور على أي مدفوعات أو اشتراكات في حسابك. 
-                يرجى إتمام عملية الدفع أولاً للحصول على اشتراك نشط.
-              </p>
-              <div className="space-y-4">
-                <Link
-                  href="/dashboard/player/bulk-payment"
-                  className="inline-flex items-center justify-center w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  <CreditCard className="w-5 h-5 mr-2" />
-                  اشترك الآن
-                </Link>
-                <Link
-                  href="/dashboard/player/billing"
-                  className="inline-flex items-center justify-center w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                >
-                  <FileImage className="w-5 h-5 mr-2" />
-                  عرض سجل المدفوعات
-                </Link>
-              </div>
-              {/* إضافة معلومات تشخيصية */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">معلومات التشخيص:</h3>
-                <div className="text-xs text-gray-600 space-y-1">
-                  <div>معرف المستخدم: {user?.uid || 'غير محدد'}</div>
-                  <div>البريد الإلكتروني: {user?.email || 'غير محدد'}</div>
-                  <div>حالة التحميل: {loading ? 'جاري التحميل...' : 'مكتمل'}</div>
-                  <div>الخطأ: {error || 'لا يوجد خطأ'}</div>
-                </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <AlertCircle className="mx-auto h-16 w-16 text-yellow-500 mb-6" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">لا توجد اشتراكات نشطة</h2>
+            <p className="text-gray-600 mb-6 text-lg">
+              لم يتم العثور على أي مدفوعات أو اشتراكات في حسابك. 
+              يرجى إتمام عملية الدفع أولاً للحصول على اشتراك نشط.
+            </p>
+            <div className="space-y-4">
+              <Link
+                href="/dashboard/shared/bulk-payment"
+                className="inline-flex items-center justify-center w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                <CreditCard className="w-5 h-5 mr-2" />
+                اشترك الآن
+              </Link>
+              <Link
+                href="/dashboard/billing"
+                className="inline-flex items-center justify-center w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                <FileImage className="w-5 h-5 mr-2" />
+                عرض سجل المدفوعات
+              </Link>
+            </div>
+            {/* إضافة معلومات تشخيصية */}
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">معلومات التشخيص:</h3>
+              <div className="text-xs text-gray-600 space-y-1">
+                <div>معرف المستخدم: {user?.uid || 'غير محدد'}</div>
+                <div>البريد الإلكتروني: {user?.email || 'غير محدد'}</div>
+                <div>حالة التحميل: {loading ? 'جاري التحميل...' : 'مكتمل'}</div>
+                <div>الخطأ: {error || 'لا يوجد خطأ'}</div>
               </div>
             </div>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
@@ -1050,13 +1035,7 @@ function SubscriptionStatusContent() {
   const packageInfo = getPackageInfo(subscription.selectedPackage || subscription.plan_name);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* القائمة الجانبية */}
-      <div className="hidden md:block w-64 border-l border-gray-200 bg-white">
-        <PlayerModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
-      </div>
-      {/* المحتوى الرئيسي */}
-      <main className="flex-1 p-4 md:p-8 overflow-auto">
+    <div className="p-4 md:p-8">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <button
@@ -1067,7 +1046,7 @@ function SubscriptionStatusContent() {
               العودة
             </button>
             <Link
-              href="/dashboard/player"
+              href="/dashboard"
               className="flex items-center text-gray-600 hover:text-gray-800"
             >
               <Home className="w-4 h-4 mr-2" />
@@ -1307,7 +1286,7 @@ function SubscriptionStatusContent() {
             {/* رابط صفحة الإحالة */}
             <div className="mt-6 text-center">
               <Link
-                href="/dashboard/player/referrals"
+                href="/dashboard/referrals"
                 className="inline-flex items-center bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
               >
                 <Trophy className="w-5 h-5 mr-2" />
@@ -1344,17 +1323,16 @@ function SubscriptionStatusContent() {
         {/* رابط للدفع المجمع */}
         <div className="mt-6 text-center">
           <Link
-            href="/dashboard/bulk-payment"
+            href="/dashboard/shared/bulk-payment"
             className="inline-flex items-center text-blue-600 hover:text-blue-800"
           >
             <CreditCard className="w-4 h-4 mr-2" />
             تحديث الاشتراك أو الدفع الجماعي
           </Link>
         </div>
-      </main>
-    </div>
-  );
-}
+      </div>
+    );
+  }
 
 export default function SubscriptionStatusPage() {
   return (

@@ -6,7 +6,6 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { motion } from 'framer-motion';
-import { useTranslation } from '@/lib/translations/simple-context';
 import { 
   VideoIcon, 
   Save, 
@@ -20,10 +19,13 @@ import {
 } from 'lucide-react';
 import type { Video } from '@/types/player';
 import VideoManager from '@/components/video/VideoManager';
+import { Button } from '@/components/ui/button';
 
 export default function VideosPage(props: any) {
   const router = useRouter();
-  const { t, tWithVars } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
   const [user, loading, authError] = useAuthState(auth);
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +59,7 @@ export default function VideosPage(props: any) {
         }
       } catch (error) {
         console.error('خطأ في جلب الفيديوهات:', error);
-        setSaveMessage({ type: 'error', text: t('dashboard.player.videos.fetchError') });
+        setSaveMessage({ type: 'error', text: 'حدث خطأ أثناء جلب الفيديوهات' });
       } finally {
         setIsLoading(false);
       }
@@ -78,13 +80,13 @@ export default function VideosPage(props: any) {
       });
       
       setHasUnsavedChanges(false);
-      setSaveMessage({ type: 'success', text: t('dashboard.player.videos.saveSuccess') });
+      setSaveMessage({ type: 'success', text: 'تم حفظ التغييرات بنجاح' });
       
       // إخفاء الرسالة بعد 3 ثواني
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (error) {
       console.error('خطأ في حفظ الفيديوهات:', error);
-      setSaveMessage({ type: 'error', text: t('dashboard.player.videos.saveError') });
+      setSaveMessage({ type: 'error', text: 'حدث خطأ أثناء حفظ الفيديوهات' });
     } finally {
       setIsSaving(false);
     }
@@ -119,7 +121,7 @@ export default function VideosPage(props: any) {
         <div className="flex items-center justify-center min-h-96">
           <div className="flex flex-col items-center gap-4">
             <Loader className="w-8 h-8 text-blue-600 animate-spin" />
-            <p className="text-gray-600">{t('dashboard.player.videos.loading')}</p>
+            <p className="text-gray-600">جاري التحميل...</p>
           </div>
         </div>
     );
@@ -133,14 +135,14 @@ export default function VideosPage(props: any) {
         <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow">
           <FileVideo className="w-8 h-8 text-blue-500" />
           <div>
-            <div className="text-sm text-gray-500">{t('dashboard.player.videos.uploadedCount')}</div>
+            <div className="text-sm text-gray-500">عدد الفيديوهات المرفوعة</div>
             <div className="text-2xl font-bold">{videos.length}</div>
           </div>
         </div>
         <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow">
           <Upload className="w-8 h-8 text-green-500" />
           <div>
-            <div className="text-sm text-gray-500">{t('dashboard.player.videos.maxUpload')}</div>
+            <div className="text-sm text-gray-500">الحد الأقصى للرفع</div>
             <div className="text-2xl font-bold">{MAX_VIDEOS}</div>
           </div>
         </div>
@@ -149,31 +151,31 @@ export default function VideosPage(props: any) {
       {/* ملاحظات وتعليمات */}
       <div className="p-4 mb-6 border-l-4 border-yellow-400 rounded bg-yellow-50">
         <ul className="space-y-1 text-sm text-yellow-800 list-disc list-inside">
-          <li>{t('dashboard.player.videos.notes.maxVideos')} {MAX_VIDEOS}</li>
-          <li>{t('dashboard.player.videos.notes.formats')}</li>
-          <li>{t('dashboard.player.videos.notes.quality')}</li>
-          <li>{t('dashboard.player.videos.notes.description')}</li>
+          <li>الحد الأقصى للفيديوهات: {MAX_VIDEOS}</li>
+          <li>الصيغ المدعومة: MP4, AVI, MOV</li>
+          <li>الجودة المطلوبة: 720p على الأقل</li>
+          <li>يجب أن يكون الفيديو واضحاً ويظهر مهاراتك</li>
         </ul>
       </div>
 
       {/* تعليمات رفع الفيديو */}
       <div className="p-6 mb-6 bg-white rounded-lg shadow">
-        <h3 className="mb-4 text-lg font-semibold text-gray-800">{t('dashboard.player.videos.howToUpload.title')}</h3>
+        <h3 className="mb-4 text-lg font-semibold text-gray-800">كيفية رفع الفيديو</h3>
         
         {/* يوتيوب */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <Youtube className="w-12 h-12 text-red-600" />
-            <h4 className="text-lg font-medium text-blue-600">{t('dashboard.player.videos.howToUpload.youtube.title')}</h4>
+            <h4 className="text-lg font-medium text-blue-600">رفع فيديو من يوتيوب</h4>
           </div>
           <ol className="space-y-2 text-sm text-gray-700 list-decimal list-inside">
-            <li>{t('dashboard.player.videos.howToUpload.youtube.step1')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.youtube.step2')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.youtube.step3')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.youtube.step4')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.youtube.step5')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.youtube.step6')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.youtube.step7')}</li>
+            <li>اذهب إلى فيديو يوتيوب الخاص بك</li>
+            <li>اضغط على زر "مشاركة" أسفل الفيديو</li>
+            <li>انسخ رابط الفيديو</li>
+            <li>الصق الرابط في حقل "رابط الفيديو" أدناه</li>
+            <li>أضف وصفاً للفيديو</li>
+            <li>حدد نوع الفيديو (مهارات، مباراة، تدريب)</li>
+            <li>اضغط على "حفظ الفيديو"</li>
           </ol>
         </div>
 
@@ -181,15 +183,15 @@ export default function VideosPage(props: any) {
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <Share2 className="w-12 h-12 text-black" />
-            <h4 className="text-lg font-medium text-blue-600">{t('dashboard.player.videos.howToUpload.tiktok.title')}</h4>
+            <h4 className="text-lg font-medium text-blue-600">رفع فيديو من تيك توك</h4>
           </div>
           <ol className="space-y-2 text-sm text-gray-700 list-decimal list-inside">
-            <li>{t('dashboard.player.videos.howToUpload.tiktok.step1')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.tiktok.step2')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.tiktok.step3')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.tiktok.step4')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.tiktok.step5')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.tiktok.step6')}</li>
+            <li>افتح تطبيق تيك توك</li>
+            <li>اذهب إلى الفيديو المطلوب</li>
+            <li>اضغط على زر "مشاركة"</li>
+            <li>اختر "نسخ الرابط"</li>
+            <li>الصق الرابط في حقل "رابط الفيديو" أدناه</li>
+            <li>أضف الوصف والنوع واضغط "حفظ"</li>
           </ol>
         </div>
 
@@ -197,13 +199,13 @@ export default function VideosPage(props: any) {
         <div>
           <div className="flex items-center gap-3 mb-4">
             <FileVideo className="w-12 h-12 text-blue-600" />
-            <h4 className="text-lg font-medium text-blue-600">{t('dashboard.player.videos.howToUpload.platform.title')}</h4>
+            <h4 className="text-lg font-medium text-blue-600">رفع فيديو مباشر</h4>
           </div>
           <ol className="space-y-2 text-sm text-gray-700 list-decimal list-inside">
-            <li>{t('dashboard.player.videos.howToUpload.platform.step1')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.platform.step2')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.platform.step3')}</li>
-            <li>{t('dashboard.player.videos.howToUpload.platform.step4')}</li>
+            <li>اضغط على "إضافة فيديو جديد"</li>
+            <li>اختر ملف الفيديو من جهازك</li>
+            <li>أضف وصفاً ونوع الفيديو</li>
+            <li>اضغط على "رفع الفيديو"</li>
           </ol>
         </div>
       </div>
@@ -216,22 +218,15 @@ export default function VideosPage(props: any) {
       />
 
       {/* زر الحفظ */}
-      {hasUnsavedChanges && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <button
-            onClick={handleSaveVideos}
-            disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSaving ? (
-              <Loader className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {isSaving ? t('dashboard.player.videos.saving') : t('dashboard.player.videos.save')}
-          </button>
-        </div>
-      )}
+      <div className="flex justify-center mt-6">
+        <Button 
+          onClick={handleSaveVideos}
+          disabled={isSaving}
+          className="px-8 py-3 text-lg"
+        >
+          {isSaving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+        </Button>
+      </div>
 
       {/* رسائل الحفظ */}
       {saveMessage && (

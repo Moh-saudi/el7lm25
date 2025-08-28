@@ -33,7 +33,6 @@ import {
   Crown,
   Sparkles
 } from 'lucide-react';
-import { useTranslation } from '@/lib/translations/simple-context';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import SmartNotifications from '@/components/notifications/SmartNotifications';
@@ -57,7 +56,9 @@ const ModernUnifiedHeader: React.FC<ModernUnifiedHeaderProps> = ({
   variant = 'gaming'
 }) => {
   const { user, userData, logout } = useAuth();
-  const { t, language, setLanguage } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -168,7 +169,8 @@ const ModernUnifiedHeader: React.FC<ModernUnifiedHeaderProps> = ({
   };
 
   const toggleLanguage = () => {
-    setLanguage(language === 'ar' ? 'en' : 'ar');
+    // تم إلغاء تغيير اللغة مؤقتاً
+    console.log('تم إلغاء تغيير اللغة مؤقتاً');
   };
 
   return (
@@ -241,7 +243,7 @@ const ModernUnifiedHeader: React.FC<ModernUnifiedHeaderProps> = ({
             >
               <Globe className="w-4 h-4" />
               <span className="text-sm font-medium">
-                {language === 'ar' ? 'EN' : 'عربي'}
+                {locale === 'ar' ? 'EN' : 'عربي'}
               </span>
             </Button>
 
@@ -405,7 +407,7 @@ const ModernUnifiedHeader: React.FC<ModernUnifiedHeaderProps> = ({
               </div>
               <div className="flex items-center gap-2 p-3 hover:bg-white/60 rounded-xl" onClick={toggleLanguage}>
                 <Globe className="w-5 h-5" />
-                <span>{language === 'ar' ? 'English' : 'عربي'}</span>
+                <span>{locale === 'ar' ? 'English' : 'عربي'}</span>
               </div>
               <div className="flex items-center gap-2 p-3 hover:bg-white/60 rounded-xl" onClick={() => setIsDarkMode(!isDarkMode)}>
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}

@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import { AuthProvider } from '@/lib/firebase/auth-provider';
-import { TranslationProvider } from '@/lib/translations/simple-context';
+// import { TranslationProvider } from '@/lib/i18n';
 import { MantineProvider } from '@mantine/core';
 
 interface ProvidersProps {
@@ -12,11 +12,9 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <MantineProvider>
-      <TranslationProvider>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-      </TranslationProvider>
+      <AuthProvider>
+        {children}
+      </AuthProvider>
     </MantineProvider>
   );
 } 

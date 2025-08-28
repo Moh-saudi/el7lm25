@@ -53,10 +53,11 @@ export default function UnifiedNotificationsButton() {
     if (!user?.uid) return;
 
     const notificationsRef = collection(db, 'notifications');
+    
+    // استخدام استعلام بدون ترتيب لتجنب مشاكل Firebase Indexing
     const q = query(
       notificationsRef,
       where('userId', '==', user.uid),
-      orderBy('timestamp', 'desc'),
       limit(50)
     );
 
@@ -109,8 +110,11 @@ export default function UnifiedNotificationsButton() {
         }
       });
 
+      // ترتيب البيانات يدوياً لتجنب مشاكل Firebase Indexing
+      const sortedNotifs = notifs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
       // إضافة بيانات تجريبية إذا لم تكن هناك إشعارات
-      if (notifs.length === 0 && user.accountType === 'trainer') {
+      if (sortedNotifs.length === 0 && user.accountType === 'trainer') {
         const demoNotifications: Notification[] = [
           {
             id: 'demo-1',
@@ -147,7 +151,7 @@ export default function UnifiedNotificationsButton() {
           }
         ];
 
-        notifs.push(...demoNotifications);
+        sortedNotifs.push(...demoNotifications);
         newStats.total = 3;
         newStats.unread = 2;
         newStats.interactive = 1;
@@ -155,7 +159,7 @@ export default function UnifiedNotificationsButton() {
         newStats.messages = 1;
       }
 
-      setNotifications(notifs);
+      setNotifications(sortedNotifs);
       setStats(newStats);
       setLoading(false);
     }, (error) => {

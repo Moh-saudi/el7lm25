@@ -10,7 +10,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { supabase } from '@/lib/supabase/config';
-import { t } from '@/lib/translations/admin';
 import {
   Database,
   HardDrive,
@@ -68,6 +67,9 @@ interface SystemHealth {
 }
 
 export default function SystemMonitoring() {
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
   const [loading, setLoading] = useState(true);
   const [databaseStats, setDatabaseStats] = useState<DatabaseStats | null>(null);
   const [storageStats, setStorageStats] = useState<StorageStats[]>([]);
@@ -342,7 +344,7 @@ export default function SystemMonitoring() {
       <div className="flex items-center justify-center">
         <div className="text-center">
           <SimpleLoader size="large" color="blue" />
-          <p className="mt-4 text-gray-600">{t('actions.loading')}</p>
+          <p className="mt-4 text-gray-600">{'actions.loading'}</p>
         </div>
       </div>
     );
@@ -353,8 +355,8 @@ export default function SystemMonitoring() {
       {/* رأس الصفحة */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{t('system.title')}</h1>
-          <p className="text-gray-500 mt-2">{t('system.subtitle')}</p>
+          <h1 className="text-3xl font-bold">{'system.title'}</h1>
+          <p className="text-gray-500 mt-2">{'system.subtitle'}</p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -363,11 +365,11 @@ export default function SystemMonitoring() {
             variant="outline"
           >
             <RefreshCw className={`w-4 h-4 ml-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? t('actions.loading') : t('actions.refresh')}
+            {isRefreshing ? 'actions.loading' : 'actions.refresh'}
           </Button>
           <Button onClick={exportSystemReport} variant="outline">
             <Download className="w-4 h-4 ml-2" />
-            {t('actions.export')} التقرير
+            {'actions.export'} التقرير
           </Button>
         </div>
       </div>

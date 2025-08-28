@@ -25,7 +25,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useTranslation } from '@/lib/translations/simple-context';
 import { 
   Search, 
   Filter, 
@@ -54,7 +53,7 @@ import {
   Calendar
 } from 'lucide-react';
 import SendMessageButton from '@/components/messaging/SendMessageButton';
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+// تم إلغاء LanguageSwitcher مؤقتاً
 
 // أنواع البيانات
 interface SearchEntity {
@@ -116,7 +115,9 @@ interface FilterOptions {
 }
 
 export default function SearchPage() {
-  const { t } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
   const [user, loading] = useAuthState(auth);
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
@@ -149,29 +150,29 @@ export default function SearchPage() {
 
   // تعريف أنواع الكيانات مع الترجمة
   const ENTITY_TYPES = {
-    club: { label: t('dashboard.player.search.entityTypes.club'), icon: Building, color: 'bg-blue-500' },
-    agent: { label: t('dashboard.player.search.entityTypes.agent'), icon: Briefcase, color: 'bg-purple-500' },
-    scout: { label: t('dashboard.player.search.entityTypes.scout'), icon: Eye, color: 'bg-green-500' },
-    academy: { label: t('dashboard.player.search.entityTypes.academy'), icon: Trophy, color: 'bg-orange-500' },
-    sponsor: { label: t('dashboard.player.search.entityTypes.sponsor'), icon: Award, color: 'bg-red-500' },
-    trainer: { label: t('dashboard.player.search.entityTypes.trainer'), icon: User, color: 'bg-cyan-500' }
+    club: { label: 'dashboard.player.search.entityTypes.club', icon: Building, color: 'bg-blue-500' },
+    agent: { label: 'dashboard.player.search.entityTypes.agent', icon: Briefcase, color: 'bg-purple-500' },
+    scout: { label: 'dashboard.player.search.entityTypes.scout', icon: Eye, color: 'bg-green-500' },
+    academy: { label: 'dashboard.player.search.entityTypes.academy', icon: Trophy, color: 'bg-orange-500' },
+    sponsor: { label: 'dashboard.player.search.entityTypes.sponsor', icon: Award, color: 'bg-red-500' },
+    trainer: { label: 'dashboard.player.search.entityTypes.trainer', icon: User, color: 'bg-cyan-500' }
   };
 
   const COUNTRIES = [
-    t('dashboard.player.search.countries.egypt'),
-    t('dashboard.player.search.countries.saudiArabia'),
-    t('dashboard.player.search.countries.uae'),
-    t('dashboard.player.search.countries.qatar'),
-    t('dashboard.player.search.countries.kuwait'),
-    t('dashboard.player.search.countries.bahrain'),
-    t('dashboard.player.search.countries.oman'),
-    t('dashboard.player.search.countries.jordan'),
-    t('dashboard.player.search.countries.lebanon'),
-    t('dashboard.player.search.countries.iraq'),
-    t('dashboard.player.search.countries.morocco'),
-    t('dashboard.player.search.countries.algeria'),
-    t('dashboard.player.search.countries.tunisia'),
-    t('dashboard.player.search.countries.libya')
+    'dashboard.player.search.countries.egypt',
+    'dashboard.player.search.countries.saudiArabia',
+    'dashboard.player.search.countries.uae',
+    'dashboard.player.search.countries.qatar',
+    'dashboard.player.search.countries.kuwait',
+    'dashboard.player.search.countries.bahrain',
+    'dashboard.player.search.countries.oman',
+    'dashboard.player.search.countries.jordan',
+    'dashboard.player.search.countries.lebanon',
+    'dashboard.player.search.countries.iraq',
+    'dashboard.player.search.countries.morocco',
+    'dashboard.player.search.countries.algeria',
+    'dashboard.player.search.countries.tunisia',
+    'dashboard.player.search.countries.libya'
   ];
 
   // جلب البيانات من Firestore
@@ -283,7 +284,7 @@ export default function SearchPage() {
             // تحويل بيانات النادي إلى تنسيق SearchEntity
             const entity: SearchEntity = {
               id: doc.id,
-              name: clubData.name || t('dashboard.player.search.defaultNames.club'),
+              name: clubData.name || 'dashboard.player.search.defaultNames.club',
               type: 'club',
               email: clubData.email || '',
               phone: clubData.phone || '',
@@ -295,17 +296,17 @@ export default function SearchPage() {
                 city: clubData.city || '',
                 address: clubData.address || ''
               },
-              description: clubData.description || t('dashboard.player.search.defaultDescriptions.club'),
-              specialization: clubData.type || t('dashboard.player.search.defaultSpecializations.football'),
+              description: clubData.description || 'dashboard.player.search.defaultDescriptions.club',
+              specialization: clubData.type || 'dashboard.player.search.defaultSpecializations.football',
               verified: true, // جميع الأندية المسجلة محققة
               rating: 4.5, // تقييم افتراضي
               reviewsCount: Math.floor(Math.random() * 500) + 100,
               followersCount: (clubData.stats?.players || 0) * 10,
               connectionsCount: clubData.stats?.contracts || 0,
               achievements: clubData.trophies?.map((t: any) => `${t.name} (${t.year})`) || [],
-              services: [t('dashboard.player.search.services.playerTraining'), t('dashboard.player.search.services.youthPrograms'), t('dashboard.player.search.services.officialCompetitions')],
+              services: ['dashboard.player.search.services.playerTraining', 'dashboard.player.search.services.youthPrograms', 'dashboard.player.search.services.officialCompetitions'],
               established: clubData.founded || '',
-              languages: [t('dashboard.player.search.languages.arabic')],
+              languages: ['dashboard.player.search.languages.arabic'],
               createdAt: new Date(),
               lastActive: new Date(),
               isPremium: true,
@@ -369,7 +370,7 @@ export default function SearchPage() {
             
             const entity: SearchEntity = {
               id: doc.id,
-              name: agentData.full_name || t('dashboard.player.search.defaultNames.agent'),
+              name: agentData.full_name || 'dashboard.player.search.defaultNames.agent',
               type: 'agent',
               email: agentData.email || '',
               phone: agentData.phone || '',
@@ -381,17 +382,17 @@ export default function SearchPage() {
                 city: agentData.current_location?.split(' - ')[1] || agentData.current_location || '',
                 address: agentData.office_address || ''
               },
-              description: agentData.specialization || t('dashboard.player.search.defaultDescriptions.agent'),
-              specialization: agentData.specialization || t('dashboard.player.search.defaultSpecializations.playerAgent'),
+              description: agentData.specialization || 'dashboard.player.search.defaultDescriptions.agent',
+              specialization: agentData.specialization || 'dashboard.player.search.defaultSpecializations.playerAgent',
               verified: agentData.is_fifa_licensed || false,
               rating: 4.5,
               reviewsCount: Math.floor(Math.random() * 500) + 100,
               followersCount: (agentData.stats?.players || 0) * 10,
               connectionsCount: agentData.stats?.contracts || 0,
-              achievements: agentData.is_fifa_licensed ? [t('dashboard.player.search.achievements.fifaLicensed')] : [],
-              services: [t('dashboard.player.search.services.playerRepresentation'), t('dashboard.player.search.services.contractNegotiation')],
+              achievements: agentData.is_fifa_licensed ? ['dashboard.player.search.achievements.fifaLicensed'] : [],
+              services: ['dashboard.player.search.services.playerRepresentation', 'dashboard.player.search.services.contractNegotiation'],
               established: agentData.established || '',
-              languages: agentData.spoken_languages || [t('dashboard.player.search.languages.arabic')],
+              languages: agentData.spoken_languages || ['dashboard.player.search.languages.arabic'],
               createdAt: new Date(),
               lastActive: new Date(),
               isPremium: true,
@@ -446,7 +447,7 @@ export default function SearchPage() {
             
             const entity: SearchEntity = {
               id: doc.id,
-              name: academyData.name || t('dashboard.player.search.defaultNames.academy'),
+              name: academyData.name || 'dashboard.player.search.defaultNames.academy',
               type: 'academy',
               email: academyData.email || '',
               phone: academyData.phone || '',
@@ -458,17 +459,17 @@ export default function SearchPage() {
                 city: academyData.city || '',
                 address: academyData.address || ''
               },
-              description: academyData.description || t('dashboard.player.search.defaultDescriptions.academy'),
-              specialization: Array.isArray(academyData.programs) ? academyData.programs.join(', ') : t('dashboard.player.search.defaultSpecializations.academy'),
+              description: academyData.description || 'dashboard.player.search.defaultDescriptions.academy',
+              specialization: Array.isArray(academyData.programs) ? academyData.programs.join(', ') : 'dashboard.player.search.defaultSpecializations.academy',
               verified: true,
               rating: 4.6,
               reviewsCount: Math.floor(Math.random() * 300) + 100,
               followersCount: (academyData.stats?.students || 0) * 5,
               connectionsCount: academyData.stats?.graduates || 0,
-              achievements: [t('dashboard.player.search.achievements.certified'), t('dashboard.player.search.achievements.advancedPrograms')],
-              services: [t('dashboard.player.search.services.playerTraining'), t('dashboard.player.search.services.advancedPrograms'), t('dashboard.player.search.services.talentDevelopment')],
+              achievements: ['dashboard.player.search.achievements.certified', 'dashboard.player.search.achievements.advancedPrograms'],
+              services: ['dashboard.player.search.services.playerTraining', 'dashboard.player.search.services.advancedPrograms', 'dashboard.player.search.services.talentDevelopment'],
               established: academyData.established || '',
-              languages: [t('dashboard.player.search.languages.arabic')],
+              languages: ['dashboard.player.search.languages.arabic'],
               createdAt: new Date(),
               lastActive: new Date(),
               isPremium: true,
@@ -526,7 +527,7 @@ export default function SearchPage() {
             
             const entity: SearchEntity = {
               id: doc.id,
-              name: trainerData.full_name || t('dashboard.player.search.defaultNames.trainer'),
+              name: trainerData.full_name || 'dashboard.player.search.defaultNames.trainer',
               type: 'trainer',
               email: trainerData.email || '',
               phone: trainerData.phone || '',
@@ -538,17 +539,17 @@ export default function SearchPage() {
                 city: trainerData.current_location?.split(' - ')[1] || trainerData.current_location || '',
                 address: ''
               },
-              description: trainerData.specialization || t('dashboard.player.search.defaultDescriptions.trainer'),
-              specialization: trainerData.specialization || t('dashboard.player.search.defaultSpecializations.physicalTraining'),
+              description: trainerData.specialization || 'dashboard.player.search.defaultDescriptions.trainer',
+              specialization: trainerData.specialization || 'dashboard.player.search.defaultSpecializations.physicalTraining',
               verified: trainerData.is_certified || false,
               rating: 4.4,
               reviewsCount: Math.floor(Math.random() * 150) + 30,
               followersCount: (trainerData.stats?.players || 0) * 20,
               connectionsCount: trainerData.stats?.training_sessions || 0,
-              achievements: trainerData.is_certified ? [t('dashboard.player.search.achievements.certified'), t('dashboard.player.search.achievements.advancedExperience')] : [t('dashboard.player.search.achievements.local'), t('dashboard.player.search.achievements.advancedExperience')],
-              services: [t('dashboard.player.search.services.personalTraining'), t('dashboard.player.search.services.preparationPrograms'), t('dashboard.player.search.services.sportsConsultations')],
+              achievements: trainerData.is_certified ? ['dashboard.player.search.achievements.certified', 'dashboard.player.search.achievements.advancedExperience'] : ['dashboard.player.search.achievements.local', 'dashboard.player.search.achievements.advancedExperience'],
+              services: ['dashboard.player.search.services.personalTraining', 'dashboard.player.search.services.preparationPrograms', 'dashboard.player.search.services.sportsConsultations'],
               established: trainerData.established || '',
-              languages: trainerData.spoken_languages || [t('dashboard.player.search.languages.arabic')],
+              languages: trainerData.spoken_languages || ['dashboard.player.search.languages.arabic'],
               createdAt: new Date(),
               lastActive: new Date(),
               isPremium: true,
@@ -580,21 +581,21 @@ export default function SearchPage() {
         const mockEntities: SearchEntity[] = [
           {
             id: '1',
-            name: t('dashboard.player.search.mockEntities.alahly.name'),
+            name: 'dashboard.player.search.mockEntities.alahly.name',
             type: 'club',
             email: 'info@alahly.com',
             phone: '+20223456789',
             website: 'www.alahly.com',
             profileImage: '/images/club-avatar.png',
             coverImage: '/images/hero-1.jpg',
-            location: { country: t('dashboard.player.search.mockEntities.alahly.location.country'), city: t('dashboard.player.search.mockEntities.alahly.location.city') },
-            description: t('dashboard.player.search.mockEntities.alahly.description'),
+            location: { country: 'dashboard.player.search.mockEntities.alahly.location.country', city: 'dashboard.player.search.mockEntities.alahly.location.city' },
+            description: 'dashboard.player.search.mockEntities.alahly.description',
             verified: true,
             rating: 4.9,
             reviewsCount: 1200,
             followersCount: 5480000,
             connectionsCount: 1200,
-            achievements: [t('dashboard.player.search.mockEntities.alahly.achievements.afcon'), t('dashboard.player.search.mockEntities.alahly.achievements.egyptianLeague')],
+            achievements: ['dashboard.player.search.mockEntities.alahly.achievements.afcon', 'dashboard.player.search.mockEntities.alahly.achievements.egyptianLeague'],
             createdAt: new Date(),
             lastActive: new Date(),
             isPremium: true,
@@ -606,23 +607,23 @@ export default function SearchPage() {
           },
           {
             id: '2',
-            name: t('dashboard.player.search.mockEntities.starsAgency.name'),
+            name: 'dashboard.player.search.mockEntities.starsAgency.name',
             type: 'agent',
             email: 'contact@stars-agency.com',
             phone: '+97145678901',
             website: 'www.stars-agency.com',
             profileImage: '/images/agent-avatar.png',
             coverImage: '/images/hero-1.jpg',
-            location: { country: t('dashboard.player.search.mockEntities.starsAgency.location.country'), city: t('dashboard.player.search.mockEntities.starsAgency.location.city') },
-            description: t('dashboard.player.search.mockEntities.starsAgency.description'),
-            specialization: t('dashboard.player.search.mockEntities.starsAgency.specialization'),
+            location: { country: 'dashboard.player.search.mockEntities.starsAgency.location.country', city: 'dashboard.player.search.mockEntities.starsAgency.location.city' },
+            description: 'dashboard.player.search.mockEntities.starsAgency.description',
+            specialization: 'dashboard.player.search.mockEntities.starsAgency.specialization',
             verified: true,
             rating: 4.8,
             reviewsCount: 340,
             followersCount: 89000,
             connectionsCount: 450,
-            achievements: [t('dashboard.player.search.mockEntities.starsAgency.achievements')],
-            services: [t('dashboard.player.search.mockEntities.starsAgency.services.contractNegotiation'), t('dashboard.player.search.mockEntities.starsAgency.services.legalConsultation')],
+            achievements: ['dashboard.player.search.mockEntities.starsAgency.achievements'],
+            services: ['dashboard.player.search.mockEntities.starsAgency.services.contractNegotiation', 'dashboard.player.search.mockEntities.starsAgency.services.legalConsultation'],
             createdAt: new Date(),
             lastActive: new Date(),
             isPremium: true,
@@ -634,23 +635,23 @@ export default function SearchPage() {
           },
           {
             id: '3',
-            name: t('dashboard.player.search.mockEntities.faisalAcademy.name'),
+            name: 'dashboard.player.search.mockEntities.faisalAcademy.name',
             type: 'academy',
             email: 'info@faisal-academy.com',
             phone: '+97123456789',
             website: 'www.faisal-academy.com',
             profileImage: '/images/club-avatar.png',
             coverImage: '/images/hero-1.jpg',
-            location: { country: t('dashboard.player.search.mockEntities.faisalAcademy.location.country'), city: t('dashboard.player.search.mockEntities.faisalAcademy.location.city') },
-            description: t('dashboard.player.search.mockEntities.faisalAcademy.description'),
-            specialization: t('dashboard.player.search.mockEntities.faisalAcademy.specialization'),
+            location: { country: 'dashboard.player.search.mockEntities.faisalAcademy.location.country', city: 'dashboard.player.search.mockEntities.faisalAcademy.location.city' },
+            description: 'dashboard.player.search.mockEntities.faisalAcademy.description',
+            specialization: 'dashboard.player.search.mockEntities.faisalAcademy.specialization',
             verified: true,
             rating: 4.7,
             reviewsCount: 280,
             followersCount: 45000,
             connectionsCount: 320,
-            achievements: [t('dashboard.player.search.mockEntities.faisalAcademy.achievements.bestAcademy'), t('dashboard.player.search.mockEntities.faisalAcademy.achievements.certified')],
-            services: [t('dashboard.player.search.mockEntities.faisalAcademy.services.youthPrograms'), t('dashboard.player.search.mockEntities.faisalAcademy.services.talentDevelopment'), t('dashboard.player.search.mockEntities.faisalAcademy.services.trainingCamps')],
+            achievements: ['dashboard.player.search.mockEntities.faisalAcademy.achievements.bestAcademy', 'dashboard.player.search.mockEntities.faisalAcademy.achievements.certified'],
+            services: ['dashboard.player.search.mockEntities.faisalAcademy.services.youthPrograms', 'dashboard.player.search.mockEntities.faisalAcademy.services.talentDevelopment', 'dashboard.player.search.mockEntities.faisalAcademy.services.trainingCamps'],
             createdAt: new Date(),
             lastActive: new Date(),
             isPremium: true,
@@ -662,23 +663,23 @@ export default function SearchPage() {
           },
           {
             id: '4',
-            name: t('dashboard.player.search.mockEntities.ahmedExpert.name'),
+            name: 'dashboard.player.search.mockEntities.ahmedExpert.name',
             type: 'trainer',
             email: 'ahmed.expert@email.com',
             phone: '+20345678901',
             website: '',
             profileImage: '/images/user-avatar.svg',
             coverImage: '/images/hero-1.jpg',
-            location: { country: t('dashboard.player.search.mockEntities.ahmedExpert.location.country'), city: t('dashboard.player.search.mockEntities.ahmedExpert.location.city') },
-            description: t('dashboard.player.search.mockEntities.ahmedExpert.description'),
-            specialization: t('dashboard.player.search.mockEntities.ahmedExpert.specialization'),
+            location: { country: 'dashboard.player.search.mockEntities.ahmedExpert.location.country', city: 'dashboard.player.search.mockEntities.ahmedExpert.location.city' },
+            description: 'dashboard.player.search.mockEntities.ahmedExpert.description',
+            specialization: 'dashboard.player.search.mockEntities.ahmedExpert.specialization',
             verified: true,
             rating: 4.4,
             reviewsCount: 59,
             followersCount: 1200,
             connectionsCount: 85,
-            achievements: [t('dashboard.player.search.mockEntities.ahmedExpert.achievements.certified'), t('dashboard.player.search.mockEntities.ahmedExpert.achievements.internationalCertification')],
-            services: [t('dashboard.player.search.mockEntities.ahmedExpert.services.personalTraining'), t('dashboard.player.search.mockEntities.ahmedExpert.services.preparationPrograms'), t('dashboard.player.search.mockEntities.ahmedExpert.services.sportsConsultations')],
+            achievements: ['dashboard.player.search.mockEntities.ahmedExpert.achievements.certified', 'dashboard.player.search.mockEntities.ahmedExpert.achievements.internationalCertification'],
+            services: ['dashboard.player.search.mockEntities.ahmedExpert.services.personalTraining', 'dashboard.player.search.mockEntities.ahmedExpert.services.preparationPrograms', 'dashboard.player.search.mockEntities.ahmedExpert.services.sportsConsultations'],
             createdAt: new Date(),
             lastActive: new Date(),
             isPremium: true,
@@ -690,21 +691,21 @@ export default function SearchPage() {
           },
           {
             id: '5',
-            name: t('dashboard.player.search.mockEntities.zamalek.name'),
+            name: 'dashboard.player.search.mockEntities.zamalek.name',
             type: 'club',
             email: 'info@zamalek.com',
             phone: '+20234567890',
             website: 'www.zamalek.com',
             profileImage: '/images/club-avatar.png',
             coverImage: '/images/hero-1.jpg',
-            location: { country: t('dashboard.player.search.mockEntities.zamalek.location.country'), city: t('dashboard.player.search.mockEntities.zamalek.location.city') },
-            description: t('dashboard.player.search.mockEntities.zamalek.description'),
+            location: { country: 'dashboard.player.search.mockEntities.zamalek.location.country', city: 'dashboard.player.search.mockEntities.zamalek.location.city' },
+            description: 'dashboard.player.search.mockEntities.zamalek.description',
             verified: true,
             rating: 4.8,
             reviewsCount: 980,
             followersCount: 3200000,
             connectionsCount: 950,
-            achievements: [t('dashboard.player.search.mockEntities.zamalek.achievements.afcon'), t('dashboard.player.search.mockEntities.zamalek.achievements.egyptianLeague')],
+            achievements: ['dashboard.player.search.mockEntities.zamalek.achievements.afcon', 'dashboard.player.search.mockEntities.zamalek.achievements.egyptianLeague'],
             createdAt: new Date(),
             lastActive: new Date(),
             isPremium: true,
@@ -827,21 +828,21 @@ export default function SearchPage() {
       const mockEntities: SearchEntity[] = [
         {
           id: '1',
-          name: t('dashboard.player.search.mockEntities.alahly.name'),
+          name: 'dashboard.player.search.mockEntities.alahly.name',
           type: 'club',
           email: 'info@alahly.com',
           phone: '+20223456789',
           website: 'www.alahly.com',
           profileImage: '/images/club-avatar.png',
           coverImage: '/images/hero-1.jpg',
-          location: { country: t('dashboard.player.search.mockEntities.alahly.location.country'), city: t('dashboard.player.search.mockEntities.alahly.location.city') },
-          description: t('dashboard.player.search.mockEntities.alahly.description'),
+          location: { country: 'dashboard.player.search.mockEntities.alahly.location.country', city: 'dashboard.player.search.mockEntities.alahly.location.city' },
+          description: 'dashboard.player.search.mockEntities.alahly.description',
           verified: true,
           rating: 4.9,
           reviewsCount: 1200,
           followersCount: 5480000,
           connectionsCount: 1200,
-          achievements: [t('dashboard.player.search.mockEntities.alahly.achievements.afcon'), t('dashboard.player.search.mockEntities.alahly.achievements.egyptianLeague')],
+          achievements: ['dashboard.player.search.mockEntities.alahly.achievements.afcon', 'dashboard.player.search.mockEntities.alahly.achievements.egyptianLeague'],
           createdAt: new Date(),
           lastActive: new Date(),
           isPremium: true,
@@ -853,23 +854,23 @@ export default function SearchPage() {
         },
         {
           id: '2',
-          name: t('dashboard.player.search.mockEntities.starsAgency.name'),
+          name: 'dashboard.player.search.mockEntities.starsAgency.name',
           type: 'agent',
           email: 'contact@stars-agency.com',
           phone: '+97145678901',
           website: 'www.stars-agency.com',
           profileImage: '/images/agent-avatar.png',
           coverImage: '/images/hero-1.jpg',
-          location: { country: t('dashboard.player.search.mockEntities.starsAgency.location.country'), city: t('dashboard.player.search.mockEntities.starsAgency.location.city') },
-          description: t('dashboard.player.search.mockEntities.starsAgency.description'),
-          specialization: t('dashboard.player.search.mockEntities.starsAgency.specialization'),
+          location: { country: 'dashboard.player.search.mockEntities.starsAgency.location.country', city: 'dashboard.player.search.mockEntities.starsAgency.location.city' },
+          description: 'dashboard.player.search.mockEntities.starsAgency.description',
+          specialization: 'dashboard.player.search.mockEntities.starsAgency.specialization',
           verified: true,
           rating: 4.8,
           reviewsCount: 340,
           followersCount: 89000,
           connectionsCount: 450,
-          achievements: [t('dashboard.player.search.mockEntities.starsAgency.achievements')],
-          services: [t('dashboard.player.search.mockEntities.starsAgency.services.contractNegotiation'), t('dashboard.player.search.mockEntities.starsAgency.services.legalConsultation')],
+          achievements: ['dashboard.player.search.mockEntities.starsAgency.achievements'],
+          services: ['dashboard.player.search.mockEntities.starsAgency.services.contractNegotiation', 'dashboard.player.search.mockEntities.starsAgency.services.legalConsultation'],
           createdAt: new Date(),
           lastActive: new Date(),
           isPremium: true,
@@ -881,23 +882,23 @@ export default function SearchPage() {
         },
         {
           id: '3',
-          name: t('dashboard.player.search.mockEntities.faisalAcademy.name'),
+          name: 'dashboard.player.search.mockEntities.faisalAcademy.name',
           type: 'academy',
           email: 'info@faisal-academy.com',
           phone: '+97123456789',
           website: 'www.faisal-academy.com',
           profileImage: '/images/club-avatar.png',
           coverImage: '/images/hero-1.jpg',
-          location: { country: t('dashboard.player.search.mockEntities.faisalAcademy.location.country'), city: t('dashboard.player.search.mockEntities.faisalAcademy.location.city') },
-          description: t('dashboard.player.search.mockEntities.faisalAcademy.description'),
-          specialization: t('dashboard.player.search.mockEntities.faisalAcademy.specialization'),
+          location: { country: 'dashboard.player.search.mockEntities.faisalAcademy.location.country', city: 'dashboard.player.search.mockEntities.faisalAcademy.location.city' },
+          description: 'dashboard.player.search.mockEntities.faisalAcademy.description',
+          specialization: 'dashboard.player.search.mockEntities.faisalAcademy.specialization',
           verified: true,
           rating: 4.7,
           reviewsCount: 280,
           followersCount: 45000,
           connectionsCount: 320,
-          achievements: [t('dashboard.player.search.mockEntities.faisalAcademy.achievements.bestAcademy'), t('dashboard.player.search.mockEntities.faisalAcademy.achievements.certified')],
-          services: [t('dashboard.player.search.mockEntities.faisalAcademy.services.youthPrograms'), t('dashboard.player.search.mockEntities.faisalAcademy.services.talentDevelopment'), t('dashboard.player.search.mockEntities.faisalAcademy.services.trainingCamps')],
+          achievements: ['dashboard.player.search.mockEntities.faisalAcademy.achievements.bestAcademy', 'dashboard.player.search.mockEntities.faisalAcademy.achievements.certified'],
+          services: ['dashboard.player.search.mockEntities.faisalAcademy.services.youthPrograms', 'dashboard.player.search.mockEntities.faisalAcademy.services.talentDevelopment', 'dashboard.player.search.mockEntities.faisalAcademy.services.trainingCamps'],
           createdAt: new Date(),
           lastActive: new Date(),
           isPremium: true,
@@ -909,23 +910,23 @@ export default function SearchPage() {
         },
         {
           id: '4',
-          name: t('dashboard.player.search.mockEntities.ahmedExpert.name'),
+          name: 'dashboard.player.search.mockEntities.ahmedExpert.name',
           type: 'trainer',
           email: 'ahmed.expert@email.com',
           phone: '+20345678901',
           website: '',
           profileImage: '/images/user-avatar.svg',
           coverImage: '/images/hero-1.jpg',
-          location: { country: t('dashboard.player.search.mockEntities.ahmedExpert.location.country'), city: t('dashboard.player.search.mockEntities.ahmedExpert.location.city') },
-          description: t('dashboard.player.search.mockEntities.ahmedExpert.description'),
-          specialization: t('dashboard.player.search.mockEntities.ahmedExpert.specialization'),
+          location: { country: 'dashboard.player.search.mockEntities.ahmedExpert.location.country', city: 'dashboard.player.search.mockEntities.ahmedExpert.location.city' },
+          description: 'dashboard.player.search.mockEntities.ahmedExpert.description',
+          specialization: 'dashboard.player.search.mockEntities.ahmedExpert.specialization',
           verified: true,
           rating: 4.4,
           reviewsCount: 59,
           followersCount: 1200,
           connectionsCount: 85,
-          achievements: [t('dashboard.player.search.mockEntities.ahmedExpert.achievements.certified'), t('dashboard.player.search.mockEntities.ahmedExpert.achievements.internationalCertification')],
-          services: [t('dashboard.player.search.mockEntities.ahmedExpert.services.personalTraining'), t('dashboard.player.search.mockEntities.ahmedExpert.services.preparationPrograms'), t('dashboard.player.search.mockEntities.ahmedExpert.services.sportsConsultations')],
+          achievements: ['dashboard.player.search.mockEntities.ahmedExpert.achievements.certified', 'dashboard.player.search.mockEntities.ahmedExpert.achievements.internationalCertification'],
+          services: ['dashboard.player.search.mockEntities.ahmedExpert.services.personalTraining', 'dashboard.player.search.mockEntities.ahmedExpert.services.preparationPrograms', 'dashboard.player.search.mockEntities.ahmedExpert.services.sportsConsultations'],
           createdAt: new Date(),
           lastActive: new Date(),
           isPremium: true,
@@ -937,21 +938,21 @@ export default function SearchPage() {
         },
         {
           id: '5',
-          name: t('dashboard.player.search.mockEntities.zamalek.name'),
+          name: 'dashboard.player.search.mockEntities.zamalek.name',
           type: 'club',
           email: 'info@zamalek.com',
           phone: '+20234567890',
           website: 'www.zamalek.com',
           profileImage: '/images/club-avatar.png',
           coverImage: '/images/hero-1.jpg',
-          location: { country: t('dashboard.player.search.mockEntities.zamalek.location.country'), city: t('dashboard.player.search.mockEntities.zamalek.location.city') },
-          description: t('dashboard.player.search.mockEntities.zamalek.description'),
+          location: { country: 'dashboard.player.search.mockEntities.zamalek.location.country', city: 'dashboard.player.search.mockEntities.zamalek.location.city' },
+          description: 'dashboard.player.search.mockEntities.zamalek.description',
           verified: true,
           rating: 4.8,
           reviewsCount: 980,
           followersCount: 3200000,
           connectionsCount: 950,
-          achievements: [t('dashboard.player.search.mockEntities.zamalek.achievements.afcon'), t('dashboard.player.search.mockEntities.zamalek.achievements.egyptianLeague')],
+          achievements: ['dashboard.player.search.mockEntities.zamalek.achievements.afcon', 'dashboard.player.search.mockEntities.zamalek.achievements.egyptianLeague'],
           createdAt: new Date(),
           lastActive: new Date(),
           isPremium: true,
@@ -1275,14 +1276,14 @@ export default function SearchPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {/* نوع الكيان */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">{t('dashboard.player.search.filters.entityType')}</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">{'dashboard.player.search.filters.entityType'}</label>
           <select
             value={filters.type}
             onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value as any }))}
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            title={t('dashboard.player.search.filters.entityType')}
+            title={'dashboard.player.search.filters.entityType'}
           >
-            <option value="all">{t('dashboard.player.search.filters.allTypes')}</option>
+            <option value="all">{'dashboard.player.search.filters.allTypes'}</option>
             {Object.entries(ENTITY_TYPES).map(([key, value]) => (
               <option key={key} value={key}>{value.label}</option>
             ))}
@@ -1291,14 +1292,14 @@ export default function SearchPage() {
 
         {/* الدولة */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">{t('dashboard.player.search.filters.country')}</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">{'dashboard.player.search.filters.country'}</label>
           <select
             value={filters.country}
             onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            title={t('dashboard.player.search.filters.country')}
+            title={'dashboard.player.search.filters.country'}
           >
-            <option value="">{t('dashboard.player.search.filters.allCountries')}</option>
+            <option value="">{'dashboard.player.search.filters.allCountries'}</option>
             {COUNTRIES.map(country => (
               <option key={country} value={country}>{country}</option>
             ))}
@@ -1307,7 +1308,7 @@ export default function SearchPage() {
 
         {/* التقييم الأدنى */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">{t('dashboard.player.search.filters.minRating')}</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">{'dashboard.player.search.filters.minRating'}</label>
           <div className="flex gap-2">
             {[0, 3, 3.5, 4, 4.5].map(rating => (
               <Button
@@ -1316,7 +1317,7 @@ export default function SearchPage() {
                 size="sm"
                 onClick={() => setFilters(prev => ({ ...prev, minRating: rating }))}
               >
-                {rating > 0 ? `${rating}+` : t('dashboard.player.search.filters.all')}
+                {rating > 0 ? `${rating}+` : 'dashboard.player.search.filters.all'}
               </Button>
             ))}
           </div>
@@ -1324,7 +1325,7 @@ export default function SearchPage() {
 
         {/* خيارات إضافية */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">{t('dashboard.player.search.filters.additionalOptions')}</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">{'dashboard.player.search.filters.additionalOptions'}</label>
           <div className="space-y-2">
             <label className="flex items-center gap-2">
               <input
@@ -1336,7 +1337,7 @@ export default function SearchPage() {
                 }))}
                 className="rounded border-gray-300 text-blue-600"
               />
-              <span className="text-sm">{t('dashboard.player.search.filters.verifiedOnly')}</span>
+              <span className="text-sm">{'dashboard.player.search.filters.verifiedOnly'}</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -1348,7 +1349,7 @@ export default function SearchPage() {
                 }))}
                 className="rounded border-gray-300 text-blue-600"
               />
-              <span className="text-sm">{t('dashboard.player.search.filters.premiumOnly')}</span>
+              <span className="text-sm">{'dashboard.player.search.filters.premiumOnly'}</span>
             </label>
           </div>
         </div>
@@ -1359,7 +1360,7 @@ export default function SearchPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* أهداف اللاعب */}
           <div>
-            <label className="block text-sm font-medium mb-3 text-gray-700">{t('dashboard.player.search.filters.playerGoals')}</label>
+            <label className="block text-sm font-medium mb-3 text-gray-700">{'dashboard.player.search.filters.playerGoals'}</label>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {[
                 'europeanLeague',
@@ -1418,7 +1419,7 @@ export default function SearchPage() {
                     }}
                     className="rounded border-gray-300 text-blue-600"
                   />
-                  <span className="text-sm">{t(`dashboard.player.search.filters.goals.${goal}`)}</span>
+                  <span className="text-sm">{'dashboard.player.search.filters.goals.${goal}'}</span>
                 </label>
               ))}
             </div>
@@ -1426,7 +1427,7 @@ export default function SearchPage() {
 
           {/* الخدمات المطلوبة */}
           <div>
-            <label className="block text-sm font-medium mb-3 text-gray-700">{t('dashboard.player.search.filters.services')}</label>
+            <label className="block text-sm font-medium mb-3 text-gray-700">{'dashboard.player.search.filters.services'}</label>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {[
                 'playerTraining',
@@ -1461,7 +1462,7 @@ export default function SearchPage() {
                     }}
                     className="rounded border-gray-300 text-blue-600"
                   />
-                  <span className="text-sm">{t(`dashboard.player.search.filters.services.${service}`)}</span>
+                  <span className="text-sm">{'dashboard.player.search.filters.services.${service}'}</span>
                 </label>
               ))}
             </div>
@@ -1471,14 +1472,14 @@ export default function SearchPage() {
 
       {/* ترتيب النتائج */}
       <div className="mt-4 pt-4 border-t border-gray-200">
-        <label className="block text-sm font-medium mb-2 text-gray-700">{t('dashboard.player.search.filters.sortResults')}</label>
+        <label className="block text-sm font-medium mb-2 text-gray-700">{'dashboard.player.search.filters.sortResults'}</label>
         <div className="flex flex-wrap gap-2">
           {[
-            { key: 'relevance', label: t('dashboard.player.search.sortOptions.relevance') },
-            { key: 'rating', label: t('dashboard.player.search.sortOptions.highestRated') },
-            { key: 'followers', label: t('dashboard.player.search.sortOptions.mostFollowed') },
-            { key: 'recent', label: t('dashboard.player.search.sortOptions.newest') },
-            { key: 'alphabetical', label: t('dashboard.player.search.sortOptions.alphabetical') }
+            { key: 'relevance', label: 'dashboard.player.search.sortOptions.relevance' },
+            { key: 'rating', label: 'dashboard.player.search.sortOptions.highestRated' },
+            { key: 'followers', label: 'dashboard.player.search.sortOptions.mostFollowed' },
+            { key: 'recent', label: 'dashboard.player.search.sortOptions.newest' },
+            { key: 'alphabetical', label: 'dashboard.player.search.sortOptions.alphabetical' }
           ].map(sort => (
             <Button
               key={sort.key}
@@ -1495,7 +1496,7 @@ export default function SearchPage() {
       {/* أزرار التحكم */}
       <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
         <div className="text-sm text-gray-600">
-          {totalResults} {t('dashboard.player.search.resultsFound')}
+          {totalResults} {'dashboard.player.search.resultsFound'}
         </div>
         <Button
           variant="outline"
@@ -1503,7 +1504,7 @@ export default function SearchPage() {
           className="flex items-center gap-2"
         >
           <Filter className="w-4 h-4" />
-          {t('dashboard.player.search.resetFilters')}
+          {'dashboard.player.search.resetFilters'}
         </Button>
       </div>
     </Card>
@@ -1565,7 +1566,7 @@ export default function SearchPage() {
               <div className="flex items-center gap-2 mb-2 group-hover:gap-3 transition-all duration-300">
                 <h3 className="font-bold text-xl text-gray-900 truncate group-hover:text-blue-600 transition-colors duration-300">{entity.name}</h3>
                 <Badge variant="secondary" className={`${entityType.color} text-white flex-shrink-0 group-hover:scale-105 transition-transform duration-300`}>
-                  {t(`dashboard.player.search.entityTypes.${entity.type}`)}
+                  {'dashboard.player.search.entityTypes.${entity.type}'}
                 </Badge>
               </div>
               
@@ -1591,7 +1592,7 @@ export default function SearchPage() {
               {entity.established && (
                 <div className="flex items-center gap-1 text-sm text-gray-500 group-hover:text-green-600 transition-colors duration-300 group-hover:gap-2">
                   <Calendar className="w-4 h-4 flex-shrink-0 group-hover:scale-110 transition-transform duration-200" />
-                  <span>{t('dashboard.player.search.established')}: {entity.established}</span>
+                  <span>{'dashboard.player.search.established'}: {entity.established}</span>
                 </div>
               )}
             </div>
@@ -1605,7 +1606,7 @@ export default function SearchPage() {
           {/* الخدمات */}
           {entity.services && entity.services.length > 0 && (
             <div className="mb-4 group-hover:scale-105 transition-transform duration-300">
-              <h4 className="font-semibold text-sm text-gray-700 mb-2 group-hover:text-gray-800 transition-colors duration-300">{t('dashboard.player.search.services.title')}</h4>
+              <h4 className="font-semibold text-sm text-gray-700 mb-2 group-hover:text-gray-800 transition-colors duration-300">{'dashboard.player.search.services.title'}</h4>
               <div className="flex flex-wrap gap-1 group-hover:gap-2 transition-all duration-300">
                 {entity.services.slice(0, 3).map((service, index) => (
                   <Badge key={index} variant="outline" className="text-xs group-hover:scale-105 transition-transform duration-300">
@@ -1614,7 +1615,7 @@ export default function SearchPage() {
                 ))}
                 {entity.services.length > 3 && (
                   <Badge variant="outline" className="text-xs group-hover:scale-105 transition-transform duration-300">
-                    +{entity.services.length - 3} {t('dashboard.player.search.more')}
+                    +{entity.services.length - 3} {'dashboard.player.search.more'}
                   </Badge>
                 )}
               </div>
@@ -1633,7 +1634,7 @@ export default function SearchPage() {
               ) : (
                 <Eye className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
               )}
-              {t('dashboard.player.search.actions.viewProfile')}
+              {'dashboard.player.search.actions.viewProfile'}
             </Button>
             
             <div className="flex gap-2 transition-all duration-300 hover:gap-3 group-hover:gap-4 group-hover:scale-105">
@@ -1656,22 +1657,22 @@ export default function SearchPage() {
                 {actionLoading === `follow-${entity.id}` ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {t('dashboard.player.search.actions.processing')}
+                    {'dashboard.player.search.actions.processing'}
                   </>
                 ) : actionSuccess === `follow-${entity.id}` ? (
                   <>
                     <Check className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
-                    {entity.isFollowing ? t('dashboard.player.search.actions.following') : t('dashboard.player.search.actions.follow')}
+                    {entity.isFollowing ? 'dashboard.player.search.actions.following' : 'dashboard.player.search.actions.follow'}
                   </>
                 ) : entity.isFollowing ? (
                   <>
                     <Check className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
-                    {t('dashboard.player.search.actions.following')}
+                    {'dashboard.player.search.actions.following'}
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
-                    {t('dashboard.player.search.actions.follow')}
+                    {'dashboard.player.search.actions.follow'}
                   </>
                 )}
               </Button>
@@ -1684,7 +1685,7 @@ export default function SearchPage() {
                 targetUserName={entity.name}
                 targetUserType={entity.type}
                 organizationName={entity?.specialization}
-                buttonText={t('dashboard.player.search.actions.message')}
+                buttonText={'dashboard.player.search.actions.message'}
                 buttonVariant="outline"
                 buttonSize="sm"
                 className={`flex-1 text-white border-0 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group-hover:shadow-2xl ${
@@ -1723,13 +1724,13 @@ export default function SearchPage() {
         <div className="text-center mb-8">
           <div className="flex justify-between items-center mb-4">
             <div></div>
-            <LanguageSwitcher variant="simple" />
+                            {/* تم إلغاء مبدل اللغة مؤقتاً */}
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            {t('dashboard.player.search.title')}
+            {'dashboard.player.search.title'}
           </h1>
           <p className="text-gray-600 text-lg mb-8">
-            {t('dashboard.player.search.subtitle')}
+            {'dashboard.player.search.subtitle'}
           </p>
 
           {/* شريط البحث */}
@@ -1738,7 +1739,7 @@ export default function SearchPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 type="text"
-                placeholder={t('dashboard.player.search.searchPlaceholder')}
+                placeholder={'dashboard.player.search.searchPlaceholder'}
                 value={filters.searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10 pr-4 py-3 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-xl shadow-lg"
@@ -1754,7 +1755,7 @@ export default function SearchPage() {
               onClick={() => handleFilterChange({ type: 'all' })}
               className="rounded-full"
             >
-              {t('dashboard.player.search.filters.allTypes')}
+              {'dashboard.player.search.filters.allTypes'}
             </Button>
             {Object.entries(ENTITY_TYPES).map(([key, value]) => (
               <Button
@@ -1764,7 +1765,7 @@ export default function SearchPage() {
                 onClick={() => handleFilterChange({ type: key as any })}
                 className="rounded-full"
               >
-                {t(`dashboard.player.search.entityTypes.${key}`)}
+                {'dashboard.player.search.entityTypes.${key}'}
               </Button>
             ))}
           </div>
@@ -1779,13 +1780,13 @@ export default function SearchPage() {
               className="flex items-center gap-2"
             >
               <Filter className="w-4 h-4" />
-              {t('dashboard.player.search.advancedFilters')}
+              {'dashboard.player.search.advancedFilters'}
             </Button>
           </div>
 
           {/* عدد النتائج */}
           <div className="text-sm text-gray-600">
-            {totalResults > 0 && `${t('dashboard.player.search.resultsCount')} ${totalResults}`}
+            {totalResults > 0 && `${'dashboard.player.search.resultsCount'} ${totalResults}`}
           </div>
         </div>
 
@@ -1815,15 +1816,15 @@ export default function SearchPage() {
           <Card className="p-12 text-center">
             <div className="flex flex-col items-center gap-4">
               <Search size={64} className="text-gray-300" />
-              <h3 className="text-2xl font-bold text-gray-900">{t('dashboard.player.search.noResults.title')}</h3>
+              <h3 className="text-2xl font-bold text-gray-900">{'dashboard.player.search.noResults.title'}</h3>
               <p className="text-gray-500 max-w-md">
-                {t('dashboard.player.search.noResults.description')}
+                {'dashboard.player.search.noResults.description'}
               </p>
               <Button
                 onClick={handleResetFilters}
                 className="mt-4"
               >
-                {t('dashboard.player.search.noResults.resetFilters')}
+                {'dashboard.player.search.noResults.resetFilters'}
               </Button>
             </div>
           </Card>
@@ -1846,11 +1847,11 @@ export default function SearchPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      {t('dashboard.player.search.loadingMore')}
+                      {'dashboard.player.search.loadingMore'}
                     </>
                   ) : (
                     <>
-                      {t('dashboard.player.search.loadMore')}
+                      {'dashboard.player.search.loadMore'}
                       <ArrowRight className="w-4 h-4 mr-2" />
                     </>
                   )}

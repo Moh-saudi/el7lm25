@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuth } from '@/lib/firebase/auth-provider';
-import { useTranslation } from '@/lib/translations/simple-context';
 import dynamic from 'next/dynamic';
 
 const UnifiedDashboardLayout = dynamic(() => import('@/components/layout/UnifiedDashboardLayout'), {
@@ -11,7 +10,9 @@ const UnifiedDashboardLayout = dynamic(() => import('@/components/layout/Unified
 
 export default function TestAllAccountsPage() {
   const { user, userData, loading } = useAuth();
-  const { t } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
 
   if (loading) {
     return (

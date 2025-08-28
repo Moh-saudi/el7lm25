@@ -118,7 +118,7 @@ export default function MarketerVideosPage() {
           فيديوهات اللاعبين
         </h1>
         <p className="text-gray-600">
-          إدارة وعرض فيديوهات اللاعبين التابعين لحسابك
+          إدارة وعرض فيديوهات اللاعبين التابعين لوكالتك
         </p>
       </div>
 

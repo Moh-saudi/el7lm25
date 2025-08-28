@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth-provider';
-import { useTranslation } from '@/lib/translations/simple-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,7 @@ const PlayerModernSidebar: React.FC<PlayerModernSidebarProps> = ({
   const router = useRouter();
   const pathname = usePathname();
   const { user, userData, logout } = useAuth();
-  const { t } = useTranslation();
+
   const [activeItem, setActiveItem] = useState('');
 
   // إضافة console.log للتأكد من عمل القائمة الجانبية

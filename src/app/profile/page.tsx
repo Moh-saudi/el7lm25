@@ -4,7 +4,6 @@ import { PlayerFormData } from '@/types/player';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
-import { useTranslation } from '@/lib/translations/simple-context';
 
 // دالة حساب العمر
 const calculateAge = (birthDate: any) => {
@@ -36,7 +35,9 @@ const calculateAge = (birthDate: any) => {
 };
 
 export default function PlayerProfile() {
-  const { t } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
   const [player, setPlayer] = useState<PlayerFormData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

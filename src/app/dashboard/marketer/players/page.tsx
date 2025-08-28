@@ -94,10 +94,10 @@ export default function MarketerPlayersPage() {
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          اللاعبين التابعين
+          إدارة اللاعبين
         </h1>
         <p className="text-gray-600">
-          إدارة اللاعبين التابعين لحسابك
+          إدارة اللاعبين التابعين لوكالتك
         </p>
       </div>
 

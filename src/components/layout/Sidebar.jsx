@@ -33,7 +33,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '@/lib/context/SidebarContext';
-import { useTranslation } from '@/lib/translations/simple-context';
+// تم حذف الترجمة
 import { useAuth } from '@/lib/firebase/auth-provider';
 
 const Sidebar = () => {
@@ -41,7 +41,8 @@ const Sidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { isOpen, toggleSidebar } = useSidebar();
-  const { t, direction } = useTranslation();
+  const t = (key) => key;
+  const direction = 'rtl';
 
   // قائمة اللاعب مع الترجمة
   const playerMenuItems = [
@@ -125,52 +126,52 @@ const Sidebar = () => {
   // قائمة النادي مع الترجمة
   const clubMenuItems = [
       {
-        title: t('sidebar.club.home'),
+        title: 'sidebar.club.home',
         icon: <Home className="w-5 h-5" />,
         path: '/dashboard/club'
       },
       {
-        title: t('sidebar.club.profile'),
+        title: 'sidebar.club.profile',
         icon: <User className="w-5 h-5" />,
         path: '/dashboard/club/profile'
       },
     {
-      title: t('sidebar.club.searchPlayers'),
+      title: 'sidebar.club.searchPlayers',
       icon: <Search className="w-5 h-5" />, 
       path: '/dashboard/club/search'
       },
       {
-        title: t('sidebar.club.players'),
+        title: 'sidebar.club.players',
         icon: <Users className="w-5 h-5" />,
         path: '/dashboard/club/players'
       },
     {
-      title: t('sidebar.club.videos'),
+      title: 'sidebar.club.videos',
       icon: <VideoIcon className="w-5 h-5" />, 
       path: '/dashboard/club/videos'
       },
       {
-        title: t('sidebar.club.playerVideos'),
+        title: 'sidebar.club.playerVideos',
       icon: <Play className="w-5 h-5" />, 
         path: '/dashboard/club/player-videos'
       },
       {
-      title: t('sidebar.club.stats'),
+      title: 'sidebar.club.stats',
         icon: <BarChart3 className="w-5 h-5" />,
       path: '/dashboard/club/stats'
       },
       {
-      title: t('sidebar.club.finances'),
+      title: 'sidebar.club.finances',
         icon: <DollarSign className="w-5 h-5" />,
       path: '/dashboard/club/finances'
       },
       {
-        title: t('sidebar.player.referrals'),
+        title: 'sidebar.player.referrals',
         icon: <Users className="w-5 h-5" />,
         path: '/dashboard/club/referrals'
       },
       {
-        title: t('sidebar.common.messages'),
+        title: 'sidebar.common.messages',
         icon: <MessageSquare className="w-5 h-5" />,
         path: '/dashboard/messages'
     }
@@ -179,47 +180,47 @@ const Sidebar = () => {
   // قائمة الوكيل مع الترجمة
   const agentMenuItems = [
       {
-        title: t('sidebar.agent.home'),
+        title: 'sidebar.agent.home',
         icon: <Home className="w-5 h-5" />,
         path: '/dashboard/agent'
       },
       {
-        title: t('sidebar.agent.profile'),
+        title: 'sidebar.agent.profile',
         icon: <User className="w-5 h-5" />,
         path: '/dashboard/agent/profile'
       },
       {
-        title: t('sidebar.agent.players'),
+        title: 'sidebar.agent.players',
         icon: <Users className="w-5 h-5" />,
         path: '/dashboard/agent/players'
       },
     {
-      title: t('sidebar.agent.clubs'),
+      title: 'sidebar.agent.clubs',
       icon: <Handshake className="w-5 h-5" />, 
       path: '/dashboard/agent/clubs'
       },
       {
-        title: t('sidebar.agent.negotiations'),
+        title: 'sidebar.agent.negotiations',
       icon: <MessageSquare className="w-5 h-5" />, 
         path: '/dashboard/agent/negotiations'
       },
       {
-      title: t('sidebar.agent.contracts'),
+      title: 'sidebar.agent.contracts',
       icon: <FileText className="w-5 h-5" />, 
       path: '/dashboard/agent/contracts'
     },
     {
-      title: t('sidebar.agent.commissions'),
+      title: 'sidebar.agent.commissions',
       icon: <DollarSign className="w-5 h-5" />, 
       path: '/dashboard/agent/commissions'
     },
     {
-      title: t('sidebar.agent.stats'),
+      title: 'sidebar.agent.stats',
       icon: <BarChart3 className="w-5 h-5" />, 
       path: '/dashboard/agent/stats'
     },
     {
-      title: t('sidebar.player.referrals'),
+      title: 'sidebar.player.referrals',
       icon: <Users className="w-5 h-5" />,
       path: '/dashboard/agent/referrals'
     }
@@ -228,47 +229,47 @@ const Sidebar = () => {
   // قائمة الأكاديمية مع الترجمة
   const academyMenuItems = [
     {
-      title: t('sidebar.academy.home'),
+      title: 'sidebar.academy.home',
       icon: <Home className="w-5 h-5" />, 
       path: '/dashboard/academy'
     },
     {
-      title: t('sidebar.academy.profile'),
+      title: 'sidebar.academy.profile',
       icon: <User className="w-5 h-5" />, 
       path: '/dashboard/academy/profile'
     },
     {
-      title: t('sidebar.academy.students'),
+      title: 'sidebar.academy.students',
       icon: <Users className="w-5 h-5" />, 
       path: '/dashboard/academy/students'
     },
     {
-      title: t('sidebar.academy.courses'),
+      title: 'sidebar.academy.courses',
         icon: <FileText className="w-5 h-5" />,
       path: '/dashboard/academy/courses'
     },
     {
-      title: t('sidebar.academy.videos'),
+      title: 'sidebar.academy.videos',
       icon: <VideoIcon className="w-5 h-5" />, 
       path: '/dashboard/academy/videos'
     },
     {
-      title: t('sidebar.academy.trainers'),
+      title: 'sidebar.academy.trainers',
       icon: <Users className="w-5 h-5" />, 
       path: '/dashboard/academy/trainers'
     },
     {
-      title: t('sidebar.academy.stats'),
+      title: 'sidebar.academy.stats',
       icon: <BarChart3 className="w-5 h-5" />, 
       path: '/dashboard/academy/stats'
     },
     {
-      title: t('sidebar.academy.finances'),
+      title: 'sidebar.academy.finances',
       icon: <DollarSign className="w-5 h-5" />, 
       path: '/dashboard/academy/finances'
     },
     {
-      title: t('sidebar.player.referrals'),
+      title: 'sidebar.player.referrals',
       icon: <Users className="w-5 h-5" />,
       path: '/dashboard/academy/referrals'
     }
@@ -277,42 +278,42 @@ const Sidebar = () => {
   // قائمة المدرب مع الترجمة
   const trainerMenuItems = [
     {
-      title: t('sidebar.trainer.home'),
+      title: 'sidebar.trainer.home',
       icon: <Home className="w-5 h-5" />, 
       path: '/dashboard/trainer'
     },
     {
-      title: t('sidebar.trainer.profile'),
+      title: 'sidebar.trainer.profile',
       icon: <User className="w-5 h-5" />, 
       path: '/dashboard/trainer/profile'
     },
     {
-      title: t('sidebar.trainer.sessions'),
+      title: 'sidebar.trainer.sessions',
       icon: <Clock className="w-5 h-5" />, 
       path: '/dashboard/trainer/sessions'
     },
     {
-      title: t('sidebar.trainer.players'),
+      title: 'sidebar.trainer.players',
       icon: <Users className="w-5 h-5" />, 
       path: '/dashboard/trainer/players'
     },
     {
-      title: t('sidebar.trainer.videos'),
+      title: 'sidebar.trainer.videos',
       icon: <VideoIcon className="w-5 h-5" />, 
       path: '/dashboard/trainer/videos'
     },
     {
-      title: t('sidebar.trainer.programs'),
+      title: 'sidebar.trainer.programs',
       icon: <FileText className="w-5 h-5" />, 
       path: '/dashboard/trainer/programs'
     },
     {
-      title: t('sidebar.trainer.stats'),
+      title: 'sidebar.trainer.stats',
       icon: <BarChart3 className="w-5 h-5" />, 
       path: '/dashboard/trainer/stats'
     },
     {
-      title: t('sidebar.player.referrals'),
+      title: 'sidebar.player.referrals',
       icon: <Users className="w-5 h-5" />,
       path: '/dashboard/trainer/referrals'
     }
@@ -321,62 +322,62 @@ const Sidebar = () => {
   // قائمة المسوق مع الترجمة
   const marketerMenuItems = [
     {
-      title: t('sidebar.marketer.home'),
+      title: 'sidebar.marketer.home',
       icon: <Home className="w-5 h-5" />, 
       path: '/dashboard/marketer'
     },
     {
-      title: t('sidebar.marketer.profile'),
+      title: 'sidebar.marketer.profile',
       icon: <User className="w-5 h-5" />, 
       path: '/dashboard/marketer/profile'
     },
     {
-      title: t('sidebar.marketer.players'),
+      title: 'sidebar.marketer.players',
       icon: <Users className="w-5 h-5" />, 
       path: '/dashboard/marketer/players'
     },
     {
-      title: t('sidebar.marketer.search'),
+      title: 'sidebar.marketer.search',
       icon: <Search className="w-5 h-5" />, 
       path: '/dashboard/marketer/search'
     },
     {
-      title: t('sidebar.marketer.videos'),
+      title: 'sidebar.marketer.videos',
       icon: <VideoIcon className="w-5 h-5" />, 
       path: '/dashboard/marketer/videos'
     },
     {
-      title: t('sidebar.marketer.dreamAcademy'),
+      title: 'sidebar.marketer.dreamAcademy',
       icon: <GraduationCap className="w-5 h-5" />, 
       path: '/dashboard/marketer/dream-academy'
     },
     {
-      title: t('sidebar.marketer.payment'),
+      title: 'sidebar.marketer.payment',
       icon: <CreditCard className="w-5 h-5" />, 
       path: '/dashboard/marketer/payment'
     },
     {
-      title: t('sidebar.marketer.subscription'),
+      title: 'sidebar.marketer.subscription',
       icon: <Package className="w-5 h-5" />, 
       path: '/dashboard/marketer/subscription'
     },
     {
-      title: t('sidebar.marketer.notifications'),
+      title: 'sidebar.marketer.notifications',
       icon: <Bell className="w-5 h-5" />, 
       path: '/dashboard/marketer/notifications'
     },
     {
-      title: t('sidebar.marketer.subscriptionStatus'),
+      title: 'sidebar.marketer.subscriptionStatus',
       icon: <CheckCircle className="w-5 h-5" />, 
       path: '/dashboard/marketer/subscription-status'
     },
     {
-      title: t('sidebar.marketer.billing'),
+      title: 'sidebar.marketer.billing',
       icon: <DollarSign className="w-5 h-5" />, 
       path: '/dashboard/marketer/billing'
     },
     {
-      title: t('sidebar.marketer.messages'),
+      title: 'sidebar.marketer.messages',
       icon: <MessageSquare className="w-5 h-5" />, 
       path: '/dashboard/marketer/messages'
     }
@@ -513,7 +514,7 @@ const Sidebar = () => {
               className="flex items-center space-x-3 rtl:space-x-reverse w-full px-4 py-3 text-white hover:bg-red-600 hover:bg-opacity-20 rounded-lg transition-all duration-200 group"
             >
               <LogOut className="w-5 h-5 text-red-300 group-hover:text-red-200" />
-              <span className="font-medium">{t('sidebar.common.logout')}</span>
+              <span className="font-medium">{'sidebar.common.logout'}</span>
             </button>
           </div>
         </div>

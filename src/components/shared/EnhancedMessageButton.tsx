@@ -54,10 +54,11 @@ export default function EnhancedMessageButton() {
     if (!user?.uid) return;
 
     const messagesRef = collection(db, 'messages');
+    
+    // استخدام استعلام بدون ترتيب لتجنب مشاكل Firebase Indexing
     const q = query(
       messagesRef,
       where('receiverId', '==', user.uid),
-      orderBy('timestamp', 'desc'),
       limit(30)
     );
 
@@ -112,8 +113,11 @@ export default function EnhancedMessageButton() {
         }
       });
 
+      // ترتيب البيانات يدوياً لتجنب مشاكل Firebase Indexing
+      const sortedMsgs = msgs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
       // إضافة بيانات تجريبية إذا لم تكن هناك رسائل
-      if (msgs.length === 0 && user.accountType === 'trainer') {
+      if (sortedMsgs.length === 0 && user.accountType === 'trainer') {
         const demoMessages: Message[] = [
           {
             id: 'demo-msg-1',
@@ -150,7 +154,7 @@ export default function EnhancedMessageButton() {
           }
         ];
 
-        msgs.push(...demoMessages);
+        sortedMsgs.push(...demoMessages);
         newStats.total = 3;
         newStats.unread = 2;
         newStats.sent = 1;
@@ -159,7 +163,7 @@ export default function EnhancedMessageButton() {
         newStats.today = 2;
       }
 
-      setMessages(msgs);
+      setMessages(sortedMsgs);
       setStats(newStats);
       setLoading(false);
     }, (error) => {

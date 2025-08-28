@@ -1,16 +1,15 @@
 'use client';
 
-import { useTranslation } from '@/lib/translations/simple-context';
-import ResponsiveMessageCenter from '@/components/messaging/ResponsiveMessageCenter';
+import WorkingMessageCenter from '@/components/messaging/WorkingMessageCenter';
 import ClientOnlyToaster from '@/components/ClientOnlyToaster';
 
 export default function SharedMessagesPage() {
-  const { t } = useTranslation();
-  
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       <ClientOnlyToaster position="top-center" />
-      <ResponsiveMessageCenter />
-    </>
+      <div className="h-full">
+        <WorkingMessageCenter />
+      </div>
+    </div>
   );
 } 

@@ -7,8 +7,7 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { useAuth } from '@/lib/firebase/auth-provider';
-import { useTranslation } from '@/lib/translations/simple-context';
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+// تم حذف الترجمة
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -83,7 +82,15 @@ function normalizePhone(countryCode: string, phone: string) {
 export default function RegisterPage() {
   const router = useRouter();
   const { register: registerUser, loginWithGoogle, userData } = useAuth();
-  const { t, language, direction } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
+  const [isClient, setIsClient] = useState(false);
+
+  // التأكد من أننا على العميل
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   
   const [formData, setFormData] = useState({
     phone: '',
@@ -147,12 +154,12 @@ export default function RegisterPage() {
   };
 
   const accountTypes = [
-    { value: 'player', label: t('accountTypes.player'), icon: Star },
-    { value: 'club', label: t('accountTypes.club'), icon: Home },
-    { value: 'agent', label: t('accountTypes.agent'), icon: UserCheck },
-    { value: 'academy', label: t('accountTypes.academy'), icon: Users },
-    { value: 'trainer', label: t('accountTypes.trainer'), icon: User },
-    { value: 'marketer', label: t('accountTypes.marketer'), icon: Users }
+    { value: 'player', label: 'لاعب', icon: Star },
+    { value: 'club', label: 'نادي', icon: Home },
+    { value: 'agent', label: 'وكيل', icon: UserCheck },
+    { value: 'academy', label: 'أكاديمية', icon: Users },
+    { value: 'trainer', label: 'مدرب', icon: User },
+    { value: 'marketer', label: 'مسوق', icon: Users }
   ];
 
   // عند تحميل الصفحة: تحقق من وجود رقم هاتف معلق في localStorage
@@ -316,7 +323,7 @@ export default function RegisterPage() {
     setPendingPhone(null);
     localStorage.removeItem('pendingPhoneVerification');
     localStorage.removeItem('pendingRegistration');
-    setError(t('register.messages.verificationCancelled'));
+          setError('تم إلغاء التحقق من الهاتف.');
   };
 
   // دالة تخطي OTP للعملاء الجدد
@@ -465,26 +472,26 @@ export default function RegisterPage() {
   };
 
   return (
-        <div className={`flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-600 to-purple-700 ${direction === 'rtl' ? 'dir-rtl' : 'dir-ltr'}`}>
-        <div className="w-full max-w-xl overflow-hidden bg-white shadow-2xl rounded-xl">
+        <div className={`flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-600 to-purple-700 ${isClient && isRTL ? 'dir-rtl' : 'dir-ltr'}`}>
+        <div className="overflow-hidden w-full max-w-xl bg-white rounded-xl shadow-2xl">
           {/* Header Section */}
           <div className="p-6 text-center text-white bg-gradient-to-r from-blue-500 to-purple-600">
             <div className="flex justify-center mb-4">
               <Shield className="w-12 h-12" />
             </div>
-            <h1 className="mb-2 text-3xl font-bold">{t('register.title')}</h1>
-            <p className="text-blue-100">{t('register.subtitle')}</p>
+                            <h1 className="mb-2 text-3xl font-bold">إنشاء حساب جديد</h1>
+                <p className="text-blue-100">انضم إلى منصة El7lm وابدأ رحلتك</p>
             
             {/* Language Switcher */}
             <div className="flex justify-center mt-4">
-              <LanguageSwitcher variant="simple" />
+              {/* تم إلغاء مبدل اللغة مؤقتاً */}
             </div>
           </div>
 
           <form onSubmit={handleRegister} className="p-8 space-y-6">
             {/* Error and Success Messages */}
             {error && (
-              <div className="flex items-start gap-2 p-4 text-red-700 rounded-lg bg-red-50">
+              <div className="flex gap-2 items-start p-4 text-red-700 bg-red-50 rounded-lg">
                 <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   {typeof error === 'string' ? <p>{error}</p> : error}
@@ -492,7 +499,7 @@ export default function RegisterPage() {
               </div>
             )}
             {message && (
-              <div className="flex items-center gap-2 p-4 text-green-700 rounded-lg bg-green-50">
+              <div className="flex gap-2 items-center p-4 text-green-700 bg-green-50 rounded-lg">
                 <CheckCircle className="w-5 h-5" />
                 <p>{message}</p>
               </div>
@@ -527,37 +534,37 @@ export default function RegisterPage() {
             <div className="space-y-4">
               {/* Full Name Input */}
               <div>
-                <label className="block mb-2 text-gray-700">{t('register.form.fullName')}</label>
+                <label className="block mb-2 text-gray-700">الاسم الكامل</label>
                 <div className="relative">
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full py-3 pl-4 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder={t('register.form.enterFullName')}
+                    className="py-3 pr-10 pl-4 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="أدخل اسمك الكامل"
                     required
                     maxLength={50}
                   />
-                  <User className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 right-3 top-1/2" />
+                  <User className="absolute right-3 top-1/2 w-5 h-5 text-gray-400 -translate-y-1/2" />
                 </div>
               </div>
 
               {/* Country Selection */}
               <div>
-                <label className="block mb-2 text-gray-700">{t('register.form.country')}</label>
+                <label className="block mb-2 text-gray-700">البلد</label>
                 <div className="relative">
                   <select
                     name="country"
                     value={formData.country}
                     onChange={(e) => handleCountryChange(e.target.value)}
-                    className="w-full py-3 pl-4 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="py-3 pr-10 pl-4 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
-                    <option value="">{t('register.form.selectCountry')}</option>
+                    <option value="">اختر البلد</option>
                     {countries.map((country) => (
                       <option key={country.code} value={country.name}>
-                        {country.name} ({country.code}) - {country.phoneLength} {t('register.form.digits')}
+                        {country.name} ({country.code}) - {country.phoneLength} أرقام
                       </option>
                     ))}
                   </select>
@@ -569,14 +576,14 @@ export default function RegisterPage() {
                 <label className="block mb-2 text-gray-700">
                   رقم الهاتف
                   {selectedCountry && (
-                    <span className="text-sm text-gray-500 ml-2">
+                    <span className="ml-2 text-sm text-gray-500">
                       ({selectedCountry.phoneLength} أرقام)
                     </span>
                   )}
                 </label>
                 <div className="relative">
                   <div className="flex">
-                    <div className="flex items-center px-3 border border-r-0 border-gray-300 rounded-l-lg bg-gray-50">
+                    <div className="flex items-center px-3 bg-gray-50 rounded-l-lg border border-r-0 border-gray-300">
                       {formData.countryCode || '+966'}
                     </div>
                     <input
@@ -590,18 +597,18 @@ export default function RegisterPage() {
                       maxLength={selectedCountry?.phoneLength || 10}
                     />
                     {phoneCheckLoading ? (
-                      <Loader2 className="absolute w-5 h-5 text-blue-500 animate-spin right-2 top-1/2 -translate-y-1/2" />
+                      <Loader2 className="absolute right-2 top-1/2 w-5 h-5 text-blue-500 animate-spin -translate-y-1/2" />
                     ) : phoneExistsError ? (
-                      <X className="absolute w-5 h-5 text-red-500 right-2 top-1/2 -translate-y-1/2" />
+                      <X className="absolute right-2 top-1/2 w-5 h-5 text-red-500 -translate-y-1/2" />
                     ) : formData.phone.length >= 6 && !phoneExistsError ? (
-                      <Check className="absolute w-5 h-5 text-green-500 right-2 top-1/2 -translate-y-1/2" />
+                      <Check className="absolute right-2 top-1/2 w-5 h-5 text-green-500 -translate-y-1/2" />
                     ) : (
-                      <Phone className="absolute w-5 h-5 text-gray-400 right-2 top-1/2 -translate-y-1/2" />
+                      <Phone className="absolute right-2 top-1/2 w-5 h-5 text-gray-400 -translate-y-1/2" />
                     )}
                   </div>
                   {/* توضيح خاص لكل دولة */}
                   {selectedCountry && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="mt-1 text-xs text-gray-500">
                       {selectedCountry.name === 'مصر' ? '10 أرقام بدون الصفر في البداية' :
                        selectedCountry.name === 'قطر' ? '8 أرقام بدون الصفر في البداية' :
                        selectedCountry.name === 'السعودية' ? '9 أرقام بدون الصفر في البداية' :
@@ -609,30 +616,30 @@ export default function RegisterPage() {
                     </p>
                   )}
                   {phoneExistsError && (
-                    <p className="text-xs text-red-500 mt-1">{phoneExistsError}</p>
+                    <p className="mt-1 text-xs text-red-500">{phoneExistsError}</p>
                   )}
                 </div>
               </div>
 
               {/* Password Input */}
               <div>
-                <label className="block mb-2 text-gray-700">{t('register.form.password')}</label>
+                <label className="block mb-2 text-gray-700">كلمة المرور</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full py-3 pl-12 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="py-3 pr-10 pl-12 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="8 أحرف على الأقل"
                     required
                     minLength={8}
                   />
-                  <Lock className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 right-3 top-1/2" />
+                  <Lock className="absolute right-3 top-1/2 w-5 h-5 text-gray-400 -translate-y-1/2" />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2 hover:text-gray-600"
+                    className="absolute left-3 top-1/2 text-gray-400 -translate-y-1/2 hover:text-gray-600"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -641,22 +648,22 @@ export default function RegisterPage() {
           
               {/* Confirm Password Input */}
               <div>
-                <label className="block mb-2 text-gray-700">{t('register.form.confirmPassword')}</label>
+                <label className="block mb-2 text-gray-700">تأكيد كلمة المرور</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="w-full py-3 pl-12 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={t('register.form.confirmPasswordPlaceholder')}
+                    className="py-3 pr-10 pl-12 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="أعد إدخال كلمة المرور"
                     required
                   />
-                  <Lock className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 right-3 top-1/2" />
+                  <Lock className="absolute right-3 top-1/2 w-5 h-5 text-gray-400 -translate-y-1/2" />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2 hover:text-gray-600"
+                    className="absolute left-3 top-1/2 text-gray-400 -translate-y-1/2 hover:text-gray-600"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -665,7 +672,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Terms and Submit */}
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2 items-center">
               <input
                 type="checkbox"
                 name="agreeToTerms"
@@ -673,7 +680,7 @@ export default function RegisterPage() {
                 onChange={handleInputChange}
                 className="w-4 h-4 text-blue-600 rounded"
               />
-              <span className="text-base text-gray-600">{t('register.form.agreeToTerms')}
+              <span className="text-base text-gray-600">أوافق على
                 <button type="button" className="ml-1 text-blue-600 hover:underline" onClick={() => setShowTerms(true)}>
                 الشروط والأحكام
                 </button>
@@ -697,22 +704,22 @@ export default function RegisterPage() {
               ) : (
                 <>
                 <Shield className="w-5 h-5" />
-                {t('register.form.register')}
+                تسجيل
                 </>
               )}
             </button>
 
             {/* Login Link */}
             {!showPhoneVerification && (
-            <div className="text-center text-gray-600 space-y-2">
+            <div className="space-y-2 text-center text-gray-600">
               <div>
-                {t('register.messages.alreadyHaveAccount')}{' '}
+                لديك حساب بالفعل؟{' '}
                 <button
                   type="button"
                   onClick={() => router.push('/auth/login')}
                   className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
                 >
-                  {t('register.messages.login')}
+                  تسجيل الدخول
                 </button>
               </div>
               <div>
@@ -721,7 +728,7 @@ export default function RegisterPage() {
                   onClick={() => router.push('/auth/forgot-password')}
                   className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
                 >
-                  {t('register.messages.forgotPassword')}
+                  نسيت كلمة المرور؟
                 </button>
               </div>
             </div>
@@ -734,28 +741,34 @@ export default function RegisterPage() {
           <AlertDialogContent className="max-w-3xl">
             <AlertDialogHeader>
               <AlertDialogTitle className="mb-4 text-2xl font-bold">
-                {t('register.terms.title')}
+                الشروط والأحكام
               </AlertDialogTitle>
             </AlertDialogHeader>
             <div className="space-y-4 text-gray-700 overflow-y-auto max-h-[60vh]">
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold">{t('register.terms.introduction.title')}</h3>
+                <h3 className="text-xl font-semibold">مقدمة</h3>
                 <div className="text-sm text-gray-600">
-                  {t('register.terms.introduction.content')}
+                  مرحباً بك في منصة El7lm. من خلال التسجيل في هذه المنصة، فإنك توافق على الشروط والأحكام التالية.
                 </div>
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold">{t('register.terms.registration.title')}</h3>
+                <h3 className="text-xl font-semibold">شروط التسجيل</h3>
               <div className="text-sm text-gray-600">
-                {t('register.terms.registration.items')}
+                • يجب أن تكون عمرك 18 عاماً أو أكثر<br/>
+                • يجب أن تقدم معلومات صحيحة ودقيقة<br/>
+                • يجب أن تحافظ على سرية كلمة المرور الخاصة بك<br/>
+                • يجب أن تستخدم المنصة لأغراض قانونية فقط
                 </div>
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold">{t('register.terms.privacy.title')}</h3>
+                <h3 className="text-xl font-semibold">سياسة الخصوصية</h3>
               <div className="text-sm text-gray-600">
-                {t('register.terms.privacy.items')}
+                • نحن نحترم خصوصيتك ونحمي بياناتك الشخصية<br/>
+                • لن نشارك معلوماتك مع أي طرف ثالث دون موافقتك<br/>
+                • نستخدم التشفير لحماية بياناتك<br/>
+                • يمكنك طلب حذف حسابك في أي وقت
                 </div>
               </div>
             </div>
@@ -764,29 +777,29 @@ export default function RegisterPage() {
 
       {/* OTP Verification Modal */}
       {showPhoneVerification && pendingPhone && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-lg w-full mx-4">
-            <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">
+        <div className="flex fixed inset-0 z-50 justify-center items-center bg-black bg-opacity-50">
+          <div className="p-8 mx-4 w-full max-w-lg bg-white rounded-xl">
+            <div className="mb-6 text-center">
+              <h2 className="mb-2 text-3xl font-bold text-gray-800">
                 التحقق من رقم الهاتف (معطل مؤقتاً)
               </h2>
-              <p className="text-gray-600 text-lg">
+              <p className="text-lg text-gray-600">
                 تم إنشاء الحساب بنجاح! التحقق من رقم الهاتف معطل مؤقتاً
               </p>
-              <p className="text-sm text-green-600 mt-2">
+              <p className="mt-2 text-sm text-green-600">
                 ✅ الحساب جاهز للاستخدام مباشرة
               </p>
               
               {/* زر تخطي التحقق للعملاء الجدد */}
-              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-800 mb-2">
+              <div className="p-3 mt-4 bg-green-50 rounded-lg border border-green-200">
+                <p className="mb-2 text-sm text-green-800">
                   ✅ <strong>التحقق معطل مؤقتاً:</strong>
                 </p>
                 <button
                   type="button"
                   onClick={handleSkipOTP}
                   disabled={loading}
-                  className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                  className="flex gap-2 justify-center items-center px-4 py-2 w-full font-semibold text-white bg-green-500 rounded-lg transition-colors duration-200 hover:bg-green-600 disabled:bg-green-300"
                 >
                   {loading ? (
                     <>
@@ -800,7 +813,7 @@ export default function RegisterPage() {
                     </>
                   )}
                 </button>
-                <p className="text-xs text-green-700 mt-2">
+                <p className="mt-2 text-xs text-green-700">
                   ⚡ التحقق من رقم الهاتف معطل مؤقتاً
                 </p>
               </div>
@@ -827,7 +840,7 @@ export default function RegisterPage() {
         onClose={handlePhoneVerificationClose}
               title="التحقق من رقم الهاتف"
               subtitle={`تم إرسال رمز التحقق إلى ${pendingPhone}`}
-              language={language}
+              language={locale}
               t={t}
             />
           </div>

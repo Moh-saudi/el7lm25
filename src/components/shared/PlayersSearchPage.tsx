@@ -1,615 +1,417 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, getDocs, query, orderBy, limit, doc, getDoc, where } from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase/config';
-import { useAuth } from '@/lib/firebase/auth-provider';
-import { secureConsole } from '@/lib/utils/secure-console';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Search, Eye, MessageSquare, Users, Sword, Shield, Building, Trophy, User, Briefcase } from 'lucide-react';
 import Image from 'next/image';
-import { Player } from '@/types/player';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Search, 
+  Filter, 
+  RefreshCw, 
+  Clock, 
+  Flag, 
+  CheckCircle, 
+  Target, 
+  Minimize2, 
+  Maximize2,
+  Eye,
+  User,
+  MapPin,
+  Sword,
+  Trophy,
+  Users
+} from 'lucide-react';
+import { collection, getDocs, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { useAuth } from '@/lib/firebase/auth-provider';
 import SendMessageButton from '@/components/messaging/SendMessageButton';
+import { secureConsole } from '@/lib/utils/secure-console';
 
-interface PlayersSearchPageProps {
-  accountType: 'club' | 'academy' | 'trainer' | 'agent';
-}
+// Simple debounce hook
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = React.useState(value);
 
-// دالة لتنظيف روابط الصور
-const getValidImageUrl = (url: any): string => {
-  // التحقق من أن url هو string
-  if (typeof url !== 'string') {
-    return '/images/default-avatar.png';
-  }
-  
-  // تحقق من وجود الرابط وصحته
-  if (!url || 
-      url === 'undefined' || 
-      url === 'null' || 
-      url === '' ||
-      url.includes('test-url.com') ||
-      url.includes('placeholder.com') ||
-      url.includes('example.com')) {
-    return '/images/default-avatar.png';
-  }
-  
-  // تحقق من صحة روابط Supabase المكسورة
-  if (url.includes('supabase.co') && url.includes('avatars/yf0b8T8xuuMfP8QAfvS9TLOJjVt2')) {
-    return '/images/default-avatar.png';
-  }
-  
-  return url;
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return [debouncedValue];
 };
 
-export default function PlayersSearchPage({ accountType }: PlayersSearchPageProps) {
-  secureConsole.log('🎯 PlayersSearchPage initialized with accountType:', accountType);
+interface Player {
+  id: string;
+  full_name?: string;
+  name?: string;
+  displayName?: string;
+  primary_position?: string;
+  position?: string;
+  nationality?: string;
+  current_club?: string;
+  club_name?: string;
+  country?: string;
+  city?: string;
+  profile_image?: string;
+  profile_image_url?: string;
+  avatar?: string;
+  accountType?: string;
+  club_id?: string;
+  clubId?: string;
+  academy_id?: string;
+  academyId?: string;
+  trainer_id?: string;
+  trainerId?: string;
+  agent_id?: string;
+  agentId?: string;
+  convertedToAccount?: boolean;
+  firebaseUid?: string;
+  organizationInfo?: string;
+  age?: number;
+  dependency?: string;
+  status?: string;
+  skill_level?: string;
+  objectives?: string[];
+}
+
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
+  const pages = [];
+  const maxVisiblePages = 5;
   
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentUserInfo, setCurrentUserInfo] = useState<any>(null);
-  const { user, userData, loading: authLoading } = useAuth();
+  let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+  
+  if (endPage - startPage + 1 < maxVisiblePages) {
+    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+  }
+  
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i);
+  }
+  
+  return (
+    <div className="flex justify-center items-center gap-2 mt-8">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="px-3 py-2"
+      >
+        السابق
+      </Button>
+      
+      {pages.map((page) => (
+        <Button
+          key={page}
+          variant={currentPage === page ? "default" : "outline"}
+          size="sm"
+          onClick={() => onPageChange(page)}
+          className="px-3 py-2"
+        >
+          {page}
+        </Button>
+      ))}
+      
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="px-3 py-2"
+      >
+        التالي
+      </Button>
+    </div>
+  );
+};
+
+export default function PlayersSearchPage() {
   const router = useRouter();
-
-  // 1. متغيرات الحالة للصفحات
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 16;
-  const [totalPlayers, setTotalPlayers] = useState(0);
-
-  // 1. متغيرات الفلاتر
-  const [filterPosition, setFilterPosition] = useState('');
-  const [filterNationality, setFilterNationality] = useState('');
-  const [filterCountry, setFilterCountry] = useState('');
-  const [filterObjective, setFilterObjective] = useState('');
-  const [filterAccountType, setFilterAccountType] = useState('all'); // فلتر جديد لنوع الحساب
+  const { user, userData } = useAuth();
   
-  // فلاتر جديدة
-  const [filterAge, setFilterAge] = useState(''); // فلتر العمر
-  const [filterDependency, setFilterDependency] = useState('all'); // فلتر التبعية
-  const [filterStatus, setFilterStatus] = useState('all'); // فلتر الحالة
-  const [filterSkillLevel, setFilterSkillLevel] = useState(''); // فلتر مستوى المهارة
+  // State variables
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [playersPerPage] = useState(12);
+  
+  // Filter states
+  const [filterPosition, setFilterPosition] = useState('all');
+  const [filterNationality, setFilterNationality] = useState('all');
+  const [filterCountry, setFilterCountry] = useState('all');
+  const [filterAccountType, setFilterAccountType] = useState('all');
+  const [filterAge, setFilterAge] = useState('all');
+  const [filterDependency, setFilterDependency] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterSkillLevel, setFilterSkillLevel] = useState('all');
+  const [filterObjective, setFilterObjective] = useState('all');
+  
+  // UI states
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
-  // دالة إعداد معلومات المستخدم الحالي
-  const setupCurrentUserInfo = () => {
-    if (!user?.uid || !userData) {
-      secureConsole.log('❌ setupCurrentUserInfo: لا يوجد user أو userData');
-      setCurrentUserInfo(null);
-      return;
-    }
-    
+  // Setup current user info
+  const setupCurrentUserInfo = useCallback(() => {
     secureConsole.log('🔍 setupCurrentUserInfo: إعداد معلومات المستخدم');
-    secureConsole.sensitive('👤 User UID:', user.uid);
-    secureConsole.sensitive('📧 User Email:', user.email);
-    secureConsole.log('🎯 Account Type Required:', accountType);
-    secureConsole.sensitive('💾 UserData:', userData);
     
-    // تحديد نوع الحساب المطلوب بناءً على accountType
-    const accountTypeMapping = {
-      club: { type: 'نادي', icon: Building, color: 'bg-blue-500' },
-      academy: { type: 'أكاديمية', icon: Trophy, color: 'bg-orange-500' },
-      trainer: { type: 'مدرب', icon: User, color: 'bg-cyan-500' },
-      agent: { type: 'وكيل لاعبين', icon: Briefcase, color: 'bg-purple-500' },
-    };
-    
-    const targetAccountType = accountTypeMapping[accountType];
-    
-    if (!targetAccountType) {
-      secureConsole.log('❌ نوع حساب غير معروف:', accountType);
-      setCurrentUserInfo(null);
-      return;
+    if (user?.uid) {
+      secureConsole.log('🔒 [SENSITIVE] 👤 User UID:', user.uid);
+      secureConsole.log('🔒 [SENSITIVE] 📧 User Email:', user.email);
     }
     
-    // التحقق من نوع الحساب - السماح بالوصول حتى لو كان مختلف
-    if (userData.accountType === accountType) {
-      secureConsole.log(`✅ تطابق نوع الحساب: ${accountType}`);
+    if (userData) {
+      secureConsole.log('🎯 Account Type Required: trainer');
+      secureConsole.log('🔒 [SENSITIVE] 💾 UserData:', userData);
       
-      setCurrentUserInfo({
-        ...userData,
-        id: user.uid,
-        type: targetAccountType.type,
-        icon: targetAccountType.icon,
-        color: targetAccountType.color
-      });
-    } else {
-      secureConsole.warn(`⚠️ عدم تطابق نوع الحساب: المطلوب ${accountType}، الموجود ${userData.accountType} - لكن سيتم السماح بالوصول`);
-      
-      // السماح بالوصول حتى لو كان نوع الحساب مختلف
-      setCurrentUserInfo({
-        ...userData,
-        id: user.uid,
-        type: targetAccountType.type,
-        icon: targetAccountType.icon,
-        color: targetAccountType.color,
-        isDifferentAccountType: true
-      });
+      if (userData.accountType !== 'trainer') {
+        secureConsole.warn(' ⚠️ عدم تطابق نوع الحساب: المطلوب trainer، الموجود ' + userData.accountType + ' - لكن سيتم السماح بالوصول');
+      }
     }
-  };
+  }, [user, userData]);
 
-  // دالة جلب اللاعبين (تجلب اللاعبين المستقلين من users والتابعين من players)
-  const loadPlayers = async () => {
-    try {
+  // Load players data
+  const loadPlayers = useCallback(async () => {
+    if (!user?.uid) return;
+    
       setIsLoading(true);
+    try {
       const allPlayers: Player[] = [];
 
-      // جلب اللاعبين من مجموعة players (اللاعبين التابعين)
-      try {
-        const playersQuery = query(
-          collection(db, 'players'),
-          orderBy('created_at', 'desc')
-        );
+      // Fetch dependent players from players collection
+      const playersQuery = query(collection(db, 'players'), orderBy('createdAt', 'desc'), limit(100));
         const playersSnapshot = await getDocs(playersQuery);
-        const playersFromPlayersCollection = playersSnapshot.docs.map(doc => {
-          const data = doc.data();
-          // تحديد نوع اللاعب بناءً على الانتماء
-          let accountType = 'dependent'; // افتراضي للاعبين التابعين
-          let organizationInfo = '';
-          
-          if (data.club_id || data.clubId) {
-            accountType = 'dependent_club';
-            organizationInfo = 'تابع لنادي';
-          } else if (data.academy_id || data.academyId) {
-            accountType = 'dependent_academy';
-            organizationInfo = 'تابع لأكاديمية';
-          } else if (data.trainer_id || data.trainerId) {
-            accountType = 'dependent_trainer';
-            organizationInfo = 'تابع لمدرب';
-          } else if (data.agent_id || data.agentId) {
-            accountType = 'dependent_agent';
-            organizationInfo = 'تابع لوكيل';
-          }
-          
-          return {
+      const dependentPlayers = playersSnapshot.docs.map(doc => ({
             id: doc.id,
-            ...data,
-            accountType,
-            organizationInfo
-          };
-        }) as Player[];
-        allPlayers.push(...playersFromPlayersCollection);
-        console.log(`📊 تم جلب ${playersFromPlayersCollection.length} لاعب تابع من مجموعة players`);
-      } catch (error) {
-        console.error('❌ خطأ في جلب اللاعبين من مجموعة players:', error);
-      }
-
-      // جلب اللاعبين من مجموعة player (مجموعة إضافية)
-      try {
-        const playerQuery = query(
-          collection(db, 'player'),
-          orderBy('created_at', 'desc')
-        );
-        const playerSnapshot = await getDocs(playerQuery);
-        const playersFromPlayerCollection = playerSnapshot.docs.map(doc => {
-          const data = doc.data();
-          // تحديد نوع اللاعب بناءً على الانتماء
-          let accountType = 'dependent'; // افتراضي للاعبين التابعين
-          let organizationInfo = '';
-          
-          if (data.club_id || data.clubId) {
-            accountType = 'dependent_club';
-            organizationInfo = 'تابع لنادي';
-          } else if (data.academy_id || data.academyId) {
-            accountType = 'dependent_academy';
-            organizationInfo = 'تابع لأكاديمية';
-          } else if (data.trainer_id || data.trainerId) {
-            accountType = 'dependent_trainer';
-            organizationInfo = 'تابع لمدرب';
-          } else if (data.agent_id || data.agentId) {
-            accountType = 'dependent_agent';
-            organizationInfo = 'تابع لوكيل';
-          }
-          
-          return {
-            id: doc.id,
-            ...data,
-            accountType,
-            organizationInfo
-          };
-        }) as Player[];
-        allPlayers.push(...playersFromPlayerCollection);
-        console.log(`📊 تم جلب ${playersFromPlayerCollection.length} لاعب من مجموعة player`);
-      } catch (error) {
-        console.error('❌ خطأ في جلب اللاعبين من مجموعة player:', error);
-      }
-
-      // جلب اللاعبين المستقلين من مجموعة users (فلترة حسب نوع الحساب)
-      try {
-        const usersQuery = query(
-          collection(db, 'users'),
-          where('accountType', '==', 'player')
-        );
+        ...doc.data()
+      })) as Player[];
+      
+      secureConsole.log('📊 تم جلب', dependentPlayers.length, 'لاعب تابع من مجموعة players');
+      allPlayers.push(...dependentPlayers);
+      
+      // Fetch independent players from users collection
+      const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(100));
         const usersSnapshot = await getDocs(usersQuery);
-        const playerUsers = usersSnapshot.docs.map(doc => ({
+      const usersIndependentPlayers = usersSnapshot.docs
+        .map(doc => ({
           id: doc.id,
           ...doc.data()
-        })) as any[];
-
-        // إضافة اللاعبين المستقلين
-        allPlayers.push(...playerUsers);
-        console.log(`📊 تم جلب ${playerUsers.length} لاعب مستقل من مجموعة users`);
-        
-        // طباعة تفاصيل اللاعبين للتحقق
-        console.log('📊 تفاصيل اللاعبين المستقلين المجلوبين:', playerUsers.map(user => ({
-          id: user.id,
-          name: user.full_name || user.name || user.displayName,
-          email: user.email,
-          accountType: user.accountType,
-          position: user.primary_position || user.position
-        })));
-      } catch (error) {
-        console.error('❌ خطأ في جلب اللاعبين المستقلين من مجموعة users:', error);
-      }
-
-      // جلب جميع المستخدمين كبديل إضافي للتأكد
-      try {
-        const allUsersQuery = query(collection(db, 'users'));
-        const allUsersSnapshot = await getDocs(allUsersQuery);
-        const allUsers = allUsersSnapshot.docs.map(doc => ({
+        }))
+        .filter((player: any) => player.accountType === 'player') as Player[];
+      
+      secureConsole.log('📊 تم جلب', usersIndependentPlayers.length, 'لاعب من مجموعة player');
+      allPlayers.push(...usersIndependentPlayers);
+      
+      // Fetch players from player collection
+      const playerCollectionQuery = query(collection(db, 'player'), orderBy('createdAt', 'desc'), limit(100));
+      const playerCollectionSnapshot = await getDocs(playerCollectionQuery);
+      const playerCollectionPlayers = playerCollectionSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        })) as any[];
-        
-        // فلترة اللاعبين من جميع المستخدمين
-        const additionalPlayers = allUsers.filter(user => 
-          user.accountType === 'player' && 
-          !allPlayers.some(p => p.id === user.id) // تجنب التكرار
-        );
-        
-        if (additionalPlayers.length > 0) {
-          allPlayers.push(...additionalPlayers);
-          console.log(`📊 تم جلب ${additionalPlayers.length} لاعب إضافي من فلترة جميع المستخدمين`);
-        }
-      } catch (error) {
-        console.warn('⚠️ لم يتم جلب اللاعبين الإضافيين:', error);
-      }
-
-      // إزالة التكرار بناءً على ID
+      })) as Player[];
+      
+      secureConsole.log('📊 تم جلب', playerCollectionPlayers.length, 'لاعب مستقل من مجموعة users');
+      allPlayers.push(...playerCollectionPlayers);
+      
+      // Remove duplicates based on id
       const uniquePlayers = allPlayers.filter((player, index, self) => 
         index === self.findIndex(p => p.id === player.id)
       );
 
-      console.log(`📊 إجمالي اللاعبين الفريدين (مستقلين + تابعين): ${uniquePlayers.length}`);
-      console.log('📊 تفاصيل اللاعبين النهائيين:', uniquePlayers.map(p => ({
-        id: p.id,
-        name: p.full_name || p.name || p.displayName,
-        position: p.primary_position || p.position,
-        accountType: p.accountType,
-        organizationInfo: p.organizationInfo || '',
-        email: p.email,
-        type: p.accountType === 'player' ? 'مستقل' : getOrganizationLabel(p.accountType),
-        hasImage: !!(p.profile_image_url || p.profile_image || p.avatar),
-        club_id: p.club_id || p.clubId,
-        academy_id: p.academy_id || p.academyId,
-        trainer_id: p.trainer_id || p.trainerId,
-        agent_id: p.agent_id || p.agentId
-      })));
+      secureConsole.log('📊 إجمالي اللاعبين الفريدين (مستقلين + تابعين):', uniquePlayers.length);
+      secureConsole.log('📊 تفاصيل اللاعبين النهائيين:', uniquePlayers);
       
-              // إحصائيات تفصيلية
+      // Categorize players
         const independentPlayers = uniquePlayers.filter(p => p.accountType === 'player');
-        const dependentPlayers = uniquePlayers.filter(p => p.accountType !== 'player');
-        const clubPlayers = uniquePlayers.filter(p => p.accountType === 'dependent_club');
-        const academyPlayers = uniquePlayers.filter(p => p.accountType === 'dependent_academy');
-        const trainerPlayers = uniquePlayers.filter(p => p.accountType === 'dependent_trainer');
-        const agentPlayers = uniquePlayers.filter(p => p.accountType === 'dependent_agent');
-        
-        console.log(`📊 اللاعبين المستقلين: ${independentPlayers.length}`);
-        console.log(`📊 اللاعبين التابعين: ${dependentPlayers.length}`);
-        console.log(`📊 - تابعين لأندية: ${clubPlayers.length}`);
-        console.log(`📊 - تابعين لأكاديميات: ${academyPlayers.length}`);
-        console.log(`📊 - تابعين لمدربين: ${trainerPlayers.length}`);
-        console.log(`📊 - تابعين لوكلاء: ${agentPlayers.length}`);
+      const dependentPlayersFinal = uniquePlayers.filter(p => p.accountType !== 'player');
+      
+      const clubDependents = dependentPlayersFinal.filter(p => p.club_id || p.clubId);
+      const academyDependents = dependentPlayersFinal.filter(p => p.academy_id || p.academyId);
+      const trainerDependents = dependentPlayersFinal.filter(p => p.trainer_id || p.trainerId);
+      const agentDependents = dependentPlayersFinal.filter(p => p.agent_id || p.agentId);
+      
+      secureConsole.log('📊 اللاعبين المستقلين:', independentPlayers.length);
+      secureConsole.log('📊 اللاعبين التابعين:', dependentPlayersFinal.length);
+      secureConsole.log('📊 - تابعين لأندية:', clubDependents.length);
+      secureConsole.log('📊 - تابعين لأكاديميات:', academyDependents.length);
+      secureConsole.log('📊 - تابعين لمدربين:', trainerDependents.length);
+      secureConsole.log('📊 - تابعين لوكلاء:', agentDependents.length);
       
       setPlayers(uniquePlayers);
-      setTotalPlayers(uniquePlayers.length);
     } catch (error) {
-      secureConsole.error('خطأ في جلب اللاعبين:', error);
+      secureConsole.error('❌ خطأ في جلب اللاعبين:', error);
     } finally {
       setIsLoading(false);
     }
+  }, [user?.uid]);
+
+  // Load data on mount
+  useEffect(() => {
+      setupCurrentUserInfo();
+    loadPlayers();
+  }, [setupCurrentUserInfo, loadPlayers]);
+
+  // Filter players based on search and filters
+  const filteredPlayers = useMemo(() => {
+    return players.filter(player => {
+      // Search filter
+      const searchFields = [
+        player.full_name,
+        player.name,
+        player.displayName,
+        player.primary_position,
+        player.position,
+        player.nationality,
+        player.current_club,
+        player.club_name,
+        player.country,
+        player.city
+      ].filter(Boolean).join(' ').toLowerCase();
+      
+      const matchesSearch = !debouncedSearchTerm || searchFields.includes(debouncedSearchTerm.toLowerCase());
+      
+      // Position filter
+      const matchesPosition = filterPosition === 'all' || 
+        player.primary_position === filterPosition || 
+        player.position === filterPosition;
+      
+      // Nationality filter
+      const matchesNationality = filterNationality === 'all' || 
+        player.nationality === filterNationality;
+      
+      // Country filter
+      const matchesCountry = filterCountry === 'all' || 
+        player.country === filterCountry;
+      
+      // Account type filter
+      const matchesAccountType = filterAccountType === 'all' || 
+        (filterAccountType === 'independent' && player.accountType === 'player') ||
+        (filterAccountType === 'dependent' && player.accountType !== 'player');
+      
+      // Age filter
+      const matchesAge = filterAge === 'all' || 
+        (filterAge === 'under16' && player.age && player.age < 16) ||
+        (filterAge === 'under18' && player.age && player.age >= 16 && player.age < 18) ||
+        (filterAge === 'under21' && player.age && player.age >= 18 && player.age < 21) ||
+        (filterAge === 'senior' && player.age && player.age >= 21);
+      
+      // Dependency filter
+      const matchesDependency = filterDependency === 'all' || 
+        (filterDependency === 'independent' && player.accountType === 'player') ||
+        (filterDependency === 'dependent' && player.accountType !== 'player');
+      
+      // Status filter
+      const matchesStatus = filterStatus === 'all' || 
+        player.status === filterStatus;
+      
+      // Skill level filter
+      const matchesSkillLevel = filterSkillLevel === 'all' || 
+        player.skill_level === filterSkillLevel;
+      
+      // Objective filter
+      const matchesObjective = filterObjective === 'all' || 
+        (player.objectives && player.objectives.includes(filterObjective));
+      
+      return matchesSearch && matchesPosition && matchesNationality && matchesCountry && 
+             matchesAccountType && matchesAge && matchesDependency && matchesStatus && 
+             matchesSkillLevel && matchesObjective;
+    });
+  }, [players, debouncedSearchTerm, filterPosition, filterNationality, filterCountry, 
+      filterAccountType, filterAge, filterDependency, filterStatus, filterSkillLevel, filterObjective]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredPlayers.length / playersPerPage);
+  const startIndex = (currentPage - 1) * playersPerPage;
+  const endIndex = startIndex + playersPerPage;
+  const pagedPlayers = filteredPlayers.slice(startIndex, endIndex);
+
+  // Reset filters function
+  const resetFilters = () => {
+    setFilterPosition('all');
+    setFilterNationality('all');
+    setFilterCountry('all');
+    setFilterAccountType('all');
+    setFilterAge('all');
+    setFilterDependency('all');
+    setFilterStatus('all');
+    setFilterSkillLevel('all');
+    setFilterObjective('all');
+    setSearchTerm('');
   };
 
-  // حدث الجلب عند تحميل الصفحة أو تغيير المستخدم
-  useEffect(() => {
-    loadPlayers();
-    if (user && userData && !authLoading) {
-      setupCurrentUserInfo();
-    } else if (!authLoading) {
-      setCurrentUserInfo(null);
-    }
-  }, [user, userData, accountType, authLoading]);
-
-  // 2. استخراج القيم الفريدة للفلاتر من اللاعبين (بعد الجلب)
-  const uniquePositions = Array.from(new Set(players.map(p => p.primary_position).filter(Boolean)));
-  const uniqueNationalities = Array.from(new Set(players.map(p => p.nationality).filter(Boolean)));
-  const uniqueCountries = Array.from(new Set(players.map(p => p.country).filter(Boolean)));
-
-  // 3. استخراج الأهداف الفريدة من بيانات اللاعبين
-  const uniqueObjectives = Array.from(new Set(players.flatMap(p => p.objectives ? Object.keys(p.objectives) : []).filter(Boolean)));
-
-  // 4. فلترة اللاعبين بناءً على البحث والفلاتر
-  
-
-  const filteredPlayers = players.filter(player => {
-    // التأكد من أن اللاعب له بيانات صحيحة
-    const hasValidData = player.full_name || player.name || player.displayName;
-    if (!hasValidData) return false;
-    
-    const playerFullName = player.full_name || '';
-    const playerName = player.name || '';
-    const playerDisplayName = player.displayName || '';
-    const playerPrimaryPosition = player.primary_position || '';
-    const playerPosition = player.position || '';
-    
-    const matchesSearch =
-      playerFullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      playerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      playerDisplayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      playerPrimaryPosition.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      playerPosition.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPosition = filterPosition ? (player.primary_position === filterPosition || player.position === filterPosition) : true;
-    const matchesNationality = filterNationality ? player.nationality === filterNationality : true;
-    const matchesCountry = filterCountry ? player.country === filterCountry : true;
-    const matchesObjective = filterObjective ? (player.objectives && player.objectives[filterObjective]) : true;
-    const matchesAccountType = filterAccountType === 'all' ? true : player.accountType === filterAccountType;
-    
-    // فلاتر جديدة
-    const matchesAge = filterAge ? getAgeCategory(player.birth_date || player.date_of_birth) === filterAge : true;
-    const matchesDependency = filterDependency === 'all' ? true : 
-      filterDependency === 'independent' ? player.accountType === 'player' :
-      filterDependency === 'dependent' ? player.accountType?.startsWith('dependent') : true;
-    const matchesStatus = filterStatus === 'all' ? true : 
-      filterStatus === 'active' ? player.isActive !== false :
-      filterStatus === 'inactive' ? player.isActive === false : true;
-    const matchesSkillLevel = filterSkillLevel ? player.skill_level === filterSkillLevel : true;
-    
-    return matchesSearch && matchesPosition && matchesNationality && matchesCountry && matchesObjective && matchesAccountType && 
-           matchesAge && matchesDependency && matchesStatus && matchesSkillLevel;
-  });
-
-  // 5. إعادة الصفحة للأولى عند تغيير البحث أو الفلاتر
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterPosition, filterNationality, filterCountry, filterObjective, filterAccountType, filterAge, filterDependency, filterStatus, filterSkillLevel]);
-
-  // 6. قص النتائج للصفحة الحالية بعد الفلترة
-  const pagedPlayers = filteredPlayers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const totalPages = Math.ceil(filteredPlayers.length / pageSize);
-
+  // Utility functions
   const getPositionColor = (position: string) => {
-    if (position?.includes('حارس')) return 'from-yellow-400 to-orange-500';
-    if (position?.includes('مدافع')) return 'from-blue-400 to-indigo-600';
-    if (position?.includes('وسط')) return 'from-green-400 to-teal-600';
-    if (position?.includes('مهاجم')) return 'from-red-400 to-pink-600';
-    return 'from-purple-400 to-indigo-600';
+    const colors: { [key: string]: string } = {
+      'مهاجم': 'from-red-500 to-red-600',
+      'لاعب وسط': 'from-blue-500 to-blue-600',
+      'مدافع': 'from-green-500 to-green-600',
+      'حارس مرمى': 'from-yellow-500 to-yellow-600',
+      'مهاجم وسط': 'from-purple-500 to-purple-600',
+      'مدافع وسط': 'from-indigo-500 to-indigo-600'
+    };
+    return colors[position] || 'from-gray-500 to-gray-600';
   };
 
   const getPositionEmoji = (position: string) => {
-    if (position?.includes('حارس')) return '🥅';
-    if (position?.includes('مدافع')) return '🛡️';
-    if (position?.includes('وسط')) return '⚡';
-    if (position?.includes('مهاجم')) return '⚔️';
-    return '⚽';
+    const emojis: { [key: string]: string } = {
+      'مهاجم': '⚽',
+      'لاعب وسط': '🎯',
+      'مدافع': '🛡️',
+      'حارس مرمى': '🥅',
+      'مهاجم وسط': '⚡',
+      'مدافع وسط': '🛡️'
+    };
+    return emojis[position] || '👤';
   };
 
-  // دالة للحصول على تسمية نوع المنظمة
-  const getOrganizationLabel = (accountType: string) => {
-    switch (accountType) {
-      case 'dependent_club':
-        return '🏢 تابع لنادي';
-      case 'dependent_academy':
-        return '🏆 تابع لأكاديمية';
-      case 'dependent_trainer':
-        return '👨‍🏫 تابع لمدرب';
-      case 'dependent_agent':
-        return '💼 تابع لوكيل';
-      default:
-        return '⚽ تابع';
-    }
-  };
-
-  // دالة للحصول على ستايل المنظمة
   const getOrganizationBadgeStyle = (accountType: string) => {
-    switch (accountType) {
-      case 'dependent_club':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'dependent_academy':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'dependent_trainer':
-        return 'bg-cyan-100 text-cyan-800 border-cyan-200';
-      case 'dependent_agent':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+    const styles: { [key: string]: string } = {
+      'club': 'from-blue-400 to-blue-500',
+      'academy': 'from-green-400 to-green-500',
+      'trainer': 'from-purple-400 to-purple-500',
+      'agent': 'from-orange-400 to-orange-500',
+      'parent': 'from-pink-400 to-pink-500',
+      'marketer': 'from-indigo-400 to-indigo-500'
+    };
+    return styles[accountType] || 'from-gray-400 to-gray-500';
   };
 
-  // 7. مكون الفلاتر
-  const Filters = () => (
-    <div className="flex flex-wrap gap-3 items-center justify-center mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-      <div className="relative">
-        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-400" />
-        <input
-          type="text"
-          placeholder="🔍 ابحث عن اسم اللاعب أو مهارته..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="px-3 py-2 pr-10 rounded border border-blue-200 bg-white text-blue-900 placeholder-blue-400 w-48"
-        />
-      </div>
-      <select 
-        value={filterPosition} 
-        onChange={e => setFilterPosition(e.target.value)} 
-        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
-        aria-label="فلتر المراكز"
-      >
-        <option value="">⚽ كل المراكز</option>
-        {uniquePositions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
-      </select>
-      <select 
-        value={filterNationality} 
-        onChange={e => setFilterNationality(e.target.value)} 
-        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
-        aria-label="فلتر الجنسيات"
-      >
-        <option value="">🌍 كل الجنسيات</option>
-        {uniqueNationalities.map(nat => <option key={nat} value={nat}>{nat}</option>)}
-      </select>
-      <select 
-        value={filterCountry} 
-        onChange={e => setFilterCountry(e.target.value)} 
-        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
-        aria-label="فلتر الدول"
-      >
-        <option value="">🏳️ كل الدول</option>
-        {uniqueCountries.map(c => <option key={c} value={c}>{c}</option>)}
-      </select>
-      <select 
-        value={filterObjective} 
-        onChange={e => setFilterObjective(e.target.value)} 
-        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
-        aria-label="فلتر الأهداف"
-      >
-        <option value="">🎯 كل الأهداف</option>
-        {uniqueObjectives.map(obj => <option key={obj} value={obj}>{obj}</option>)}
-      </select>
-      
-      {/* فلتر نوع الحساب */}
-      <select 
-        value={filterAccountType} 
-        onChange={e => setFilterAccountType(e.target.value)} 
-        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
-        aria-label="فلتر نوع الحساب"
-      >
-        <option value="all">👥 جميع الحسابات</option>
-        <option value="player">⚽ لاعبين فقط</option>
-        <option value="club">🏢 أندية فقط</option>
-        <option value="academy">🏆 أكاديميات فقط</option>
-        <option value="trainer">👨‍🏫 مدربين فقط</option>
-        <option value="agent">💼 وكلاء فقط</option>
-      </select>
+  const getOrganizationLabel = (accountType: string) => {
+    const labels: { [key: string]: string } = {
+      'club': '🏢 نادي',
+      'academy': '🎓 أكاديمية',
+      'trainer': '👨‍🏫 مدرب',
+      'agent': '🤝 وكيل',
+      'parent': '👨‍👩‍👧‍👦 ولي أمر',
+      'marketer': '📢 مسوق'
+    };
+    return labels[accountType] || '🏢 منظمة';
+  };
 
-      {/* فلتر العمر */}
-      <select 
-        value={filterAge} 
-        onChange={e => setFilterAge(e.target.value)} 
-        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
-        aria-label="فلتر العمر"
-      >
-        <option value="">🎂 كل الأعمار</option>
-        <option value="أقل من 12 سنة">👶 أقل من 12 سنة</option>
-        <option value="12-14 سنة">🧒 12-14 سنة</option>
-        <option value="15-17 سنة">👦 15-17 سنة</option>
-        <option value="18-20 سنة">👨‍🎓 18-20 سنة</option>
-        <option value="21-24 سنة">👨‍💼 21-24 سنة</option>
-        <option value="25-29 سنة">👨‍💻 25-29 سنة</option>
-        <option value="30-34 سنة">👨‍🏫 30-34 سنة</option>
-        <option value="35 سنة وأكثر">👴 35 سنة وأكثر</option>
-      </select>
+  const getValidImageUrl = (url: any) => {
+    if (!url || typeof url !== 'string') return '/images/default-avatar.png';
+    if (url.startsWith('http')) return url;
+    return url;
+  };
 
-      {/* فلتر التبعية */}
-      <select 
-        value={filterDependency} 
-        onChange={e => setFilterDependency(e.target.value)} 
-        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
-        aria-label="فلتر التبعية"
-      >
-        <option value="all">👥 جميع اللاعبين</option>
-        <option value="independent">🆓 لاعبين مستقلين</option>
-        <option value="dependent">🔗 لاعبين تابعين</option>
-      </select>
-
-      {/* فلتر الحالة */}
-      <select 
-        value={filterStatus} 
-        onChange={e => setFilterStatus(e.target.value)} 
-        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
-        aria-label="فلتر الحالة"
-      >
-        <option value="all">📊 جميع الحالات</option>
-        <option value="active">✅ حسابات مفعلة</option>
-        <option value="inactive">❌ حسابات معلقة</option>
-      </select>
-
-      {/* فلتر مستوى المهارة */}
-      <select 
-        value={filterSkillLevel} 
-        onChange={e => setFilterSkillLevel(e.target.value)} 
-        className="px-3 py-2 rounded border border-blue-200 bg-white text-blue-900"
-        aria-label="فلتر مستوى المهارة"
-      >
-        <option value="">⭐ كل المستويات</option>
-        <option value="مبتدئ">🌱 مبتدئ</option>
-        <option value="متوسط">🌿 متوسط</option>
-        <option value="متقدم">🌳 متقدم</option>
-        <option value="محترف">🏆 محترف</option>
-        <option value="خبير">👑 خبير</option>
-      </select>
-
-      {/* زر مسح الفلاتر */}
-      <button
-        onClick={() => {
-          setSearchTerm('');
-          setFilterPosition('');
-          setFilterNationality('');
-          setFilterCountry('');
-          setFilterObjective('');
-          setFilterAccountType('all');
-          setFilterAge('');
-          setFilterDependency('all');
-          setFilterStatus('all');
-          setFilterSkillLevel('');
-        }}
-        className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-200 font-medium"
-        title="مسح جميع الفلاتر"
-      >
-        🗑️ مسح الفلاتر
-      </button>
-    </div>
-  );
-
-  // 8. مكون الصفحات
-  const Pagination = () => (
-    <div className="flex justify-center items-center gap-2 mt-8">
-      <button
-        className="px-3 py-1 rounded bg-blue-200 text-blue-800 disabled:opacity-50"
-        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-        disabled={currentPage === 1}
-      >
-        السابق
-      </button>
-      {Array.from({ length: totalPages }, (_, i) => (
-        <button
-          key={i}
-          className={`px-3 py-1 rounded ${currentPage === i + 1 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'}`}
-          onClick={() => setCurrentPage(i + 1)}
-        >
-          {i + 1}
-        </button>
-      ))}
-      <button
-        className="px-3 py-1 rounded bg-blue-200 text-blue-800 disabled:opacity-50"
-        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-        disabled={currentPage === totalPages}
-      >
-        التالي
-      </button>
-    </div>
-  );
-
-  // عرض شاشة التحميل إذا كان النظام لا يزال يحمل بيانات المصادقة
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center" dir="rtl">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-yellow-400 mx-auto mb-4"></div>
-          <p className="text-white text-lg">جاري تحميل البيانات...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // أضف دالة getUserDisplayName بسيطة
+  // Add simple getUserDisplayName function
   const getUserDisplayName = () => {
     if (!userData) return 'مستخدم';
     return userData.full_name || userData.name || userData.email || 'مستخدم';
@@ -617,173 +419,362 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50" dir="rtl">
-
-      {/* منطقة البحث الرئيسية */}
-      <div className="relative py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5" />
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-3 mb-6 p-4 bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
-                <Users className="w-8 h-8 text-white" />
+      {/* شريط البحث المدمج */}
+      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center gap-3">
+            {/* أيقونة البحث */}
+            <div className="flex-shrink-0">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Search className="w-5 h-5 text-blue-600" />
               </div>
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                اكتشف أفضل المواهب
-              </h2>
             </div>
             
-            <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
-              ابحث عن اللاعبين المناسبين لفريقك من بين آلاف المواهب المميزة
-            </p>
-            
-            <div className="max-w-xl mx-auto relative">
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                <Search className="w-5 h-5 text-slate-400" />
-              </div>
+            {/* شريط البحث المدمج */}
+            <div className="flex-1 relative">
               <Input
-                type="text"
-                placeholder="ابحث باسم اللاعب، المركز، أو الجنسية..."
-                value={searchTerm}
+          type="text"
+                placeholder="ابحث عن لاعبين..."
+          value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-6 pr-12 py-4 text-lg bg-white/80 backdrop-blur-sm border-white/30 shadow-lg rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400 transition-all duration-300"
-              />
+                className="w-full bg-white/60 border-gray-200 rounded-xl pr-10"
+        />
+              {searchTerm && searchTerm !== debouncedSearchTerm && (
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+      </div>
+              )}
             </div>
-          </div>
+            
+            {/* زر توسيع البحث */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+              className="flex-shrink-0"
+            >
+              {isSearchExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </Button>
+            
+            {/* زر توسيع الفلاتر */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+              className="flex-shrink-0"
+            >
+              <Filter className="w-4 h-4" />
+            </Button>
+            
+            {/* إحصائيات سريعة */}
+            <div className="flex-shrink-0 text-sm text-gray-600">
+              {filteredPlayers.length} لاعب
+    </div>
+    </div>
         </div>
       </div>
 
-      {/* جزء الفلاتر */}
-      <div className="container mx-auto px-6 mb-8">
-        <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg p-6">
-          <Filters />
-          
-          {/* إحصائيات الفلترة */}
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-blue-700">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">📊 النتائج:</span>
-                <span className="bg-blue-100 px-2 py-1 rounded-full">
-                  {filteredPlayers.length} لاعب من أصل {players.length}
-                </span>
+      {/* البحث الموسع */}
+      {isSearchExpanded && (
+        <div className="bg-white/60 backdrop-blur-sm border-b border-gray-200">
+          <div className="container mx-auto px-4 py-4">
+            <div className="max-w-2xl mx-auto">
+              <div className="relative">
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                  <Search className="w-5 h-5 text-gray-400" />
               </div>
-              
-              {(searchTerm || filterPosition || filterNationality || filterCountry || filterObjective || filterAccountType !== 'all' || filterAge || filterDependency !== 'all' || filterStatus !== 'all' || filterSkillLevel) && (
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold">🔍 الفلاتر المطبقة:</span>
-                  <div className="flex flex-wrap gap-1">
-                    {searchTerm && <span className="bg-blue-200 px-2 py-1 rounded-full text-xs">البحث: {searchTerm}</span>}
-                    {filterPosition && <span className="bg-green-200 px-2 py-1 rounded-full text-xs">المركز: {filterPosition}</span>}
-                    {filterNationality && <span className="bg-yellow-200 px-2 py-1 rounded-full text-xs">الجنسية: {filterNationality}</span>}
-                    {filterCountry && <span className="bg-purple-200 px-2 py-1 rounded-full text-xs">الدولة: {filterCountry}</span>}
-                    {filterObjective && <span className="bg-orange-200 px-2 py-1 rounded-full text-xs">الهدف: {filterObjective}</span>}
-                    {filterAccountType !== 'all' && <span className="bg-indigo-200 px-2 py-1 rounded-full text-xs">النوع: {filterAccountType}</span>}
-                    {filterAge && <span className="bg-pink-200 px-2 py-1 rounded-full text-xs">العمر: {filterAge}</span>}
-                    {filterDependency !== 'all' && <span className="bg-teal-200 px-2 py-1 rounded-full text-xs">التبعية: {filterDependency === 'independent' ? 'مستقل' : 'تابع'}</span>}
-                    {filterStatus !== 'all' && <span className="bg-red-200 px-2 py-1 rounded-full text-xs">الحالة: {filterStatus === 'active' ? 'مفعل' : 'معلق'}</span>}
-                    {filterSkillLevel && <span className="bg-cyan-200 px-2 py-1 rounded-full text-xs">المهارة: {filterSkillLevel}</span>}
+              <Input
+                type="text"
+                  placeholder="ابحث باسم اللاعب، المركز، الجنسية، النادي..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-6 pr-12 py-3 text-lg bg-white/80 backdrop-blur-sm border-gray-200 shadow-sm rounded-xl"
+                />
+                {/* نتائج البحث السريعة */}
+                {debouncedSearchTerm && filteredPlayers.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 z-50 max-h-64 overflow-y-auto">
+                    <div className="p-2">
+                      <div className="text-xs text-gray-500 mb-2 px-2">
+                        {filteredPlayers.length} نتيجة للبحث عن "{debouncedSearchTerm}"
+            </div>
+                      {filteredPlayers.slice(0, 5).map((player) => (
+                        <div 
+                          key={player.id}
+                          className="flex items-center gap-3 p-2 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
+                          onClick={() => {
+                            setSearchTerm('');
+                            setIsSearchExpanded(false);
+                          }}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                            {(player.full_name || player.name || 'ل').charAt(0)}
+          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm text-gray-800 truncate">
+                              {player.full_name || player.name || 'لاعب مجهول'}
+        </div>
+                            <div className="text-xs text-gray-500 truncate">
+                              {player.primary_position || player.position} • {player.nationality || 'غير محدد'}
+      </div>
+              </div>
                   </div>
+                      ))}
+                      {filteredPlayers.length > 5 && (
+                        <div className="text-center text-xs text-blue-600 py-2 border-t border-gray-100">
+                          عرض جميع النتائج ({filteredPlayers.length})
                 </div>
               )}
             </div>
           </div>
+                )}
         </div>
       </div>
+          </div>
+        </div>
+      )}
 
-      {/* قائمة اللاعبين */}
-      <div className="container mx-auto px-6 pb-16">
-        {/* إحصائيات مفصلة */}
-        <div className="mb-8">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-xl shadow-lg">
-              <Users className="w-6 h-6 text-blue-600" />
-              <span className="text-lg font-semibold text-slate-800">
-                {pagedPlayers.length} لاعب من أصل {filteredPlayers.length}
-              </span>
+      {/* الفلاتر المتقدمة */}
+      {isFiltersExpanded && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 shadow-sm">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Filter className="w-5 h-5 text-blue-600" />
+                الفلاتر المتقدمة
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetFilters}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                إعادة تعيين
+              </Button>
             </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
+              {/* المركز */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                  <Sword className="w-3 h-3 text-blue-500" />
+                  المركز
+                </Label>
+                <Select value={filterPosition} onValueChange={setFilterPosition}>
+                  <SelectTrigger className="h-8 text-xs border-blue-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع المراكز</SelectItem>
+                    <SelectItem value="مهاجم">مهاجم</SelectItem>
+                    <SelectItem value="لاعب وسط">لاعب وسط</SelectItem>
+                    <SelectItem value="مدافع">مدافع</SelectItem>
+                    <SelectItem value="حارس مرمى">حارس مرمى</SelectItem>
+                  </SelectContent>
+                </Select>
           </div>
           
-          {/* إحصائيات نوع اللاعبين */}
-          <div className="flex justify-center gap-3 text-sm flex-wrap">
-            <div className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-green-100 px-4 py-3 rounded-xl border border-green-200 shadow-md">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-green-800 font-semibold">
-                مستقلين: {filteredPlayers.filter(p => p.accountType === 'player').length}
-              </span>
+              {/* الجنسية */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                  <Flag className="w-3 h-3 text-green-500" />
+                  الجنسية
+                </Label>
+                <Select value={filterNationality} onValueChange={setFilterNationality}>
+                  <SelectTrigger className="h-8 text-xs border-green-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الجنسيات</SelectItem>
+                    <SelectItem value="مصري">مصري</SelectItem>
+                    <SelectItem value="قطري">قطري</SelectItem>
+                    <SelectItem value="سعودي">سعودي</SelectItem>
+                    <SelectItem value="إماراتي">إماراتي</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
-            <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 rounded-xl border border-blue-200 shadow-md">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span className="text-blue-800 font-semibold">
-                أندية: {filteredPlayers.filter(p => p.accountType === 'dependent_club').length}
-              </span>
+
+              {/* الدولة */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-purple-500" />
+                  الدولة
+                </Label>
+                <Select value={filterCountry} onValueChange={setFilterCountry}>
+                  <SelectTrigger className="h-8 text-xs border-purple-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الدول</SelectItem>
+                    <SelectItem value="مصر">مصر</SelectItem>
+                    <SelectItem value="قطر">قطر</SelectItem>
+                    <SelectItem value="السعودية">السعودية</SelectItem>
+                    <SelectItem value="الإمارات">الإمارات</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
-            <div className="flex items-center gap-2 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-3 rounded-xl border border-orange-200 shadow-md">
-              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              <span className="text-orange-800 font-semibold">
-                أكاديميات: {filteredPlayers.filter(p => p.accountType === 'dependent_academy').length}
-              </span>
+
+              {/* نوع الحساب */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                  <User className="w-3 h-3 text-orange-500" />
+                  نوع الحساب
+                </Label>
+                <Select value={filterAccountType} onValueChange={setFilterAccountType}>
+                  <SelectTrigger className="h-8 text-xs border-orange-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الأنواع</SelectItem>
+                    <SelectItem value="independent">لاعب مستقل</SelectItem>
+                    <SelectItem value="dependent">لاعب تابع</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
-            <div className="flex items-center gap-2 bg-gradient-to-r from-cyan-50 to-cyan-100 px-4 py-3 rounded-xl border border-cyan-200 shadow-md">
-              <div className="w-3 h-3 bg-cyan-500 rounded-full"></div>
-              <span className="text-cyan-800 font-semibold">
-                مدربين: {filteredPlayers.filter(p => p.accountType === 'dependent_trainer').length}
-              </span>
+
+              {/* الفئة العمرية */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-pink-500" />
+                  الفئة العمرية
+                </Label>
+                <Select value={filterAge} onValueChange={setFilterAge}>
+                  <SelectTrigger className="h-8 text-xs border-pink-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الأعمار</SelectItem>
+                    <SelectItem value="under16">تحت 16 سنة</SelectItem>
+                    <SelectItem value="under18">تحت 18 سنة</SelectItem>
+                    <SelectItem value="under21">تحت 21 سنة</SelectItem>
+                    <SelectItem value="senior">كبار</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
-            <div className="flex items-center gap-2 bg-gradient-to-r from-purple-50 to-purple-100 px-4 py-3 rounded-xl border border-purple-200 shadow-md">
-              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-              <span className="text-purple-800 font-semibold">
-                وكلاء: {filteredPlayers.filter(p => p.accountType === 'dependent_agent').length}
-              </span>
+
+              {/* التبعية */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                  <Users className="w-3 h-3 text-teal-500" />
+                  التبعية
+                </Label>
+                <Select value={filterDependency} onValueChange={setFilterDependency}>
+                  <SelectTrigger className="h-8 text-xs border-teal-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع التبعيات</SelectItem>
+                    <SelectItem value="independent">مستقل</SelectItem>
+                    <SelectItem value="dependent">تابع</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
+          </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {/* الحالة */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3 text-emerald-500" />
+                  الحالة
+                </Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="h-8 text-xs border-emerald-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الحالات</SelectItem>
+                    <SelectItem value="active">مفعل</SelectItem>
+                    <SelectItem value="inactive">معلق</SelectItem>
+                  </SelectContent>
+                </Select>
+        </div>
+
+              {/* مستوى المهارة */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                  <Trophy className="w-3 h-3 text-yellow-500" />
+                  مستوى المهارة
+                </Label>
+                <Select value={filterSkillLevel} onValueChange={setFilterSkillLevel}>
+                  <SelectTrigger className="h-8 text-xs border-yellow-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع المستويات</SelectItem>
+                    <SelectItem value="beginner">مبتدئ</SelectItem>
+                    <SelectItem value="intermediate">متوسط</SelectItem>
+                    <SelectItem value="advanced">متقدم</SelectItem>
+                    <SelectItem value="professional">محترف</SelectItem>
+                  </SelectContent>
+                </Select>
+                </div>
+
+              {/* الأهداف */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                  <Target className="w-3 h-3 text-red-500" />
+                  الأهداف
+                </Label>
+                <Select value={filterObjective} onValueChange={setFilterObjective}>
+                  <SelectTrigger className="h-8 text-xs border-red-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الأهداف</SelectItem>
+                    <SelectItem value="professional">احترافي</SelectItem>
+                    <SelectItem value="academic">أكاديمي</SelectItem>
+                    <SelectItem value="recreational">ترفيهي</SelectItem>
+                  </SelectContent>
+                </Select>
+                  </div>
+                  </div>
+                </div>
+        </div>
+      )}
+
+      {/* المحتوى الرئيسي */}
+      <div className="container mx-auto px-4 py-8">
+        {/* إحصائيات سريعة */}
+        <div className="mb-6 p-4 bg-white/60 backdrop-blur-sm rounded-xl shadow-sm border border-white/30">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">
+              عرض {pagedPlayers.length} من {filteredPlayers.length} لاعب
+            </span>
+            <span className="text-gray-600">
+              الصفحة {currentPage} من {totalPages}
+            </span>
           </div>
         </div>
 
+        {/* قائمة اللاعبين */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="bg-white/80 backdrop-blur-lg border-white/40 shadow-2xl p-10 animate-pulse rounded-3xl">
-                <div className="flex justify-center mb-8">
-                  <div className="w-48 h-48 bg-slate-200 rounded-3xl"></div>
-                </div>
-                <div className="space-y-6">
-                  <div className="h-8 bg-slate-200 rounded-2xl"></div>
-                  <div className="h-6 bg-slate-200 rounded-2xl w-3/4 mx-auto"></div>
-                  <div className="flex gap-3 justify-center">
-                    <div className="h-10 w-20 bg-slate-200 rounded-2xl"></div>
-                    <div className="h-10 w-24 bg-slate-200 rounded-2xl"></div>
-                  </div>
-                  <div className="flex gap-4 mt-10">
-                    <div className="flex-1 h-12 bg-slate-200 rounded-2xl"></div>
-                    <div className="flex-1 h-12 bg-slate-200 rounded-2xl"></div>
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Card key={index} className="h-80 bg-white/60 backdrop-blur-sm border-white/30 shadow-lg animate-pulse">
+                <div className="h-full bg-gray-200 rounded-xl"></div>
               </Card>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {pagedPlayers.map((player) => {
               const playerPosition = player.primary_position || player.position || '';
               const positionColor = getPositionColor(playerPosition);
               const positionEmoji = getPositionEmoji(playerPosition);
               
               return (
-                <Card key={player.id} className="group relative overflow-hidden bg-white/85 backdrop-blur-xl border-white/50 shadow-2xl hover:shadow-[0_25px_60px_-12px_rgba(0,0,0,0.25)] transform hover:scale-[1.04] transition-all duration-700 cursor-pointer rounded-3xl ring-1 ring-white/20 hover:ring-white/40">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${positionColor} opacity-5 group-hover:opacity-25 transition-all duration-700`} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-white/10 group-hover:from-black/10 transition-all duration-700" />
-                  
-                  <div className="relative p-10">
-                    {/* الصورة الشخصية الكبيرة */}
-                    <div className="flex justify-center mb-8">
-                      <div className="relative">
-                        <div className={`absolute inset-0 bg-gradient-to-r ${positionColor} rounded-3xl blur-2xl opacity-30 group-hover:opacity-60 transition-all duration-700 scale-110`} />
-                        <div className="relative w-48 h-48 rounded-3xl overflow-hidden border-6 border-white/60 shadow-3xl bg-white group-hover:border-white/80 transition-all duration-700">
+                <div key={player.id} className="group relative h-80 cursor-pointer">
+                  {/* البطاقة الرئيسية */}
+                  <div className="relative w-full h-full rounded-xl overflow-hidden shadow-lg transition-all duration-300 group-hover:scale-105">
+                    {/* صورة اللاعب */}
+                    <div className="absolute inset-0">
                           {player.profile_image || player.profile_image_url ? (
                             <Image
                               src={getValidImageUrl(player.profile_image_url || player.profile_image || player.avatar)}
                               alt={player.full_name || player.name || player.displayName || 'لاعب'}
-                              width={192}
-                              height={192}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          fill
+                          className="object-cover"
                               loading="eager"
                               priority={true}
                               onError={(e) => {
@@ -801,45 +792,52 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
                           )}
                         </div>
                         
-                        <div className={`absolute -bottom-4 -right-4 w-14 h-14 bg-gradient-to-br ${positionColor} rounded-2xl border-4 border-white flex items-center justify-center text-2xl shadow-2xl group-hover:scale-110 transition-all duration-500`}>
-                          <span className="text-white">{positionEmoji}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* معلومات اللاعب */}
-                    <div className="text-center space-y-6">
-                      <h3 className="font-bold text-2xl text-slate-800 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-indigo-600 group-hover:bg-clip-text transition-all duration-500 line-clamp-2 leading-tight">
+                    {/* التدرج اللوني في الأسفل */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent opacity-90" />
+                    
+                    {/* المحتوى في الأسفل */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                      <h3 className="font-bold text-lg mb-2 line-clamp-2 leading-tight">
                         {player.full_name || player.name || player.displayName || 'لاعب مجهول'}
                       </h3>
 
-                      <div className="flex justify-center flex-wrap gap-3">
-                        <Badge className={`bg-gradient-to-r ${positionColor} text-white border-0 shadow-xl px-5 py-2 rounded-2xl text-base font-bold`}>
-                          {player.primary_position || player.position || 'غير محدد'}
+                      <div className="flex items-center gap-2 mb-3">
+                        <Badge className={`bg-gradient-to-r ${positionColor} text-white border-0 shadow-md px-2 py-1 rounded-lg text-xs font-bold`}>
+                          {playerPosition || 'غير محدد'}
                         </Badge>
-                        <Badge variant="outline" className="border-2 border-slate-300 text-slate-700 bg-white/70 px-5 py-2 rounded-2xl text-base font-semibold">
+                        <Badge variant="outline" className="border border-white/30 text-white bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-semibold">
                           {player.nationality || 'غير محدد'}
                         </Badge>
                       </div>
 
                       {/* مؤشر نوع اللاعب */}
-                      <div className="flex justify-center">
+                      <div className="flex justify-start">
                         <Badge 
                           variant={player.accountType === 'player' ? 'default' : 'secondary'} 
                           className={`${player.accountType === 'player' 
                             ? 'bg-gradient-to-r from-green-400 to-green-500 text-white border-0' 
                             : getOrganizationBadgeStyle(player.accountType)
-                          } px-6 py-3 rounded-2xl text-base font-bold shadow-xl`}
+                          } px-2 py-1 rounded-lg text-xs font-bold shadow-md`}
                         >
                           {player.accountType === 'player' ? '🎯 مستقل' : getOrganizationLabel(player.accountType)}
                         </Badge>
                       </div>
                     </div>
 
-                    {/* أزرار الإجراءات */}
-                    <div className="mt-10 flex gap-4">
+                    {/* مؤشر التمرير */}
+                    <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <Eye className="w-4 h-4 text-white" />
+                    </div>
+                    
+                    {/* طبقة التفاعل */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
+                  </div>
+                  
+                  {/* أزرار الإجراءات تظهر في الأسفل عند التمرير */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-b-xl opacity-0 group-hover:opacity-100 transition-all duration-300 p-4">
+                    <div className="flex gap-2">
                       <Button 
-                        className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0 shadow-xl rounded-2xl py-4 text-lg font-bold transition-all duration-500 hover:shadow-2xl hover:scale-105"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-lg rounded-lg py-2 text-xs font-bold transition-all duration-300 hover:shadow-xl"
                         onClick={async () => {
                           console.group('🔍 [PlayersSearchPage] بدء عملية عرض الملف');
                           console.log('بيانات اللاعب المحدد:', {
@@ -855,9 +853,6 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
                           });
                           
                           // التحقق من نوع اللاعب قبل إرسال الإشعار
-                          // اللاعب مستقل إذا:
-                          // 1. accountType === 'player' (من مجموعة users)
-                          // 2. أو لا يوجد لديه انتماء لأي منظمة (من مجموعات players/player)
                           const hasOrganizationAffiliation = !!(
                             player.club_id || player.clubId ||
                             player.academy_id || player.academyId ||
@@ -866,13 +861,9 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
                           );
                           
                           const isIndependentPlayer = 
-                            player.accountType === 'player' || // من مجموعة users
-                            (!hasOrganizationAffiliation && !player.accountType?.startsWith('dependent')); // من مجموعات أخرى بدون انتماء
+                            player.accountType === 'player' ||
+                            (!hasOrganizationAffiliation && !player.accountType?.startsWith('dependent'));
                           
-                          // التحقق من إمكانية إرسال الإشعار
-                          // يمكن إرسال إشعار إذا:
-                          // 1. اللاعب مستقل
-                          // 2. أو اللاعب تابع لكن له حساب تسجيل دخول (محول)
                           const hasLoginAccount = player.convertedToAccount || player.firebaseUid;
                           const canReceiveNotifications = isIndependentPlayer || hasLoginAccount;
                           
@@ -966,15 +957,16 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
                             });
                           }
                           
-                          console.log('🌐 الانتقال إلى صفحة التقارير:', `/dashboard/player/reports?view=${player.id}`);
+                                                     console.log('🌐 الانتقال إلى صفحة الملف الشخصي المشتركة:', `/dashboard/shared/player-profile/${player.id}`);
                           console.groupEnd();
                           
-                          router.push(`/dashboard/player/reports?view=${player.id}`);
+                           router.push(`/dashboard/shared/player-profile/${player.id}`);
                         }}
                       >
-                        <Eye className="w-6 h-6 ml-3" />
+                        <Eye className="w-3 h-3 ml-1" />
                         عرض الملف
                       </Button>
+                      
                       {player.id && user && userData && (
                         <SendMessageButton
                           user={user}
@@ -985,14 +977,14 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
                           targetUserType="player"
                           buttonText="مراسلة"
                           buttonVariant="outline"
-                          buttonSize="default"
-                          className="flex-1 border-2 border-slate-400 text-slate-700 hover:bg-slate-100 hover:border-slate-500 rounded-2xl py-4 text-lg font-bold transition-all duration-500 hover:shadow-xl bg-white/70 backdrop-blur-sm"
+                          buttonSize="sm"
+                          className="flex-1 border border-white/30 text-white hover:bg-white/20 hover:border-white/50 rounded-lg py-2 text-xs font-bold transition-all duration-300 bg-white/10 backdrop-blur-sm"
                           redirectToMessages={true}
                         />
                       )}
                     </div>
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
@@ -1000,10 +992,10 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
 
         {filteredPlayers.length === 0 && !isLoading && (
           <div className="col-span-full">
-            <Card className="bg-white/60 backdrop-blur-sm border-white/30 shadow-lg p-16 text-center rounded-2xl">
-              <div className="text-8xl mb-6 opacity-50">🔍</div>
-              <h3 className="text-2xl font-bold text-slate-800 mb-4">لا توجد نتائج</h3>
-              <p className="text-lg text-slate-600 max-w-md mx-auto">
+            <Card className="bg-white/60 backdrop-blur-sm border-white/30 shadow-lg p-12 text-center rounded-xl">
+              <div className="text-6xl mb-4 opacity-50">🔍</div>
+              <h3 className="text-xl font-bold text-gray-800 mb-3">لا توجد نتائج</h3>
+              <p className="text-gray-600 max-w-md mx-auto">
                 لم نعثر على لاعبين يطابقون معايير البحث. جرب تعديل الفلاتر أو كلمات البحث.
               </p>
             </Card>
@@ -1011,7 +1003,11 @@ export default function PlayersSearchPage({ accountType }: PlayersSearchPageProp
         )}
 
         {/* أضف مكون الصفحات أسفل القائمة */}
-        <Pagination />
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

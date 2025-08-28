@@ -4,7 +4,18 @@ import React, { useState, useEffect, createContext, useContext, useMemo } from '
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth-provider';
-import { useTranslation } from '@/lib/translations/simple-context';
+import { 
+  collection, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
+  onSnapshot,
+  getDocs,
+  doc,
+  updateDoc
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 import { 
   Home, 
   User, 
@@ -50,7 +61,8 @@ import {
   ChevronDown,
   ChevronUp,
   ShoppingBag,
-  Brain
+  Brain,
+  Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -177,11 +189,14 @@ interface ResponsiveSidebarProps {
   accountType?: string;
 }
 
-const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'player' }) => {
+const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType: propAccountType = 'player' }) => {
   const { user, userData, logout } = useAuth();
+  
+  // تحديد نوع الحساب من userData أو من prop
+  const accountType = userData?.accountType || propAccountType;
   const router = useRouter();
   const pathname = usePathname();
-  const { t, direction } = useTranslation();
+
   const { 
     isSidebarOpen, 
     isSidebarCollapsed, 
@@ -252,6 +267,15 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
       textColor: 'text-pink-600',
       emoji: '🎯'
     },
+    marketer: {
+      title: 'منصة المسوق',
+      subtitle: 'مسوق',
+      icon: TrendingUp,
+      color: 'from-indigo-500 to-indigo-600',
+      bgColor: 'bg-indigo-50',
+      textColor: 'text-indigo-600',
+      emoji: '📈'
+    },
     'dream-academy': {
       title: 'أكاديمية الحلم',
       subtitle: 'أكاديمية الحلم',
@@ -311,9 +335,17 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
           id: 'messages',
           label: 'الرسائل',
           icon: MessageSquare,
-          href: `/dashboard/${accountType}/messages`,
+          href: `/dashboard/messages`,
           color: 'text-cyan-600',
           bgColor: 'bg-cyan-50'
+        },
+        {
+          id: 'notifications',
+          label: 'الإشعارات',
+          icon: Bell,
+          href: `/dashboard/${accountType}/notifications`,
+          color: 'text-orange-600',
+          bgColor: 'bg-orange-50'
         }
       ]
     };
@@ -335,7 +367,7 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
           id: 'payment',
           label: 'الدفع',
           icon: CreditCard,
-          href: accountType === 'admin' ? `/dashboard/admin/payments` : `/dashboard/${accountType}/bulk-payment`,
+          href: accountType === 'admin' ? `/dashboard/admin/payments` : `/dashboard/shared/bulk-payment`,
           color: 'text-purple-600',
           bgColor: 'bg-purple-50'
         }
@@ -354,6 +386,22 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
           href: `/dashboard/dream-academy`,
           color: 'text-indigo-600',
           bgColor: 'bg-indigo-50'
+        }
+      ]
+    };
+
+    const sharedGroup = {
+      id: 'shared',
+      title: 'الصفحات المشتركة',
+      icon: Users,
+      items: [
+        {
+          id: 'shared-bulk-payment',
+          label: 'الدفع الجماعي',
+          icon: CreditCard,
+          href: `/dashboard/shared/bulk-payment`,
+          color: 'text-purple-600',
+          bgColor: 'bg-purple-50'
         }
       ]
     };
@@ -728,12 +776,37 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
             bgColor: 'bg-orange-50'
           },
           {
+            id: 'admin-notification-center',
+            label: 'مركز الإشعارات',
+            icon: Bell,
+            href: `/dashboard/admin/notification-center`,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-50'
+          },
+          {
+            id: 'admin-send-notifications',
+            label: 'إرسال الإشعارات',
+            icon: Send,
+            href: `/dashboard/admin/send-notifications`,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50'
+          },
+
+          {
             id: 'admin-reports',
             label: 'التقارير',
             icon: FileText,
             href: `/dashboard/admin/reports`,
             color: 'text-blue-600',
             bgColor: 'bg-blue-50'
+          },
+          {
+            id: 'admin-customer-management',
+            label: 'إدارة العملاء',
+            icon: UserPlus,
+            href: `/dashboard/admin/customer-management`,
+            color: 'text-teal-600',
+            bgColor: 'bg-teal-50'
           },
           {
             id: 'admin-careers',
@@ -774,6 +847,14 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
             href: `/dashboard/admin/ads`,
             color: 'text-orange-600',
             bgColor: 'bg-orange-50'
+          },
+          {
+            id: 'admin-videos',
+            label: 'إدارة الفيديوهات',
+            icon: Video,
+            href: `/dashboard/admin/videos`,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-50'
           }
         ]
       });
@@ -812,6 +893,110 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
           }
         ]
       });
+
+      accountSpecificGroups.push({
+        id: 'marketer-content',
+        title: 'إدارة المحتوى',
+        icon: Video,
+        items: [
+          {
+            id: 'marketer-videos',
+            label: 'فيديوهات اللاعبين',
+            icon: Video,
+            href: `/dashboard/marketer/videos`,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-50'
+          },
+          {
+            id: 'marketer-players',
+            label: 'إدارة اللاعبين',
+            icon: Users,
+            href: `/dashboard/marketer/players`,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50'
+          },
+          {
+            id: 'marketer-search',
+            label: 'البحث عن لاعبين',
+            icon: Search,
+            href: `/dashboard/marketer/search`,
+            color: 'text-indigo-600',
+            bgColor: 'bg-indigo-50'
+          }
+        ]
+      });
+
+      accountSpecificGroups.push({
+        id: 'marketer-services',
+        title: 'الخدمات',
+        icon: ShoppingBag,
+        items: [
+          {
+            id: 'marketer-dream-academy',
+            label: 'أكاديمية الحلم',
+            icon: GraduationCap,
+            href: `/dashboard/marketer/dream-academy`,
+            color: 'text-cyan-600',
+            bgColor: 'bg-cyan-50'
+          },
+          {
+            id: 'marketer-subscription',
+            label: 'الاشتراكات',
+            icon: CreditCard,
+            href: `/dashboard/marketer/subscription`,
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-50'
+          }
+        ]
+      });
+
+      accountSpecificGroups.push({
+        id: 'marketer-financial',
+        title: 'المالية',
+        icon: DollarSign,
+        items: [
+          {
+            id: 'marketer-billing',
+            label: 'الفواتير',
+            icon: CreditCard,
+            href: `/dashboard/marketer/billing`,
+            color: 'text-yellow-600',
+            bgColor: 'bg-yellow-50'
+          },
+          {
+            id: 'marketer-payment',
+            label: 'المدفوعات',
+            icon: DollarSign,
+            href: `/dashboard/marketer/payment`,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50'
+          }
+        ]
+      });
+
+      accountSpecificGroups.push({
+        id: 'marketer-communication',
+        title: 'التواصل',
+        icon: MessageSquare,
+        items: [
+          {
+            id: 'marketer-messages',
+            label: 'الرسائل',
+            icon: MessageSquare,
+            href: `/dashboard/marketer/messages`,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50'
+          },
+          {
+            id: 'marketer-notifications',
+            label: 'الإشعارات',
+            icon: Bell,
+            href: `/dashboard/marketer/notifications`,
+            color: 'text-red-600',
+            bgColor: 'bg-red-50'
+          }
+        ]
+      });
     }
 
     // قائمة الوالد - إعادة ترتيب منطقي
@@ -833,10 +1018,10 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
       });
     }
 
-    return [baseGroup, subscriptionGroup, academyGroup, ...accountSpecificGroups];
+    return [baseGroup, subscriptionGroup, academyGroup, sharedGroup, ...accountSpecificGroups];
   };
 
-  const menuGroups = useMemo(() => getMenuGroups(), [accountType, t]);
+  const menuGroups = useMemo(() => getMenuGroups(), [accountType]);
   const showText = useMemo(() => shouldShowText(), [isMobile, isTablet, isSidebarCollapsed]);
   const sidebarWidth = useMemo(() => getSidebarWidth(), [isMobile, isTablet, isSidebarCollapsed]);
 
@@ -887,7 +1072,7 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
         break;
       }
     }
-  }, [pathname, menuGroups]);
+  }, [pathname]);
 
   // لا تعرض السايدبار حتى يتم تحميل المكون على العميل
   if (!isClient) {
@@ -917,7 +1102,7 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
         className={`fixed top-0 right-0 h-full bg-gradient-to-b ${accountInfo.color} z-50 shadow-xl backdrop-blur-xl border-l border-white/20 ${
           isMobile ? 'w-72' : sidebarWidth
         }`}
-        dir={direction}
+        dir="rtl"
       >
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -1139,7 +1324,7 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType = 'pl
                     exit={{ opacity: 0, x: -10 }}
                     className="font-medium text-sm"
                   >
-                    {t('sidebar.common.logout')}
+                    تسجيل الخروج
                   </motion.span>
                 )}
               </AnimatePresence>
@@ -1157,6 +1342,18 @@ const ResponsiveHeader: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { toggleSidebar, isMobile, isTablet, isDesktop, isSidebarCollapsed, isClient } = useLayout();
+  
+  // حالة للرسائل والإشعارات الحقيقية
+  const [newMessagesCount, setNewMessagesCount] = useState(0);
+  const [newNotificationsCount, setNewNotificationsCount] = useState(0);
+  const [isMessagesActive, setIsMessagesActive] = useState(false);
+  const [isNotificationsActive, setIsNotificationsActive] = useState(false);
+  const [showMessagesDropdown, setShowMessagesDropdown] = useState(false);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const [recentMessages, setRecentMessages] = useState<any[]>([]);
+  const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   const getUserDisplayName = () => {
     return userData?.displayName || userData?.name || user?.displayName || user?.email?.split('@')[0] || 'مستخدم';
@@ -1185,24 +1382,287 @@ const ResponsiveHeader: React.FC = () => {
 
   const accountType = getAccountTypeFromPath();
 
-  // التنقل إلى صفحة الرسائل
-  const navigateToMessages = () => {
-    router.push(`/dashboard/${accountType}/messages`);
+  // دالة لتنسيق الوقت
+  const formatTime = (date: Date) => {
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'الآن';
+    if (diffInMinutes < 60) return `منذ ${diffInMinutes} دقيقة`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `منذ ${diffInHours} ساعة`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `منذ ${diffInDays} يوم`;
+    
+    return date.toLocaleDateString('ar-EG');
   };
 
-  // التنقل إلى صفحة الإشعارات (للإدارة فقط)
+  // التعامل مع قائمة الرسائل المنسدلة
+  const toggleMessagesDropdown = () => {
+    setShowMessagesDropdown(!showMessagesDropdown);
+    setShowNotificationsDropdown(false); // إغلاق قائمة الإشعارات
+  };
+
+  // التعامل مع قائمة الإشعارات المنسدلة
+  const toggleNotificationsDropdown = () => {
+    setShowNotificationsDropdown(!showNotificationsDropdown);
+    setShowMessagesDropdown(false); // إغلاق قائمة الرسائل
+  };
+
+  // التنقل إلى صفحة الرسائل
+  const navigateToMessages = () => {
+    setIsMessagesActive(true);
+    setShowMessagesDropdown(false);
+    setNewMessagesCount(0);
+    router.push('/dashboard/messages');
+  };
+
+  // التنقل إلى صفحة الإشعارات
   const navigateToNotifications = () => {
-    if (accountType === 'admin') {
-      router.push('/dashboard/admin/notifications');
-    } else {
-      // يمكن إضافة صفحة إشعارات عامة للمستخدمين الآخرين
-      router.push(`/dashboard/${accountType}/notifications`);
+    setIsNotificationsActive(true);
+    setShowNotificationsDropdown(false);
+    setNewNotificationsCount(0);
+    router.push(`/dashboard/${accountType}/notifications`);
+  };
+
+  // جلب الرسائل الأخيرة من Firebase
+  const fetchRecentMessages = async () => {
+    if (!user?.uid) return;
+    
+    setMessagesLoading(true);
+    try {
+      const messagesQuery = query(
+        collection(db, 'conversations'),
+        where('participants', 'array-contains', user.uid),
+        orderBy('updatedAt', 'desc'),
+        limit(5)
+      );
+
+      const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+        const messages = snapshot.docs.map(doc => {
+          const data = doc.data();
+          const otherParticipantId = data.participants.find((id: string) => id !== user.uid);
+          return {
+            id: doc.id,
+            sender: data.participantNames?.[otherParticipantId] || 'مستخدم',
+            message: data.lastMessage || 'لا توجد رسائل',
+            time: data.lastMessageTime?.toDate ? data.lastMessageTime.toDate() : new Date(),
+            unread: data.unreadCount?.[user.uid] > 0,
+            conversationId: doc.id
+          };
+        });
+        
+        setRecentMessages(messages);
+        const unreadCount = messages.filter(msg => msg.unread).length;
+        setNewMessagesCount(unreadCount);
+      });
+
+      return unsubscribe;
+    } catch (error) {
+      console.error('خطأ في جلب الرسائل:', error);
+    } finally {
+      setMessagesLoading(false);
     }
   };
 
+  // جلب الإشعارات الأخيرة من Firebase
+  const fetchRecentNotifications = async () => {
+    if (!user?.uid) return;
+    
+    setNotificationsLoading(true);
+    try {
+      // محاولة جلب من مجموعة interaction_notifications أولاً
+      const interactionNotificationsQuery = query(
+        collection(db, 'interaction_notifications'),
+        where('userId', '==', user.uid),
+        limit(5)
+      );
+
+      const unsubscribe = onSnapshot(interactionNotificationsQuery, (snapshot) => {
+        const notifications = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            title: data.title || 'إشعار جديد',
+            message: data.message || 'لا توجد تفاصيل',
+            time: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+            type: data.type || 'general',
+            read: data.isRead || false,
+            notificationId: doc.id
+          };
+        });
+        
+        // ترتيب البيانات يدوياً حسب التاريخ
+        const sortedNotifications = notifications.sort((a, b) => {
+          return b.time.getTime() - a.time.getTime();
+        });
+        
+        setRecentNotifications(sortedNotifications);
+        const unreadCount = sortedNotifications.filter(notif => !notif.read).length;
+        setNewNotificationsCount(unreadCount);
+      }, (error) => {
+        console.error('خطأ في جلب interaction_notifications:', error);
+        // إذا فشل، جرب مجموعة notifications العادية
+        fetchRegularNotifications();
+      });
+
+      return unsubscribe;
+    } catch (error) {
+      console.error('خطأ في جلب الإشعارات:', error);
+      // إذا فشل، جرب مجموعة notifications العادية
+      fetchRegularNotifications();
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  // جلب الإشعارات العادية كبديل
+  const fetchRegularNotifications = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      const notificationsQuery = query(
+        collection(db, 'notifications'),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc'),
+        limit(5)
+      );
+
+      const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
+        const notifications = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            title: data.title || 'إشعار جديد',
+            message: data.message || 'لا توجد تفاصيل',
+            time: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+            type: data.type || 'general',
+            read: data.isRead || false,
+            notificationId: doc.id
+          };
+        });
+        
+        // ترتيب البيانات يدوياً حسب التاريخ
+        const sortedNotifications = notifications.sort((a, b) => {
+          return b.time.getTime() - a.time.getTime();
+        });
+        
+        setRecentNotifications(sortedNotifications);
+        const unreadCount = sortedNotifications.filter(notif => !notif.read).length;
+        setNewNotificationsCount(unreadCount);
+      });
+
+      return unsubscribe;
+    } catch (error) {
+      console.error('خطأ في جلب notifications العادية:', error);
+    }
+  };
+
+  // التعامل مع الرسالة
+  const handleMessageClick = async (message: any) => {
+    try {
+      // تحديد الرسالة كمقروءة
+      if (message.unread && message.conversationId) {
+        const conversationRef = doc(db, 'conversations', message.conversationId);
+        await updateDoc(conversationRef, {
+          [`unreadCount.${user?.uid}`]: 0
+        });
+      }
+      
+      setShowMessagesDropdown(false);
+      router.push('/dashboard/messages');
+    } catch (error) {
+      console.error('خطأ في تحديث حالة الرسالة:', error);
+      router.push('/dashboard/messages');
+    }
+  };
+
+  // التعامل مع الإشعار
+  const handleNotificationClick = async (notification: any) => {
+    try {
+      // تحديد الإشعار كمقروء
+      if (!notification.read && notification.notificationId) {
+        // محاولة تحديث في interaction_notifications أولاً
+        try {
+          const interactionNotificationRef = doc(db, 'interaction_notifications', notification.notificationId);
+          await updateDoc(interactionNotificationRef, {
+            isRead: true
+          });
+        } catch (error) {
+          // إذا فشل، جرب notifications العادية
+          const notificationRef = doc(db, 'notifications', notification.notificationId);
+          await updateDoc(notificationRef, {
+            isRead: true
+          });
+        }
+      }
+      
+      setShowNotificationsDropdown(false);
+      router.push('/dashboard/notifications');
+    } catch (error) {
+      console.error('خطأ في تحديث حالة الإشعار:', error);
+      router.push('/dashboard/notifications');
+    }
+  };
+
+  // تحديد إذا كانت الصفحة الحالية هي صفحة الرسائل أو الإشعارات
+  useEffect(() => {
+    setIsMessagesActive(pathname.includes('/messages'));
+    setIsNotificationsActive(pathname.includes('/notifications'));
+  }, [pathname]);
+
+  // جلب البيانات عند تحميل المكون
+  useEffect(() => {
+    if (user?.uid) {
+      let unsubscribeMessages: (() => void) | undefined;
+      let unsubscribeNotifications: (() => void) | undefined;
+
+      // جلب الرسائل
+      fetchRecentMessages().then(unsubscribe => {
+        unsubscribeMessages = unsubscribe;
+      }).catch(error => {
+        console.error('خطأ في جلب الرسائل:', error);
+      });
+
+      // جلب الإشعارات
+      fetchRecentNotifications().then(unsubscribe => {
+        unsubscribeNotifications = unsubscribe;
+      }).catch(error => {
+        console.error('خطأ في جلب الإشعارات:', error);
+      });
+
+      return () => {
+        if (typeof unsubscribeMessages === 'function') {
+          unsubscribeMessages();
+        }
+        if (typeof unsubscribeNotifications === 'function') {
+          unsubscribeNotifications();
+        }
+      };
+    }
+  }, [user?.uid]);
+
+  // إغلاق القوائم المنسدلة عند النقر خارجها
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.messages-dropdown') && !target.closest('.notifications-dropdown')) {
+        setShowMessagesDropdown(false);
+        setShowNotificationsDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <header className={`bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30 transition-all duration-300 ease-in-out ${getHeaderMargin()}`}>
-      <div className="flex items-center justify-between px-4 py-3 lg:px-6">
+      <div className="flex items-center justify-between px-4 py-3 lg:px-6 relative">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -1216,47 +1676,222 @@ const ResponsiveHeader: React.FC = () => {
           
           <div>
             <h1 className="text-xl font-semibold text-gray-900">لوحة التحكم</h1>
-            <p className="text-sm text-gray-600">مرحباً بك في منصة الحلم</p>
+            <p className="text-sm text-gray-600">
+              مرحباً بك في {accountType === 'admin' ? 'منصة الإدارة' : 
+                           accountType === 'academy' ? 'منصة الأكاديمية' :
+                           accountType === 'club' ? 'منصة النادي' :
+                           accountType === 'trainer' ? 'منصة المدرب' :
+                           accountType === 'agent' ? 'منصة الوكيل' :
+                           accountType === 'marketer' ? 'منصة المسوق' :
+                           'منصة اللاعب'}
+            </p>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
-          {/* أيقونة الرسائل */}
+        <div className="flex items-center gap-3 overflow-visible">
+          {/* أيقونة الرسائل مع القائمة المنسدلة */}
+          <div className="relative messages-dropdown inline-block">
           <Button
             variant="ghost"
             size="icon"
-            onClick={navigateToMessages}
-            className="relative hover:bg-gray-100"
-            title="الرسائل"
-          >
-            <MessageSquare className="w-5 h-5 text-gray-600" />
+              onClick={toggleMessagesDropdown}
+              className={`relative transition-all duration-200 group ${
+                isMessagesActive 
+                  ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' 
+                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
+              }`}
+              title={`الرسائل${newMessagesCount > 0 ? ` (${newMessagesCount} جديدة)` : ''}`}
+            >
+              <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
             {/* مؤشر الرسائل الجديدة */}
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              {newMessagesCount > 0 && (
+                <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full animate-pulse flex items-center justify-center shadow-lg">
+                  <span className="text-[10px] text-white font-bold">
+                    {newMessagesCount > 9 ? '9+' : newMessagesCount}
+                  </span>
+                </div>
+              )}
+              {/* مؤشر الصفحة النشطة */}
+              {isMessagesActive && (
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full shadow-sm"></div>
+              )}
           </Button>
 
-          {/* أيقونة الإشعارات */}
+            {/* قائمة الرسائل المنسدلة */}
+            {showMessagesDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-80 bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-gray-200 z-50 min-w-max transform origin-top-right">
+                <div className="p-4 border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">الرسائل الأخيرة</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={navigateToMessages}
+                      className="text-blue-600 hover:text-blue-700 text-sm"
+                    >
+                      عرض الكل
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="max-h-64 overflow-y-auto max-w-full">
+                  {messagesLoading ? (
+                    <div className="p-4 text-center text-gray-500">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                      <p className="text-sm">جاري تحميل الرسائل...</p>
+                    </div>
+                  ) : recentMessages.length > 0 ? (
+                    recentMessages.map((message) => (
+                      <div
+                        key={message.id}
+                        onClick={() => handleMessageClick(message)}
+                        className={`p-3 border-b border-gray-50 cursor-pointer transition-colors hover:bg-gray-50 ${
+                          message.unread ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {message.sender}
+                            </p>
+                            <p className="text-sm text-gray-600 truncate mt-1">
+                              {message.message}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {formatTime(message.time)}
+                            </p>
+                          </div>
+                          {message.unread && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 flex-shrink-0"></div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-gray-500">
+                      <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm">لا توجد رسائل جديدة</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* أيقونة الإشعارات مع القائمة المنسدلة */}
+          <div className="relative notifications-dropdown inline-block">
           <Button
             variant="ghost"
             size="icon"
-            onClick={navigateToNotifications}
-            className="relative hover:bg-gray-100"
-            title={accountType === 'admin' ? 'إدارة الإشعارات' : 'الإشعارات'}
-          >
-            <Bell className="w-5 h-5 text-gray-600" />
+              onClick={toggleNotificationsDropdown}
+              className={`relative transition-all duration-200 group ${
+                isNotificationsActive 
+                  ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' 
+                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
+              }`}
+              title={`الإشعارات${newNotificationsCount > 0 ? ` (${newNotificationsCount} جديدة)` : ''}`}
+            >
+              <Bell className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
             {/* مؤشر الإشعارات الجديدة */}
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+              {newNotificationsCount > 0 && (
+                <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-orange-500 rounded-full animate-pulse flex items-center justify-center shadow-lg">
+                  <span className="text-[10px] text-white font-bold">
+                    {newNotificationsCount > 9 ? '9+' : newNotificationsCount}
+                  </span>
+                </div>
+              )}
+              {/* مؤشر الصفحة النشطة */}
+              {isNotificationsActive && (
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-orange-600 rounded-full shadow-sm"></div>
+              )}
           </Button>
+
+            {/* قائمة الإشعارات المنسدلة */}
+            {showNotificationsDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-80 bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-gray-200 z-50 min-w-max transform origin-top-right">
+                <div className="p-4 border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">الإشعارات الأخيرة</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={navigateToNotifications}
+                      className="text-orange-600 hover:text-orange-700 text-sm"
+                    >
+                      عرض الكل
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="max-h-64 overflow-y-auto max-w-full">
+                  {notificationsLoading ? (
+                    <div className="p-4 text-center text-gray-500">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto mb-2"></div>
+                      <p className="text-sm">جاري تحميل الإشعارات...</p>
+                    </div>
+                  ) : recentNotifications.length > 0 ? (
+                    recentNotifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        onClick={() => handleNotificationClick(notification)}
+                        className={`p-3 border-b border-gray-50 cursor-pointer transition-colors hover:bg-gray-50 ${
+                          !notification.read ? 'bg-orange-50' : ''
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                            notification.type === 'message' ? 'bg-blue-500' :
+                            notification.type === 'payment' ? 'bg-green-500' :
+                            notification.type === 'system' ? 'bg-gray-500' :
+                            notification.type === 'match' ? 'bg-purple-500' :
+                            'bg-orange-500'
+                          }`}></div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">
+                              {notification.title}
+                            </p>
+                            <p className="text-sm text-gray-600 truncate mt-1">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {formatTime(notification.time)}
+                            </p>
+                          </div>
+                          {!notification.read && (
+                            <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0"></div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-gray-500">
+                      <Bell className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm">لا توجد إشعارات جديدة</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* فاصل */}
           <div className="w-px h-6 bg-gray-300"></div>
 
           {/* صورة المستخدم */}
-          <Avatar className="w-8 h-8">
+          <div className="flex items-center gap-2">
+            <Avatar className="w-8 h-8 cursor-pointer hover:scale-105 transition-transform duration-200">
             <AvatarImage src={userData?.photoURL || '/default-avatar.png'} alt={getUserDisplayName()} />
             <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
               {getUserDisplayName().slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
+            {!isMobile && (
+              <div className="hidden md:block">
+                <p className="text-sm font-medium text-gray-900">{getUserDisplayName()}</p>
+                <p className="text-xs text-gray-500 capitalize">{accountType}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

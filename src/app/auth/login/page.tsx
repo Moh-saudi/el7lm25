@@ -20,13 +20,19 @@ import { useState, useEffect } from 'react';
 import EmailVerification from '@/components/auth/EmailVerification';
 import { EmailService } from '@/lib/emailjs/service';
 import { getInvalidAccountMessage, getContactInfo } from '@/lib/support-contact';
-import { useTranslation } from '@/lib/translations/simple-context';
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+// تم حذف الترجمة
 import SMSOTPVerification from '@/components/shared/SMSOTPVerification';
 
 export default function LoginPage() {
   const { login, logout, user, userData, loading: authLoading } = useAuth();
-  const { t, direction } = useTranslation();
+  const t = (key: string) => key;
+  const isRTL = true;
+  const [isClient, setIsClient] = useState(false);
+
+  // التأكد من أننا على العميل
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   
   // إذا كان المستخدم مسجل دخوله مسبقاً، نخفي النموذج
   const shouldShowForm = !authLoading && !user;
@@ -416,14 +422,14 @@ export default function LoginPage() {
             <div className="flex justify-center mb-2">
               <Shield className="w-8 h-8" />
             </div>
-            <h1 className="mb-1 text-xl font-bold">{t('login.messages.verifying')}</h1>
+                            <h1 className="mb-1 text-xl font-bold">جاري التحقق...</h1>
           </div>
           <div className="p-8 text-center">
             <div className="flex justify-center mb-4">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
             </div>
             <p className="text-gray-600">
-              {authLoading ? t('login.messages.loading') : t('login.messages.loadingUserData')}
+              {authLoading ? 'جاري التحميل...' : 'جاري تحميل بيانات المستخدم...'}
             </p>
           </div>
         </div>
@@ -567,7 +573,7 @@ export default function LoginPage() {
 
   return (
       <div
-        className={`flex items-center justify-center min-h-screen p-2 bg-gradient-to-br from-blue-600 to-purple-700 ${direction === 'rtl' ? 'dir-rtl' : 'dir-ltr'}`}
+        className={`flex items-center justify-center min-h-screen p-2 bg-gradient-to-br from-blue-600 to-purple-700 ${isClient && isRTL ? 'dir-rtl' : 'dir-ltr'}`}
       >
       <div className="w-full max-w-xs overflow-hidden transition-all duration-500 transform bg-white shadow-2xl rounded-xl hover:scale-102">
         {/* Header */}
@@ -575,12 +581,12 @@ export default function LoginPage() {
           <div className="flex justify-center mb-2">
             <Shield className="w-8 h-8" />
           </div>
-          <h1 className="mb-1 text-xl font-bold">{t('login.title')}</h1>
-          <p className="text-xs text-blue-100">{t('login.subtitle')}</p>
+                          <h1 className="mb-1 text-xl font-bold">تسجيل الدخول</h1>
+                <p className="text-xs text-blue-100">مرحباً بك مرة أخرى في منصة El7lm</p>
           
           {/* Language Switcher */}
           <div className="flex justify-center mt-2">
-            <LanguageSwitcher variant="simple" />
+            {/* تم إلغاء مبدل اللغة مؤقتاً */}
           </div>
         </div>
 
@@ -624,7 +630,7 @@ export default function LoginPage() {
           {/* Security Notice */}
           <div className="flex items-center gap-2 p-2 text-xs text-blue-700 rounded-lg bg-blue-50">
             <KeyRound className="flex-shrink-0 w-4 h-4" />
-            <p>{t('login.security.notice')}</p>
+                            <p>نحن نستخدم أحدث تقنيات الأمان لحماية بياناتك</p>
           </div>
 
           {/* Login Method Toggle */}
@@ -639,7 +645,7 @@ export default function LoginPage() {
               }`}
             >
               <Phone className="w-3 h-3" />
-              {t('login.methods.phone')}
+                              رقم الهاتف
             </button>
             <button
               type="button"
@@ -651,7 +657,7 @@ export default function LoginPage() {
               }`}
             >
               <Mail className="w-3 h-3" />
-              {t('login.methods.email')}
+                              البريد الإلكتروني
             </button>
           </div>
 
@@ -661,7 +667,7 @@ export default function LoginPage() {
               <div className="space-y-3">
                 {/* Country Selection */}
                 <div>
-                  <label className="block mb-1 text-xs text-gray-700">{t('login.form.country')}</label>
+                  <label className="block mb-1 text-xs text-gray-700">البلد</label>
                   <div className="relative">
                     <select
                       value={selectedCountry.code}
@@ -680,9 +686,9 @@ export default function LoginPage() {
                 {/* Phone Input */}
                 <div>
                   <label className="block mb-1 text-xs text-gray-700">
-                    {t('login.form.phone')}
+                    رقم الهاتف
                     <span className="text-xs text-gray-500 mr-1">
-                      ({selectedCountry.phoneLength} {t('login.form.digits')})
+                                              ({selectedCountry.phoneLength} أرقام)
                     </span>
                   </label>
                   <div className="relative">
@@ -696,7 +702,7 @@ export default function LoginPage() {
                         value={formData.phone}
                         onChange={handleInputChange}
                         className="w-full py-2 pl-3 pr-8 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder={`${selectedCountry.phoneLength} ${t('login.form.digits')}`}
+                      placeholder={`${selectedCountry.phoneLength} أرقام`}
                         pattern={selectedCountry.phonePattern}
                         maxLength={selectedCountry.phoneLength}
                         required
@@ -704,7 +710,7 @@ export default function LoginPage() {
                       <Phone className="absolute w-4 h-4 text-gray-400 -translate-y-1/2 right-2 top-1/2" />
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                    {t('login.form.example')}: {selectedCountry.name === 'مصر' ? '1234567890' : 
+                    مثال: {selectedCountry.name === 'مصر' ? '1234567890' : 
                              selectedCountry.name === 'قطر' ? '12345678' : 
                              selectedCountry.name === 'السعودية' ? '123456789' : 
                              '123456789'}
@@ -714,7 +720,7 @@ export default function LoginPage() {
               </div>
             ) : (
               <div className="relative">
-                <label className="block mb-1 text-xs text-gray-700">{t('login.form.email')}</label>
+                <label className="block mb-1 text-xs text-gray-700">البريد الإلكتروني</label>
                 <div className="relative">
                   <input
                     type="email"
@@ -722,7 +728,7 @@ export default function LoginPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     className="w-full py-2 pl-3 pr-8 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder={t('login.form.enterEmail')}
+                                          placeholder="أدخل بريدك الإلكتروني"
                     required
                   />
                   <Mail className="absolute w-4 h-4 text-gray-400 -translate-y-1/2 right-2 top-1/2" />
@@ -731,7 +737,7 @@ export default function LoginPage() {
             )}
 
             <div className="relative">
-              <label className="block mb-1 text-xs text-gray-700">{t('login.form.password')}</label>
+                              <label className="block mb-1 text-xs text-gray-700">كلمة المرور</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -739,7 +745,7 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   className="w-full py-2 pl-10 pr-8 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={t('login.form.enterPassword')}
+                                      placeholder="أدخل كلمة المرور"
                   required
                 />
                 <Lock className="absolute w-4 h-4 text-gray-400 -translate-y-1/2 right-2 top-1/2" />
@@ -763,14 +769,14 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   className="w-3 h-3 text-blue-600 rounded"
                 />
-                <label className="text-xs text-gray-600">{t('login.form.rememberMe')}</label>
+                <label className="text-xs text-gray-600">تذكرني</label>
               </div>
               <button
                 type="button"
                 className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
                 onClick={() => (window.location.href = '/auth/forgot-password')}
               >
-                {t('login.form.forgotPassword')}
+                نسيت كلمة المرور؟
               </button>
             </div>
           </div>
@@ -789,25 +795,25 @@ export default function LoginPage() {
                 </span>
               </div>
             ) : (
-              t('login.form.login')
+                              'تسجيل الدخول'
             )}
           </button>
 
           {/* Register Link */}
           <div className="text-xs text-center text-gray-600">
-          {t('login.messages.noAccount')}{' '}
+                          ليس لديك حساب؟{' '}
             <button
               type="button"
               onClick={() => (window.location.href = '/auth/register')}
               className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
             >
-            {t('login.messages.createAccount')}
+                            إنشاء حساب جديد
             </button>
           </div>
 
           {/* Account Types Info */}
           <div className="pt-3 text-xs text-center text-gray-500 border-t">
-          <p className="mb-2">{t('login.messages.accountTypes')}</p>
+                        <p className="mb-2">يمكنك التسجيل كـ:</p>
             <div className="grid grid-cols-2 gap-2 text-xs">
             <span className="text-blue-600">• لاعب</span>
             <span className="text-green-600">• نادي</span>

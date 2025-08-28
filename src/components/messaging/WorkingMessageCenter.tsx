@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/firebase/auth-provider';
-import { useTranslation } from '@/lib/translations/simple-context';
 import { 
   collection, 
   query, 
@@ -99,7 +98,9 @@ const USER_TYPES = {
 
 const WorkingMessageCenter: React.FC = () => {
   const { user, userData } = useAuth();
-  const { t } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
@@ -214,6 +215,23 @@ const WorkingMessageCenter: React.FC = () => {
   }, [user?.uid, !!userData]);
 
   // إلغاء useEffect الإضافي لجلب جهات الاتصال لتفادي الاستدعاء المزدوج
+
+  // إغلاق منتقي الإيموجي عند النقر خارجه
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEmojiPicker]);
 
   // إلغاء إعادة الجلب التلقائي لتفادي الحلقات؛ الاعتماد على المحاولة الأولى وزر إعادة المحاولة فقط
 
@@ -773,9 +791,9 @@ const WorkingMessageCenter: React.FC = () => {
                 <MessageSquare className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold">{t('dashboard.player.messages.conversations')}</h2>
-                                                                                                                                                                                                                                                                                                                                                                                                    <p className="text-sm text-green-100">
-              {conversations.length} {t('dashboard.player.messages.conversations')} | {contacts.length} جهات اتصال
+                                <h2 className="text-lg font-semibold">المحادثات</h2>
+                <p className="text-sm text-green-100">
+              {conversations.length} محادثة | {contacts.length} جهات اتصال
             </p>
               </div>
             </div>
@@ -802,7 +820,7 @@ const WorkingMessageCenter: React.FC = () => {
           <div className="relative">
             <Input
               type="text"
-              placeholder={t('dashboard.player.messages.searchPlaceholder')}
+                              placeholder="البحث في المحادثات..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-white border-gray-300 focus:border-green-500 focus:ring-green-500"
@@ -914,12 +932,12 @@ const WorkingMessageCenter: React.FC = () => {
           <div className="text-center text-gray-500 py-8">
             <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-semibold mb-2">
-                {searchTerm ? t('dashboard.player.search.noResults.title') : t('dashboard.player.messages.noConversations')}
+                {searchTerm ? 'لا توجد نتائج' : 'لا توجد محادثات'}
               </h3>
               <p className="text-sm">
                 {searchTerm 
-                  ? t('dashboard.player.search.noResults.description')
-                  : t('dashboard.player.messages.startNewConversation')
+                  ? 'جرب البحث بكلمات مختلفة'
+                  : 'ابدأ محادثة جديدة مع جهات الاتصال'
                 }
               </p>
               {!searchTerm && (
@@ -928,7 +946,7 @@ const WorkingMessageCenter: React.FC = () => {
                   onClick={() => setShowNewChat(true)}
             >
               <Plus className="h-4 w-4 mr-2" />
-              {t('dashboard.player.messages.newConversation')}
+              محادثة جديدة
             </Button>
               )}
           </div>
@@ -1059,12 +1077,12 @@ const WorkingMessageCenter: React.FC = () => {
             </div>
 
             {/* منطقة إدخال الرسالة */}
-            <div className="p-4 border-t bg-white">
+            <div className="p-4 border-t bg-white relative">
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <Input
                     type="text"
-                    placeholder={t('dashboard.player.messages.input.placeholder')}
+                    placeholder="اكتب رسالتك هنا..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => {
@@ -1077,7 +1095,12 @@ const WorkingMessageCenter: React.FC = () => {
                   />
                   <Button
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:bg-gray-100 bg-transparent border-none"
+                    className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 rounded-md transition-all duration-200 ${
+                      showEmojiPicker 
+                        ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' 
+                        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                    } bg-transparent border-none`}
+                    title="إضافة إيموجي"
                   >
                     <Smile className="h-4 w-4" />
                   </Button>
@@ -1095,10 +1118,15 @@ const WorkingMessageCenter: React.FC = () => {
               {showEmojiPicker && (
                 <div 
                   ref={emojiPickerRef}
-                  className="absolute bottom-20 right-4 z-50"
+                  className="absolute bottom-full right-0 mb-2 z-50"
                 >
                   <div className="bg-white border rounded-lg shadow-lg p-3 max-w-xs">
-                    <div className="grid grid-cols-8 gap-1">
+                    {/* عنوان منتقي الإيموجي */}
+                    <div className="text-center mb-2 pb-2 border-b">
+                      <h4 className="text-sm font-medium text-gray-700">اختر الإيموجي</h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
                       {[
                         '😊', '😂', '❤️', '👍', '👎', '🎉', '🔥', '💯', 
                         '😍', '🤔', '😭', '😡', '😱', '😴', '🤗', '😎',
@@ -1111,14 +1139,30 @@ const WorkingMessageCenter: React.FC = () => {
                           key={emoji}
                           onClick={() => {
                             setNewMessage(prev => prev + emoji);
-                            setShowEmojiPicker(false);
+                            // لا نغلق منتقي الإيموجي للسماح بالاختيار المتعدد
                           }}
-                          className="p-2 hover:bg-gray-100 rounded text-lg transition-colors"
+                          className="p-2 hover:bg-blue-50 hover:scale-110 rounded text-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           title={emoji}
                         >
                           {emoji}
                         </button>
                       ))}
+                    </div>
+                    
+                    {/* أزرار التحكم */}
+                    <div className="mt-2 pt-2 border-t flex gap-2">
+                      <Button
+                        onClick={() => setShowEmojiPicker(false)}
+                        className="flex-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700"
+                      >
+                        إغلاق
+                      </Button>
+                      <Button
+                        onClick={() => setNewMessage('')}
+                        className="text-sm bg-red-100 hover:bg-red-200 text-red-700 px-3"
+                      >
+                        مسح
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -1129,16 +1173,16 @@ const WorkingMessageCenter: React.FC = () => {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center text-gray-500">
             <MessageSquare className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-xl font-semibold mb-2">{t('dashboard.player.messages.welcome.title')}</h3>
-            <p className="text-sm mb-4">{t('dashboard.player.messages.welcome.subtitle')}</p>
+            <h3 className="text-xl font-semibold mb-2">مرحباً بك في مركز الرسائل</h3>
+            <p className="text-sm mb-4">اختر محادثة من القائمة أو ابدأ محادثة جديدة</p>
             <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
               <CheckCircle2 className="h-4 w-4" />
-              <span>{t('dashboard.player.messages.welcome.ready')}</span>
+              <span>جاهز للتواصل</span>
               </div>
                 <div className="mt-4 text-xs text-gray-400">
                 {contactsLoading
                   ? 'جاري تحميل جهات الاتصال...'
-                  : `${contacts.length} ${t('dashboard.player.messages.welcome.contactsAvailable')}`}
+                  : `${contacts.length} جهة اتصال متاحة`}
                 </div>
             </div>
           </div>
@@ -1152,7 +1196,7 @@ const WorkingMessageCenter: React.FC = () => {
             {/* Header */}
             <div className="bg-green-600 text-white p-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">{t('dashboard.player.messages.newChat.title')}</h3>
+                <h3 className="text-lg font-semibold">محادثة جديدة</h3>
                 <Button
                   className="text-white hover:bg-white/20 bg-transparent border-none p-2"
                   onClick={closeNewChat}

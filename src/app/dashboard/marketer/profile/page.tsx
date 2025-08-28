@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from '@/lib/translations/simple-context';
+
 import { useAuth } from '@/lib/firebase/auth-provider';
 import { 
   User, 
@@ -19,7 +19,9 @@ import {
 } from 'lucide-react';
 
 export default function MarketerProfilePage() {
-  const { t } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
   const { userData, updateUserProfile } = useAuth();
   
   const [isEditing, setIsEditing] = useState(false);

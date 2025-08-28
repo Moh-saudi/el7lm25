@@ -22,10 +22,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '@/lib/context/SidebarContext';
 import MessageNotifications from '@/components/messaging/MessageNotifications';
 import ExternalNotifications from '@/components/messaging/ExternalNotifications';
-import { useTranslation } from '@/lib/translations/context';
+// تم حذف الترجمة
 
 const Header = () => {
-  const { language, setLanguage, t } = useTranslation();
+  const language = 'ar';
+  const setLanguage = () => {};
+  const t = (key) => key;
   const pathname = usePathname();
   const router = useRouter();
   const [user] = useAuthState(auth);
@@ -73,7 +75,7 @@ const Header = () => {
             } else if (userData?.name) {
               displayName = userData.name;
             }
-            setUserName(displayName || t('header.defaultPlayerName'));
+            setUserName(displayName || 'header.defaultPlayerName');
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -121,10 +123,10 @@ const Header = () => {
     if (isAuthPage) return [];
     if (isHomePage) {
       return [
-        { label: t('header.nav.home'), href: '/' },
-        { label: t('header.nav.about'), href: '/#about' },
-        { label: t('header.nav.services'), href: '/#services' },
-        { label: t('header.nav.contact'), href: '/contact' }
+        { label: 'header.nav.home', href: '/' },
+        { label: 'header.nav.about', href: '/#about' },
+        { label: 'header.nav.services', href: '/#services' },
+        { label: 'header.nav.contact', href: '/contact' }
       ];
     }
     return [];
@@ -146,7 +148,7 @@ const Header = () => {
               <button 
                 onClick={toggleMobileSidebar}
                 className="p-2 text-gray-600 rounded-lg lg:hidden hover:bg-gray-100 transition-colors duration-200"
-                aria-label={t('header.menuToggle')}
+                aria-label={'header.menuToggle'}
               >
                 <Menu className="w-6 h-6" />
               </button>
@@ -157,7 +159,7 @@ const Header = () => {
               <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="p-2 text-gray-600 rounded-lg lg:hidden hover:bg-gray-100 transition-colors duration-200"
-                aria-label={t('header.menuToggle')}
+                aria-label={'header.menuToggle'}
               >
                 {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
@@ -166,7 +168,7 @@ const Header = () => {
            
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <img src="/el7hm-logo.png" alt={t('header.logoAlt')} className="w-auto h-10" />
+            <img src="/el7hm-logo.png" alt={'header.logoAlt'} className="w-auto h-10" />
             <span className="hidden md:block text-xl font-bold text-gray-800">El7hm</span>
           </div>
            
@@ -177,7 +179,7 @@ const Header = () => {
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder={t('header.searchPlaceholder')}
+                  placeholder={'header.searchPlaceholder'}
                   className="w-full pl-4 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -195,7 +197,7 @@ const Header = () => {
                 window.location.reload();
               }}
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
-              aria-label={t('header.languageToggle')}
+              aria-label={'header.languageToggle'}
             >
               <span className="text-xs font-bold">
                 {language === 'en' ? 'عربي' : 'EN'}
@@ -230,7 +232,7 @@ const Header = () => {
                 onClick={handleLoginClick}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
               >
-                {t('header.loginButton')}
+                {'header.loginButton'}
               </button>
             )}
           </div>

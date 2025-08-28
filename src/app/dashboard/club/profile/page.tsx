@@ -1,7 +1,7 @@
 'use client';
 import { useAuth } from '@/lib/firebase/auth-provider';
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Edit, Users, FileText, Trophy, User, MapPin, Phone, Mail, Globe, Facebook, Twitter, Instagram, Calendar, ArrowLeft, School, Award, Building2, UserCircle2, Plus, Sun, Moon, LogOut } from 'lucide-react';
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
@@ -159,6 +159,7 @@ const requiredFields = [
 export default function ClubProfilePage() {
   const { userData, user, signOut: authSignOut } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [clubData, setClubData] = useState<ClubData>(initialClubData);
@@ -166,41 +167,66 @@ export default function ClubProfilePage() {
   const [imageError, setImageError] = useState('');
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [darkMode, setDarkMode] = useState(false);
+  const [isViewingOtherClub, setIsViewingOtherClub] = useState(false);
 
   const fetchClubData = useCallback(async () => {
-    if (!user?.uid) return;
+    // قراءة معرف النادي من URL parameters
+    const clubId = searchParams?.get('id');
+    const targetClubId = clubId || user?.uid;
+    
+    if (!targetClubId) {
+      console.error('❌ لا يوجد معرف نادي متاح');
+      return;
+    }
+
+    // تحديد ما إذا كنا نعرض نادي آخر أم نادي المستخدم الحالي
+    const isOtherClub = clubId && clubId !== user?.uid;
+    setIsViewingOtherClub(isOtherClub);
+
+    console.log(`🔍 جلب بيانات النادي: ${targetClubId} (${isOtherClub ? 'نادي آخر' : 'نادي المستخدم'})`);
+
     try {
-      const clubRef = doc(db, 'clubs', user.uid);
+      const clubRef = doc(db, 'clubs', targetClubId);
       const clubDoc = await getDoc(clubRef);
       
       let data = {};
       
       if (clubDoc.exists()) {
         data = clubDoc.data() as any;
+        console.log(`✅ تم العثور على بيانات النادي: ${(data as any).name || 'غير محدد'}`);
       } else {
-        // إنشاء مستند أساسي إذا لم يكن موجوداً
-        const basicData = {
-          ...initialClubData,
-          name: userData?.name || 'نادي جديد',
-          email: userData?.email || '',
-          phone: userData?.phone || '',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          accountType: 'club',
-          isVerified: false,
-          isPremium: false
-        };
-        
-        await setDoc(clubRef, basicData);
-        data = basicData;
+        if (isOtherClub) {
+          // إذا كنا نعرض نادي آخر ولا يوجد، نعرض رسالة خطأ
+          console.error(`❌ النادي غير موجود: ${targetClubId}`);
+          toast.error('النادي المطلوب غير موجود');
+          router.back();
+          return;
+        } else {
+          // إنشاء مستند أساسي إذا لم يكن موجوداً (فقط لنادي المستخدم الحالي)
+          const basicData = {
+            ...initialClubData,
+            name: userData?.name || 'نادي جديد',
+            email: userData?.email || '',
+            phone: userData?.phone || '',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            accountType: 'club',
+            isVerified: false,
+            isPremium: false
+          };
+          
+          await setDoc(clubRef, basicData);
+          data = basicData;
+          console.log('✅ تم إنشاء بيانات نادي جديدة');
+        }
       }
       
       const mergedData = {
         ...initialClubData,
         ...(data as any),
-        name: ((data as any).name && (data as any).name.trim()) ? (data as any).name : (userData?.name || 'نادي جديد'),
-        phone: ((data as any).phone && (data as any).phone.trim()) ? (data as any).phone : (userData?.phone || ''),
-        email: ((data as any).email && (data as any).email.trim()) ? (data as any).email : (userData?.email || ''),
+        name: ((data as any).name && (data as any).name.trim()) ? (data as any).name : (isOtherClub ? 'نادي غير محدد' : (userData?.name || 'نادي جديد')),
+        phone: ((data as any).phone && (data as any).phone.trim()) ? (data as any).phone : (isOtherClub ? '' : (userData?.phone || '')),
+        email: ((data as any).email && (data as any).email.trim()) ? (data as any).email : (isOtherClub ? '' : (userData?.email || '')),
         coverImage: getSupabaseImageUrl((data as any).coverImage || initialClubData.coverImage),
         logo: getSupabaseImageUrl((data as any).logo || initialClubData.logo),
         board: {
@@ -223,7 +249,7 @@ export default function ClubProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [user, userData]);
+  }, [user, userData, searchParams]);
 
   useEffect(() => {
     if (user && userData) {
@@ -278,6 +304,11 @@ export default function ClubProfilePage() {
   };
 
   const handleImageUpload = async (file: File, type: 'logo' | 'cover' | 'gallery' | 'chairman' | 'youthDirector') => {
+    if (isViewingOtherClub) {
+      toast.error('لا يمكن تعديل بيانات نادي آخر');
+      return;
+    }
+    
     if (!user?.uid) return;
     try {
       if (!file.type.startsWith('image/')) {
@@ -346,6 +377,11 @@ export default function ClubProfilePage() {
   };
 
   const handleSaveChanges = async () => {
+    if (isViewingOtherClub) {
+      toast.error('لا يمكن تعديل بيانات نادي آخر');
+      return;
+    }
+    
     if (!user?.uid || !clubData) {
       toast.error('لم يتم العثور على بيانات المستخدم');
       return;
@@ -507,7 +543,7 @@ export default function ClubProfilePage() {
                 alt="صورة الغلاف"
                 className="object-cover w-full h-full"
               />
-              {editMode && (
+              {editMode && !isViewingOtherClub && (
                 <div className="flex absolute inset-0 justify-center items-center bg-black/50">
                   <label className="p-2 rounded-lg transition cursor-pointer bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800">
                     <input
@@ -524,6 +560,19 @@ export default function ClubProfilePage() {
               )}
             </div>
 
+            {/* رسالة عرض نادي آخر */}
+            {isViewingOtherClub && (
+              <div className="p-4 mb-6 text-blue-800 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-300">
+                <div className="flex gap-2 items-center">
+                  <Building2 className="w-5 h-5" />
+                  <span className="font-medium">عرض نادي آخر - وضع القراءة فقط</span>
+                </div>
+                <p className="mt-1 text-sm text-blue-600 dark:text-blue-400">
+                  أنت تعرض بيانات نادي آخر. لا يمكنك تعديل هذه البيانات.
+                </p>
+              </div>
+            )}
+
             {/* كرت بيانات النادي */}
             <div className="flex flex-col gap-8 items-center p-8 mb-8 bg-white rounded-2xl shadow-lg dark:bg-gray-800 md:flex-row">
               <div className="relative">
@@ -532,7 +581,7 @@ export default function ClubProfilePage() {
                   alt="شعار النادي"
                   className="object-cover w-32 h-32 rounded-full border-4 shadow border-primary dark:border-primary/80"
                 />
-                {editMode && (
+                {editMode && !isViewingOtherClub && (
                   <label className="flex absolute inset-0 justify-center items-center rounded-full transition cursor-pointer bg-black/50 hover:bg-black/60">
                     <input
                       type="file"
@@ -555,13 +604,15 @@ export default function ClubProfilePage() {
                   <span className="flex gap-1 items-center"><User size={18} /> نوع النادي: {clubData?.type}</span>
                 </div>
               </div>
-              <button
-                className="flex gap-2 items-center px-5 py-2 text-white bg-gradient-to-l from-blue-400 to-blue-600 rounded-lg shadow transition hover:scale-105 dark:from-blue-500 dark:to-blue-700"
-                onClick={() => editMode ? handleSaveChanges() : setEditMode(true)}
-                disabled={uploading}
-              >
-                <Edit size={18} /> {editMode ? 'حفظ التغييرات' : 'تعديل البيانات'}
-              </button>
+              {!isViewingOtherClub && (
+                <button
+                  className="flex gap-2 items-center px-5 py-2 text-white bg-gradient-to-l from-blue-400 to-blue-600 rounded-lg shadow transition hover:scale-105 dark:from-blue-500 dark:to-blue-700"
+                  onClick={() => editMode ? handleSaveChanges() : setEditMode(true)}
+                  disabled={uploading}
+                >
+                  <Edit size={18} /> {editMode ? 'حفظ التغييرات' : 'تعديل البيانات'}
+                </button>
+              )}
             </div>
 
             {/* كروت الإحصائيات */}

@@ -161,6 +161,29 @@ export interface Player extends BaseEntity, PlayerFormData {
     accountName: string;
     dateAdded: DateOrTimestamp;
   };
+  
+  // Additional properties for PlayersSearchPage
+  displayName?: string;
+  accountType?: string;
+  organizationInfo?: string;
+  avatar?: string;
+  club_id?: string;
+  clubId?: string;
+  academy_id?: string;
+  academyId?: string;
+  trainer_id?: string;
+  trainerId?: string;
+  agent_id?: string;
+  agentId?: string;
+  convertedToAccount?: boolean;
+  firebaseUid?: string;
+  club_name?: string;
+  bio?: string;
+  description?: string;
+  age_category?: string;
+  status?: string;
+  skill_level?: string;
+  objectives?: string[];
 }
 
 // Player search and filter types

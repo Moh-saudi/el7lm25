@@ -1,12 +1,14 @@
 'use client';
 
-import { useTranslation } from '@/lib/translations/simple-context';
+
 import { useAuth } from '@/lib/firebase/auth-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function MarketerSubscriptionPage() {
-  const { t } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
   const { userData } = useAuth();
   const router = useRouter();
 

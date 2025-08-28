@@ -1015,7 +1015,7 @@ export default function PlayerVideosPage({ accountType }: PlayerVideosPageProps)
               {/* Player Avatar */}
               <div className="relative">
                 <button
-                  onClick={() => safeNavigate(router, `/dashboard/player/reports?view=${video.playerId}`)}
+                  onClick={() => safeNavigate(router, `/dashboard/shared/player-profile/${video.playerId}`)}
                   className="group"
                 >
                   <div className="w-12 h-12 rounded-full border-2 border-white overflow-hidden group-hover:border-cyan-400 transition-colors">
@@ -1101,7 +1101,7 @@ export default function PlayerVideosPage({ accountType }: PlayerVideosPageProps)
                 {/* Player Info */}
                 <div className="flex items-center space-x-3 space-x-reverse">
                   <button
-                    onClick={() => safeNavigate(router, `/dashboard/player/reports?view=${video.playerId}`)}
+                    onClick={() => safeNavigate(router, `/dashboard/shared/player-profile/${video.playerId}`)}
                     className="hover:text-cyan-300 transition-colors"
                   >
                     <h3 className="text-white font-bold text-lg">@{video.playerName}</h3>

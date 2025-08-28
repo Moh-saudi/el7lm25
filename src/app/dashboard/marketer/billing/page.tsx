@@ -134,7 +134,7 @@ export default function MarketerBillingPage() {
           الفواتير والمدفوعات
         </h1>
         <p className="text-gray-600">
-          عرض جميع المدفوعات والفواتير الخاصة بك
+          عرض جميع المدفوعات والفواتير الخاصة بوكالتك
         </p>
       </div>
 

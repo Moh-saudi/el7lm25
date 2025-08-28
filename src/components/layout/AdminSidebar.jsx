@@ -26,7 +26,8 @@ import {
   Settings,
   UserCog,
   Building,
-  GraduationCap
+  GraduationCap,
+  UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/firebase/config';
@@ -130,7 +131,8 @@ const AdminSidebar = ({ isOpen, adminData, onToggle, isMobile }) => {
       subItems: [
         { title: 'الرسائل', href: '/dashboard/admin/messages', icon: MessageSquare },
         { title: 'إدارة الإشعارات', href: '/dashboard/admin/notifications', icon: MessageCircle },
-        { title: 'الدعم الفني', href: '/dashboard/admin/support', icon: Headphones }
+        { title: 'الدعم الفني', href: '/dashboard/admin/support', icon: Headphones },
+        { title: 'إدارة العملاء', href: '/dashboard/admin/customer-management', icon: UserPlus }
       ]
     },
     {

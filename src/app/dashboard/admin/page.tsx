@@ -70,6 +70,14 @@ export default function AdminDashboardPage() {
       href: "/dashboard/admin/content",
       color: "bg-indigo-500",
       badge: "المحتوى"
+    },
+    {
+      title: "إدارة العملاء",
+      description: "إدارة بيانات العملاء والتفاعل معهم",
+      icon: Users,
+      href: "/dashboard/admin/customer-management",
+      color: "bg-teal-500",
+      badge: "العملاء"
     }
   ];
 
@@ -202,6 +210,12 @@ export default function AdminDashboardPage() {
                     <Button variant="outline" className="flex items-center gap-2">
                       <BarChart3 className="h-4 w-4" />
                       عرض التقارير
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/admin/customer-management">
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      إدارة العملاء
                     </Button>
                   </Link>
                 </div>

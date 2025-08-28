@@ -12,7 +12,8 @@ export const STORAGE_BUCKETS = {
   DOCUMENTS: 'documents',
   PLAYER_VIDEOS: 'player-videos',
   CLUB_VIDEOS: 'club-videos',
-  ACADEMY_VIDEOS: 'academy-videos'
+  ACADEMY_VIDEOS: 'academy-videos',
+  ADS: 'ads' // Bucket جديد للإعلانات
 };
 
 // تصدير عنوان وAPI key الخاص بـ Supabase - Updated with working credentials

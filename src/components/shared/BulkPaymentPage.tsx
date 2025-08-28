@@ -28,6 +28,7 @@ import { useAuth } from '@/lib/firebase/auth-provider';
 import Link from 'next/link';
 import GeideaPaymentModal from '@/components/GeideaPaymentModal';
 import { getCurrencyRates, convertCurrency as convertCurrencyLib, getCurrencyInfo, getRatesAge, forceUpdateRates } from '@/lib/currency-rates';
+import toast from 'react-hot-toast';
 
 // إعداد Supabase لرفع الإيصالات في bucket "wallet" - Updated with working credentials
 import { supabase } from '@/lib/supabase/config';
@@ -615,10 +616,24 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
         .getPublicUrl(filePath);
 
       console.log(`✅ تم رفع الإيصال بنجاح: ${urlData.publicUrl}`);
+      
+      // عرض رسالة تأكيد للمستخدم
+      toast.success('✅ تم رفع الإيصال بنجاح!', {
+        description: 'سيتم مراجعة الإيصال والموافقة على الدفع خلال 24 ساعة.',
+        duration: 5000,
+      });
+      
       return urlData.publicUrl;
 
     } catch (error) {
       console.error('❌ خطأ في رفع الإيصال:', error);
+      
+      // عرض رسالة خطأ للمستخدم
+      toast.error('❌ فشل في رفع الإيصال', {
+        description: 'يرجى التحقق من الملف والمحاولة مرة أخرى.',
+        duration: 5000,
+      });
+      
       throw error;
     } finally {
       setUploading(false);
@@ -1029,14 +1044,12 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
       // حفظ في مجموعة bulkPayments في Firebase
       await addDoc(collection(db, 'bulkPayments'), paymentData);
 
-      // إعادة تعيين النموذج
-      setFormData({
-        transactionId: '',
-        senderName: '',
-        senderAccount: '',
-        receiptFile: null
+      // عرض رسالة تأكيد اكتمال العملية
+      toast.success('🎉 تم إرسال طلب الدفع بنجاح!', {
+        description: `تم إرسال طلب دفع لـ ${selectedCount} لاعب بمبلغ ${finalPrice.toLocaleString()} ${currency.symbol}. سيتم مراجعته خلال 24 ساعة.`,
+        duration: 7000,
       });
-      
+
       // إعادة تعيين النموذج
       setFormData({
         transactionId: '',
@@ -1045,8 +1058,17 @@ export default function BulkPaymentPage({ accountType }: BulkPaymentPageProps) {
         receiptFile: null
       });
 
+      // إعادة تعيين اختيار اللاعبين
+      setPlayers(prev => prev.map(player => ({ ...player, selected: false })));
+
     } catch (error) {
       console.error('خطأ في معالجة الدفع:', error);
+      
+      // عرض رسالة خطأ للمستخدم
+      toast.error('❌ حدث خطأ في معالجة الدفع', {
+        description: 'يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني.',
+        duration: 5000,
+      });
     } finally {
       setUploading(false);
     }

@@ -1,15 +1,14 @@
 'use client';
-import { useTranslation } from '@/lib/translations/simple-context';
 import WorkingMessageCenter from '@/components/messaging/WorkingMessageCenter';
 import ClientOnlyToaster from '@/components/ClientOnlyToaster';
 
 export default function ClubMessagesPage() {
-  const { t } = useTranslation();
-  
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       <ClientOnlyToaster position="top-center" />
-      <WorkingMessageCenter />
-    </>
+      <div className="h-full">
+        <WorkingMessageCenter />
+      </div>
+    </div>
   );
 } 

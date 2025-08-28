@@ -28,11 +28,11 @@ export const useAccountTypeAuth = ({ allowedTypes, redirectTo = '/' }: UseAccoun
       if (userData) {
         const userAccountType = (userData as any).accountType;
         
-        if (allowedTypes.includes(userAccountType)) {
+        if (userAccountType && allowedTypes.includes(userAccountType)) {
           setIsAuthorized(true);
         } else {
-          // نوع الحساب غير مسموح - توجيه للوحة المناسبة
-          const correctRoute = getDashboardRoute(userAccountType);
+          // نوع الحساب غير مسموح أو غير محدد - توجيه للوحة المناسبة
+          const correctRoute = getDashboardRoute(userAccountType || 'player');
           router.push(correctRoute);
         }
       }

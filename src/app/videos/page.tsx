@@ -36,6 +36,7 @@ export default function VideosPage() {
   const fetchVideos = async () => {
     try {
       setLoading(true);
+      console.log('🎬 بدء جلب الفيديوهات...');
       
       // جلب جميع اللاعبين
       const playersRef = collection(db, 'players');
@@ -49,19 +50,23 @@ export default function VideosPage() {
         const playerVideos = playerData.videos || [];
         
         // تحويل فيديوهات اللاعب إلى الشكل المطلوب
-        const formattedVideos = playerVideos.map((video: any, index: number) => ({
-          id: `${playerDoc.id}_${index}`,
-          url: video.url,
-          playerName: playerData.name || 'لاعب',
-          playerImage: playerData.profile_image?.url || '/default-avatar.png',
-          description: video.description || '',
-          likes: video.likes || 0,
-          comments: video.comments || 0,
-          shares: video.shares || 0,
-          music: video.music || 'بدون موسيقى',
-          playerId: playerDoc.id,
-          createdAt: video.createdAt || new Date()
-        }));
+        const formattedVideos = playerVideos.map((video: any, index: number) => {
+          const videoData = {
+            id: `${playerDoc.id}_${index}`,
+            url: video.url,
+            playerName: playerData.name || 'لاعب',
+            playerImage: playerData.profile_image?.url || '/default-avatar.png',
+            description: video.description || '',
+            likes: video.likes || 0,
+            comments: video.comments || 0,
+            shares: video.shares || 0,
+            music: video.music || 'بدون موسيقى',
+            playerId: playerDoc.id,
+            createdAt: video.createdAt || new Date()
+          };
+          console.log('📹 فيديو:', videoData.playerName, 'معرف اللاعب:', videoData.playerId);
+          return videoData;
+        });
         
         allVideos.push(...formattedVideos);
       }
@@ -199,12 +204,22 @@ export default function VideosPage() {
             {/* Video Info Overlay */}
             <div className="absolute bottom-0 left-0 right-0 p-4 text-white bg-gradient-to-t from-black/80 to-transparent">
               <div className="flex items-center space-x-3 mb-2">
-                <img
-                  src={video.playerImage}
-                  alt={video.playerName}
-                  className="w-12 h-12 rounded-full border-2 border-white"
-                />
-                <span className="font-bold">{video.playerName}</span>
+                <button
+                  onClick={() => {
+                    // الانتقال إلى صفحة تقرير اللاعب المشتركة
+                    const targetUrl = `/dashboard/shared/player-profile/${video.playerId}`;
+                    console.log('🔗 الانتقال إلى:', targetUrl, 'لللاعب:', video.playerName, 'معرف:', video.playerId);
+                    window.open(targetUrl, '_blank');
+                  }}
+                  className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  <img
+                    src={video.playerImage}
+                    alt={video.playerName}
+                    className="w-12 h-12 rounded-full border-2 border-white hover:border-blue-400 transition-colors"
+                  />
+                  <span className="font-bold hover:text-blue-300 transition-colors">{video.playerName}</span>
+                </button>
               </div>
               <p className="mb-2">{video.description}</p>
               <div className="flex items-center space-x-2 text-sm">

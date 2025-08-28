@@ -127,7 +127,7 @@ export default function MarketerDreamAcademyPage() {
           أكاديمية الحلم
         </h1>
         <p className="text-gray-600">
-          اكتشف برامج التدريب المتقدمة لتنمية مهارات اللاعبين
+          اكتشف برامج التدريب المتقدمة لتنمية مهارات لاعبيك
         </p>
       </div>
 

@@ -18,7 +18,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { useAuth } from '@/lib/firebase/auth-provider';
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+// تم إلغاء LanguageSwitcher مؤقتاً
 import InteractionNotifications from '@/components/notifications/InteractionNotifications';
 import { useMobileSidebar } from './MobileSidebarManager';
 import { motion } from 'framer-motion';
@@ -103,7 +103,7 @@ export default function Header({
               <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
             </div>
             {showLanguageSwitcher && (
-              <LanguageSwitcher variant="simple" />
+              <div>تم إلغاء مبدل اللغة مؤقتاً</div>
             )}
           </div>
         </div>
@@ -176,7 +176,7 @@ export default function Header({
             {/* مبدل اللغة */}
             {showLanguageSwitcher && (
               <div className="hidden md:block">
-                <LanguageSwitcher variant="simple" />
+                <div>تم إلغاء مبدل اللغة مؤقتاً</div>
               </div>
             )}
 
@@ -322,7 +322,7 @@ export default function Header({
               {/* مبدل اللغة في الموبايل */}
               {showLanguageSwitcher && (
                 <div className="mb-4">
-                  <LanguageSwitcher variant="simple" />
+                  <div>تم إلغاء مبدل اللغة مؤقتاً</div>
                 </div>
               )}
 

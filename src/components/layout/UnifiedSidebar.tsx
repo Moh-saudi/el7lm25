@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth-provider';
-import { useTranslation } from '@/lib/translations/simple-context';
 import { 
   Home, 
   User, 
@@ -86,7 +85,9 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
   const { user, userData, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const { t, direction } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
   const [activeItem, setActiveItem] = useState('dashboard');
   const [collapsed, setCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['main']));
@@ -972,7 +973,7 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
         className={`fixed top-0 right-0 h-full bg-gradient-to-b ${accountInfo.color} z-50 shadow-2xl backdrop-blur-xl border-l border-white/20 ${
           isMobile ? 'w-80' : getSidebarWidth()
         }`}
-        dir={direction}
+        dir={isRTL}
       >
         <div className="flex flex-col h-full">
           {/* Header */}

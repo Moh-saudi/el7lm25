@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/firebase/auth-provider';
-import { useTranslation } from '@/lib/translations/simple-context';
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+// تم إلغاء LanguageSwitcher مؤقتاً
 import { 
   Bell, 
   LogOut, 
@@ -24,7 +23,9 @@ export default function DashboardHeader({
   searchPlaceholder 
 }: DashboardHeaderProps) {
   const { signOut } = useAuth();
-  const { t, language, direction } = useTranslation();
+  const t = (key: string) => key;
+  const locale = 'ar';
+  const isRTL = true;
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -38,7 +39,7 @@ export default function DashboardHeader({
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-lg border-b border-gray-200" dir={direction}>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-lg border-b border-gray-200" dir={isRTL}>
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
@@ -58,7 +59,7 @@ export default function DashboardHeader({
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder={searchPlaceholder || t('header.searchPlaceholder')}
+                  placeholder={searchPlaceholder || 'header.searchPlaceholder'}
                   className="w-full pl-4 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -70,16 +71,13 @@ export default function DashboardHeader({
             
             {/* Language Switcher */}
             <div className="flex items-center">
-              <LanguageSwitcher 
-                variant="simple" 
-                className="mr-2 rtl:ml-2"
-              />
+              <div className="mr-2 rtl:ml-2">تم إلغاء مبدل اللغة مؤقتاً</div>
             </div>
 
             {/* Notifications */}
             <button 
               className="p-2 text-gray-600 hover:text-blue-600 transition-colors relative"
-              title={t('header.notifications')}
+              title={'header.notifications'}
             >
               <Bell className="w-5 h-5" />
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
@@ -88,7 +86,7 @@ export default function DashboardHeader({
             {/* Settings */}
             <button 
               className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
-              title={t('header.settings')}
+              title={'header.settings'}
             >
               <Settings className="w-5 h-5" />
             </button>
@@ -97,7 +95,7 @@ export default function DashboardHeader({
             <button 
               onClick={handleSignOut}
               className="p-2 text-gray-600 hover:text-red-600 transition-colors"
-              title={t('header.signOut')}
+              title={'header.signOut'}
             >
               <LogOut className="w-5 h-5" />
             </button>
@@ -126,7 +124,7 @@ export default function DashboardHeader({
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="text"
-                      placeholder={searchPlaceholder || t('header.searchPlaceholder')}
+                      placeholder={searchPlaceholder || 'header.searchPlaceholder'}
                       className="w-full pl-4 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -135,19 +133,19 @@ export default function DashboardHeader({
               
               {/* Language Switcher for Mobile */}
               <div className="flex items-center justify-center py-2">
-                <LanguageSwitcher variant="button" />
+                <div>تم إلغاء مبدل اللغة مؤقتاً</div>
               </div>
 
               {/* Notifications for Mobile */}
               <button className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
                 <Bell className="w-5 h-5 mr-3 rtl:ml-3" />
-                {t('header.notifications')}
+                {'header.notifications'}
               </button>
 
               {/* Settings for Mobile */}
               <button className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
                 <Settings className="w-5 h-5 mr-3 rtl:ml-3" />
-                {t('header.settings')}
+                {'header.settings'}
               </button>
 
               {/* Sign Out for Mobile */}
@@ -156,7 +154,7 @@ export default function DashboardHeader({
                 className="flex items-center px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg"
               >
                 <LogOut className="w-5 h-5 mr-3 rtl:ml-3" />
-                {t('header.signOut')}
+                {'header.signOut'}
               </button>
             </div>
           </div>

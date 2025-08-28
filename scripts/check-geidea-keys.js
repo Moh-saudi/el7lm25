@@ -31,3 +31,12 @@ try {
   console.error('❌ خطأ في قراءة الملف:', error.message);
 }
 
+
+
+
+
+
+
+
+
+

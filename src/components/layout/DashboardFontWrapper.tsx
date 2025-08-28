@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useTranslation } from '@/lib/translations/simple-context';
 
 interface DashboardFontWrapperProps {
   children: React.ReactNode;
@@ -9,13 +8,13 @@ interface DashboardFontWrapperProps {
 }
 
 export default function DashboardFontWrapper({ children, className = '' }: DashboardFontWrapperProps) {
-  const { language, direction } = useTranslation();
+  const { locale, isRTL } = useTranslation();
   
   // تحديد الخط حسب اللغة
-  const fontClass = language === 'en' ? 'font-english' : 'font-arabic';
+  const fontClass = locale === 'en' ? 'font-english' : 'font-arabic';
   
   return (
-    <div className={`min-h-screen ${fontClass} ${className}`} style={{ direction }} lang={language}>
+    <div className={`min-h-screen ${fontClass} ${className}`} style={{ isRTL }} lang={locale}>
       {children}
     </div>
   );
@@ -31,13 +30,13 @@ export function DashboardHeading({
   level?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'; 
   className?: string;
 }) {
-  const { language } = useTranslation();
-  const fontClass = language === 'en' ? 'font-english' : 'font-arabic';
+  const locale = 'ar';
+  const fontClass = locale === 'en' ? 'font-english' : 'font-arabic';
   
   const Tag = level as keyof JSX.IntrinsicElements;
   
   return (
-    <Tag className={`${fontClass} ${className}`} lang={language}>
+    <Tag className={`${fontClass} ${className}`} lang={locale}>
       {children}
     </Tag>
   );
@@ -51,11 +50,11 @@ export function DashboardText({
   children: React.ReactNode; 
   className?: string;
 }) {
-  const { language } = useTranslation();
-  const fontClass = language === 'en' ? 'font-english' : 'font-arabic';
+  const locale = 'ar';
+  const fontClass = locale === 'en' ? 'font-english' : 'font-arabic';
   
   return (
-    <span className={`${fontClass} ${className}`} lang={language}>
+    <span className={`${fontClass} ${className}`} lang={locale}>
       {children}
     </span>
   );
@@ -71,11 +70,11 @@ export function DashboardButton({
   className?: string;
   [key: string]: any;
 }) {
-  const { language } = useTranslation();
-  const fontClass = language === 'en' ? 'font-english' : 'font-arabic';
+  const locale = 'ar';
+  const fontClass = locale === 'en' ? 'font-english' : 'font-arabic';
   
   return (
-    <button className={`${fontClass} ${className}`} lang={language} {...props}>
+    <button className={`${fontClass} ${className}`} lang={locale} {...props}>
       {children}
     </button>
   );
@@ -89,11 +88,11 @@ export function DashboardInput({
   className?: string;
   [key: string]: any;
 }) {
-  const { language } = useTranslation();
-  const fontClass = language === 'en' ? 'font-english' : 'font-arabic';
+  const locale = 'ar';
+  const fontClass = locale === 'en' ? 'font-english' : 'font-arabic';
   
   return (
-    <input className={`${fontClass} ${className}`} lang={language} {...props} />
+    <input className={`${fontClass} ${className}`} lang={locale} {...props} />
   );
 }
 
