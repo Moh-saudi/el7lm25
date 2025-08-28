@@ -45,10 +45,15 @@ const hasValidConfig = missingVars.length === 0;
 
 // إظهار تحذير فقط في وضع التطوير وإذا كانت المتغيرات ناقصة
 if (!hasValidConfig && process.env.NODE_ENV === 'development') {
-  console.error('❌ Firebase environment variables are missing or using placeholder values.');
-  console.error('Missing/placeholder variables:', missingVars);
-  console.error('Please set proper Firebase configuration in your .env.local file');
-  console.error('Current Firebase config:', requiredEnvVars);
+  console.warn('⚠️ Firebase environment variables are missing or using placeholder values.');
+  console.warn('Missing/placeholder variables:', missingVars);
+  console.warn('Please set proper Firebase configuration in your .env.local file');
+  console.warn('Current Firebase config:', requiredEnvVars);
+}
+
+// في وضع الإنتاج، لا نطرح خطأ إذا كانت المتغيرات ناقصة
+if (!hasValidConfig && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️ Firebase configuration is missing in production. Some features may not work.');
 }
 
 // تكوين Firebase - استخدام متغيرات البيئة فقط
@@ -89,10 +94,27 @@ if (!getApps().length) {
   try {
     // التحقق من صحة التكوين قبل التهيئة
     if (!hasValidConfig) {
-      console.error('❌ Firebase configuration is missing or invalid');
-      console.error('Please set proper Firebase configuration in your .env.local file');
-      console.error('Current config:', firebaseConfig);
-      throw new Error('Firebase configuration is required');
+      console.warn('⚠️ Firebase configuration is missing or invalid');
+      console.warn('Please set proper Firebase configuration in your .env.local file');
+      console.warn('Current config:', firebaseConfig);
+      
+      // في وضع الإنتاج، لا نطرح خطأ بل نستخدم تكوين افتراضي
+      if (process.env.NODE_ENV === 'production') {
+        console.warn('⚠️ Using fallback configuration for production build');
+        // استخدام تكوين افتراضي للبناء
+        const fallbackConfig = {
+          apiKey: 'fallback_api_key',
+          authDomain: 'fallback.firebaseapp.com',
+          projectId: 'fallback_project',
+          storageBucket: 'fallback.appspot.com',
+          messagingSenderId: '123456789',
+          appId: 'fallback_app_id',
+          measurementId: 'fallback_measurement_id'
+        };
+        app = initializeApp(fallbackConfig);
+      } else {
+        throw new Error('Firebase configuration is required for development');
+      }
     } else {
     console.log('🔧 Initializing Firebase with config:', {
       apiKey: firebaseConfig.apiKey ? '✅ Set' : '❌ Missing',
