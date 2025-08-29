@@ -27,6 +27,15 @@ interface DependentPlayer {
   hasEmailOrPhone: boolean;
   canCreateAccount: boolean;
   source: 'players' | 'player';
+  // إضافة الحقول المفقودة
+  profile_image?: string;
+  nationality?: string;
+  primary_position?: string;
+  position?: string;
+  birth_date?: any;
+  birthDate?: any;
+  country?: string;
+  city?: string;
 }
 
 export default function ConvertDependentPlayersPage() {

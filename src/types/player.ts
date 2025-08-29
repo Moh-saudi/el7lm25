@@ -183,7 +183,7 @@ export interface Player extends BaseEntity, PlayerFormData {
   age_category?: string;
   status?: string;
   skill_level?: string;
-  objectives?: string[];
+  objectives?: PlayerObjectives | string[]; // يمكن أن يكون PlayerObjectives أو string[]
 }
 
 // Player search and filter types

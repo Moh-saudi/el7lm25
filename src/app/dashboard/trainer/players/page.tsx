@@ -207,8 +207,8 @@ export default function TrainerPlayersPage() {
         bValue = b.full_name || b.name || '';
         break;
       case 'created_at':
-        aValue = a.created_at ? new Date(a.created_at instanceof Date ? a.created_at : a.created_at) : new Date(0);
-        bValue = b.created_at ? new Date(b.created_at instanceof Date ? b.created_at : b.created_at) : new Date(0);
+        aValue = (a.createdAt || a.created_at) ? new Date((a.createdAt || a.created_at) instanceof Date ? (a.createdAt || a.created_at) : (a.createdAt || a.created_at)) : new Date(0);
+        bValue = (b.createdAt || b.created_at) ? new Date((b.createdAt || b.created_at) instanceof Date ? (b.createdAt || b.created_at) : (b.createdAt || b.created_at)) : new Date(0);
         break;
       case 'updated_at':
         aValue = a.updated_at ? new Date(a.updated_at instanceof Date ? a.updated_at : a.updated_at) : new Date(0);
@@ -380,7 +380,7 @@ export default function TrainerPlayersPage() {
       player.height || '',
       player.weight || '',
       player.subscription_status || 'غير نشط',
-      formatDate(player.created_at)
+      formatDate(player.createdAt || player.created_at)
     ]);
 
     const csvContent = [headers, ...data]
@@ -636,8 +636,8 @@ export default function TrainerPlayersPage() {
                             <span className="font-medium">إضافة:</span>
                           </div>
                           <div className="mb-2">
-                            {formatDate(player.created_at)}
-                            <div className="text-gray-400">{getTimeAgo(player.created_at)}</div>
+                            {formatDate(player.createdAt || player.created_at)}
+                            <div className="text-gray-400">{getTimeAgo(player.createdAt || player.created_at)}</div>
                           </div>
                           
                           <div className="flex gap-1 items-center mb-1">

@@ -9,7 +9,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { retryOperation } from '@/lib/firebase/config';
 import { supabase } from '@/lib/supabase/config';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+// import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { 
   User, 
   MapPin, 
@@ -64,18 +64,17 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from '@/components/ui/dialog';
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
+import {
+  AlertDialog,
+  AlertDialogAction,
   AlertDialogCancel, 
   AlertDialogContent, 
   AlertDialogDescription, 
   AlertDialogFooter, 
   AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
+  AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { useTranslations } from '@/lib/translations/context';
+// import { useTranslations } from '@/lib/translations/context';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip as ChartTooltip } from 'recharts';
@@ -83,6 +82,8 @@ import { debugConsole } from '@/lib/utils/console-manager';
 import { getPlayerOrganization, getOrganizationDetails } from '@/utils/player-organization';
 import PlayerResume from '@/components/player/PlayerResume';
 import { FileText } from 'lucide-react';
+import { PlayerFormData, Achievement, Injury, ContractHistory, AgentHistory } from '@/types/player';
+// import { PlayerVideo } from '@/types/common';
 import 'dayjs/locale/ar';
 
 // تعيين اللغة العربية لمكتبة dayjs
@@ -1247,7 +1248,7 @@ function PlayerReportPage() {
         
         {player?.videos && player.videos.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {player.videos.map((video: PlayerVideo, index: number) => {
+              {player.videos.map((video: any, index: number) => {
                 console.log(`🎬 [renderMedia] فيديو ${index + 1}:`, video);
                 console.log(`🔗 رابط الفيديو:`, video.url);
                 console.log(`📝 وصف الفيديو:`, video.desc);

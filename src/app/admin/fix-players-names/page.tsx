@@ -73,7 +73,7 @@ export default function FixPlayersNamesPage() {
                 oldName,
                 newName: playerName,
                 status: 'error',
-                message: 'خطأ أثناء التحديث: ' + (err?.message || err)
+                message: 'خطأ أثناء التحديث: ' + ((err as any)?.message || err)
               });
             }
           } else {

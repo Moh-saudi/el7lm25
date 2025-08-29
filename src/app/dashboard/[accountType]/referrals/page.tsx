@@ -20,7 +20,7 @@ import {
   Award,
   Star,
   Crown,
-  Fire,
+  Flame,
   Target,
   BarChart3,
   Calendar,

@@ -16,8 +16,8 @@ export default function Dashboard() {
       return;
     }
 
-    if (userData?.account_type) {
-      const accountType = userData.account_type;
+    if (userData?.accountType) {
+      const accountType = userData.accountType;
       
       // Valid account types
       const validTypes = ['player', 'club', 'agent', 'academy', 'trainer', 'admin', 'marketer', 'parent'];
