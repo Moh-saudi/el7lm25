@@ -177,7 +177,21 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
               }}
               onError={(error) => {
                 console.warn('Video player error:', error);
-                setVideoError('حدث خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى أو التحقق من اتصال الإنترنت.');
+                let errorMessage = 'حدث خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى أو التحقق من اتصال الإنترنت.';
+                
+                // تحسين رسائل الخطأ بناءً على نوع الخطأ
+                if (error && typeof error === 'object') {
+                  const errorStr = error.toString().toLowerCase();
+                  if (errorStr.includes('connection_reset') || errorStr.includes('net::err_connection_reset')) {
+                    errorMessage = 'فشل الاتصال بخوادم YouTube. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.';
+                  } else if (errorStr.includes('network') || errorStr.includes('timeout')) {
+                    errorMessage = 'انقطع الاتصال بالشبكة. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.';
+                  } else if (errorStr.includes('blocked') || errorStr.includes('cors')) {
+                    errorMessage = 'تم حظر الاتصال بخوادم YouTube. يرجى المحاولة مرة أخرى أو استخدام الرابط المباشر.';
+                  }
+                }
+                
+                setVideoError(errorMessage);
                 setIsVideoLoading(false);
               }}
               onReady={() => {
@@ -234,6 +248,7 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
             if (activeSource?.id) {
               fetch('/api/dream-academy/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sourceId: activeSource.id, action: 'view' }) }).catch(() => {});
             }
+            return null;
           })()}
         </div>
       )}
@@ -261,7 +276,7 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
                   // Set a timeout to show error if video doesn't load within 10 seconds
                   setTimeout(() => {
                     if (isVideoLoading) {
-                      setVideoError('استغرق تحميل الفيديو وقتاً طويلاً. يرجى المحاولة مرة أخرى.');
+                      setVideoError('استغرق تحميل الفيديو وقتاً طويلاً. قد تكون هناك مشكلة في الاتصال بالشبكة. يرجى المحاولة مرة أخرى أو استخدام الرابط المباشر.');
                       setIsVideoLoading(false);
                     }
                   }, 10000);
@@ -282,7 +297,7 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
                     // Set a timeout to show error if video doesn't load within 10 seconds
                     setTimeout(() => {
                       if (isVideoLoading) {
-                        setVideoError('استغرق تحميل الفيديو وقتاً طويلاً. يرجى المحاولة مرة أخرى.');
+                        setVideoError('استغرق تحميل الفيديو وقتاً طويلاً. قد تكون هناك مشكلة في الاتصال بالشبكة. يرجى المحاولة مرة أخرى أو استخدام الرابط المباشر.');
                         setIsVideoLoading(false);
                       }
                     }, 10000);
