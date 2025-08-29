@@ -3,6 +3,8 @@ import React, { useRef } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Download, Printer, FileText, User, MapPin, Phone, Mail, Calendar, GraduationCap, Trophy, Target, Star, HeartPulse, Award, Building2, Globe, Flag, Weight, Ruler, Languages, Briefcase, Clock, CheckCircle, XCircle } from 'lucide-react';
+import ShareModal from '@/components/shared/ShareModal';
+import { Button } from '@/components/ui/button';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ar';
 
@@ -12,6 +14,8 @@ interface PlayerResumeProps {
   player: any;
   playerOrganization?: any;
 }
+
+
 
 // دالة حساب العمر
 const calculateAge = (birthDate: any) => {
@@ -173,44 +177,63 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
 
   const age = calculateAge(player?.birth_date);
 
+
+
   return (
     <div className="space-y-4">
       {/* أزرار التحكم */}
-      <div className="flex gap-3 justify-center print:hidden">
-        <button
-          onClick={handleDownloadPDF}
-          className="flex gap-2 items-center px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          تنزيل PDF
-        </button>
-        <button
-          onClick={async () => {
-            try {
-              if (!resumeRef.current) return;
-              
-              const canvas = await html2canvas(resumeRef.current, {
-                scale: 1,
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#ffffff'
-              });
-              
-              const link = document.createElement('a');
-              link.download = `${player?.full_name || 'player'}-resume.png`;
-              link.href = canvas.toDataURL();
-              link.click();
-              
-              alert('تم تنزيل الصورة بنجاح!');
-            } catch (error) {
-              alert('خطأ في تنزيل الصورة: ' + (error as Error).message);
+      <div className="space-y-4 print:hidden">
+        {/* أزرار التنزيل */}
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={handleDownloadPDF}
+            className="flex gap-2 items-center px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            تنزيل PDF
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                if (!resumeRef.current) return;
+                
+                const canvas = await html2canvas(resumeRef.current, {
+                  scale: 1,
+                  useCORS: true,
+                  allowTaint: true,
+                  backgroundColor: '#ffffff'
+                });
+                
+                const link = document.createElement('a');
+                link.download = `${player?.full_name || 'player'}-resume.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                
+                alert('تم تنزيل الصورة بنجاح!');
+              } catch (error) {
+                alert('خطأ في تنزيل الصورة: ' + (error as Error).message);
+              }
+            }}
+            className="flex gap-2 items-center px-4 py-2 text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            تنزيل كصورة
+          </button>
+        </div>
+
+        {/* زر المشاركة */}
+        <div className="flex justify-center">
+          <ShareModal 
+            playerId={player?.id} 
+            playerName={player?.full_name || 'لاعب'}
+            trigger={
+              <Button className="flex gap-2 items-center px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                <Download className="w-4 h-4" />
+                مشاركة التقرير
+              </Button>
             }
-          }}
-          className="flex gap-2 items-center px-4 py-2 text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          تنزيل كصورة
-        </button>
+          />
+        </div>
       </div>
 
       {/* السيرة الذاتية */}
@@ -268,7 +291,7 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
           
           {/* معلومات المنصة والتاريخ */}
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="flex justify-between items-center text-sm text-gray-600">
+            <div className="flex justify-between items-center text-xs text-gray-600">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-blue-600">منصة الحلم لاكتشاف المواهب الكروية 2025</span>
               </div>
@@ -276,6 +299,9 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
                 <span>تاريخ الإنشاء: {dayjs().format('DD/MM/YYYY')}</span>
                 <span>آخر تحديث: {dayjs().format('DD/MM/YYYY HH:mm')}</span>
               </div>
+            </div>
+            <div className="mt-2 text-xs text-gray-500 text-center">
+              هذه الوثيقة تم إنشاء بواسطة صاحب الحساب على منصة الحلم لاكتشاف المواهب الكروية دون أي مسؤولية عليها
             </div>
           </div>
         </div>
@@ -780,12 +806,13 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
 
         {/* Footer */}
         <div className="border-t-2 border-gray-300 pt-6 mt-8">
-          <div className="text-center text-gray-600 text-sm">
+          <div className="text-center text-gray-600 text-xs">
             <p className="font-semibold text-blue-600 mb-2">منصة الحلم لاكتشاف المواهب الكروية 2025</p>
             <p>تم إنشاء هذه السيرة الذاتية بتاريخ {dayjs().format('DD/MM/YYYY')}</p>
             <p>آخر تحديث: {dayjs().format('DD/MM/YYYY HH:mm')}</p>
             <p className="mt-2">جميع المعلومات المذكورة صحيحة وقت إنشاء الوثيقة</p>
             <p className="text-xs mt-1">هذه الوثيقة تم إعدادها بواسطة منصة الحلم المتخصصة في اكتشاف وتطوير المواهب الكروية</p>
+            <p className="text-xs mt-1 text-gray-500">هذه الوثيقة تم إنشاء بواسطة صاحب الحساب على منصة الحلم لاكتشاف المواهب الكروية دون أي مسؤولية عليها</p>
           </div>
         </div>
       </div>
