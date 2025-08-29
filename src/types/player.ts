@@ -161,6 +161,9 @@ export interface Player extends BaseEntity, PlayerFormData {
     accountName: string;
     dateAdded: DateOrTimestamp;
   };
+  // Legacy field names for backward compatibility
+  created_at?: DateOrTimestamp;
+  updated_at?: DateOrTimestamp;
   
   // Additional properties for PlayersSearchPage
   displayName?: string;
@@ -183,7 +186,7 @@ export interface Player extends BaseEntity, PlayerFormData {
   age_category?: string;
   status?: string;
   skill_level?: string;
-  objectives?: PlayerObjectives | string[]; // يمكن أن يكون PlayerObjectives أو string[]
+  objectives?: PlayerObjectives | string[] | Record<string, any>; // يمكن أن يكون PlayerObjectives أو string[] أو object
 }
 
 // Player search and filter types
