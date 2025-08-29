@@ -154,11 +154,11 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
             </div>
           )}
           <div className="relative">
-            <ReactPlayer
-              url={activePlaylistId ? `https://www.youtube.com/embed?listType=playlist&list=${activePlaylistId}` : (activeVideoId ? `https://www.youtube.com/watch?v=${activeVideoId}` : undefined)}
-              width="100%"
-              height="420px"
-              controls
+          <ReactPlayer
+            url={activePlaylistId ? `https://www.youtube.com/embed?listType=playlist&list=${activePlaylistId}` : (activeVideoId ? `https://www.youtube.com/watch?v=${activeVideoId}` : undefined)}
+            width="100%"
+            height="420px"
+            controls
               playing={false}
               light={false}
               config={{ 

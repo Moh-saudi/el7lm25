@@ -64,9 +64,9 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
   AlertDialogCancel, 
   AlertDialogContent, 
   AlertDialogDescription, 
@@ -1289,10 +1289,10 @@ function PlayerReportPage() {
                     <div className="text-center text-gray-500">
                       <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 002 2v8a2 2 0 002 2z" />
-                      </svg>
+                        </svg>
                       <p className="text-sm">فيديو {index + 1}</p>
                       <p className="text-xs mt-1">اضغط على الرابط أدناه للمشاهدة</p>
-                    </div>
+                      </div>
                   </div>
                       {/* عرض رابط الفيديو للتشخيص */}
                       <div className="absolute top-2 left-2 px-2 py-1 text-xs text-white bg-black bg-opacity-50 rounded">

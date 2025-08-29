@@ -150,29 +150,29 @@ export default function SearchPage() {
 
   // تعريف أنواع الكيانات مع الترجمة
   const ENTITY_TYPES = {
-    club: { label: 'dashboard.player.search.entityTypes.club', icon: Building, color: 'bg-blue-500' },
-    agent: { label: 'dashboard.player.search.entityTypes.agent', icon: Briefcase, color: 'bg-purple-500' },
-    scout: { label: 'dashboard.player.search.entityTypes.scout', icon: Eye, color: 'bg-green-500' },
-    academy: { label: 'dashboard.player.search.entityTypes.academy', icon: Trophy, color: 'bg-orange-500' },
-    sponsor: { label: 'dashboard.player.search.entityTypes.sponsor', icon: Award, color: 'bg-red-500' },
-    trainer: { label: 'dashboard.player.search.entityTypes.trainer', icon: User, color: 'bg-cyan-500' }
+    club: { label: 'الأندية', icon: Building, color: 'bg-blue-500' },
+    agent: { label: 'الوكلاء', icon: Briefcase, color: 'bg-purple-500' },
+    scout: { label: 'الكشافين', icon: Eye, color: 'bg-green-500' },
+    academy: { label: 'الأكاديميات', icon: Trophy, color: 'bg-orange-500' },
+    sponsor: { label: 'الرعاة', icon: Award, color: 'bg-red-500' },
+    trainer: { label: 'المدربين', icon: User, color: 'bg-cyan-500' }
   };
 
   const COUNTRIES = [
-    'dashboard.player.search.countries.egypt',
-    'dashboard.player.search.countries.saudiArabia',
-    'dashboard.player.search.countries.uae',
-    'dashboard.player.search.countries.qatar',
-    'dashboard.player.search.countries.kuwait',
-    'dashboard.player.search.countries.bahrain',
-    'dashboard.player.search.countries.oman',
-    'dashboard.player.search.countries.jordan',
-    'dashboard.player.search.countries.lebanon',
-    'dashboard.player.search.countries.iraq',
-    'dashboard.player.search.countries.morocco',
-    'dashboard.player.search.countries.algeria',
-    'dashboard.player.search.countries.tunisia',
-    'dashboard.player.search.countries.libya'
+    'مصر',
+    'السعودية',
+    'الإمارات',
+    'قطر',
+    'الكويت',
+    'البحرين',
+    'عمان',
+    'الأردن',
+    'لبنان',
+    'العراق',
+    'المغرب',
+    'الجزائر',
+    'تونس',
+    'ليبيا'
   ];
 
   // جلب البيانات من Firestore
@@ -1566,7 +1566,7 @@ export default function SearchPage() {
               <div className="flex items-center gap-2 mb-2 group-hover:gap-3 transition-all duration-300">
                 <h3 className="font-bold text-xl text-gray-900 truncate group-hover:text-blue-600 transition-colors duration-300">{entity.name}</h3>
                 <Badge variant="secondary" className={`${entityType.color} text-white flex-shrink-0 group-hover:scale-105 transition-transform duration-300`}>
-                  {'dashboard.player.search.entityTypes.${entity.type}'}
+                  {entityType.label}
                 </Badge>
               </div>
               
@@ -1592,7 +1592,7 @@ export default function SearchPage() {
               {entity.established && (
                 <div className="flex items-center gap-1 text-sm text-gray-500 group-hover:text-green-600 transition-colors duration-300 group-hover:gap-2">
                   <Calendar className="w-4 h-4 flex-shrink-0 group-hover:scale-110 transition-transform duration-200" />
-                  <span>{'dashboard.player.search.established'}: {entity.established}</span>
+                  <span>تأسس في: {entity.established}</span>
                 </div>
               )}
             </div>
@@ -1606,7 +1606,7 @@ export default function SearchPage() {
           {/* الخدمات */}
           {entity.services && entity.services.length > 0 && (
             <div className="mb-4 group-hover:scale-105 transition-transform duration-300">
-              <h4 className="font-semibold text-sm text-gray-700 mb-2 group-hover:text-gray-800 transition-colors duration-300">{'dashboard.player.search.services.title'}</h4>
+              <h4 className="font-semibold text-sm text-gray-700 mb-2 group-hover:text-gray-800 transition-colors duration-300">الخدمات المقدمة</h4>
               <div className="flex flex-wrap gap-1 group-hover:gap-2 transition-all duration-300">
                 {entity.services.slice(0, 3).map((service, index) => (
                   <Badge key={index} variant="outline" className="text-xs group-hover:scale-105 transition-transform duration-300">
@@ -1615,7 +1615,7 @@ export default function SearchPage() {
                 ))}
                 {entity.services.length > 3 && (
                   <Badge variant="outline" className="text-xs group-hover:scale-105 transition-transform duration-300">
-                    +{entity.services.length - 3} {'dashboard.player.search.more'}
+                    +{entity.services.length - 3} المزيد
                   </Badge>
                 )}
               </div>
@@ -1634,7 +1634,7 @@ export default function SearchPage() {
               ) : (
                 <Eye className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
               )}
-              {'dashboard.player.search.actions.viewProfile'}
+              عرض الملف الشخصي
             </Button>
             
             <div className="flex gap-2 transition-all duration-300 hover:gap-3 group-hover:gap-4 group-hover:scale-105">
@@ -1644,35 +1644,35 @@ export default function SearchPage() {
                 onClick={() => handleFollow(entity.id)}
                 disabled={actionLoading === `follow-${entity.id}`}
                 data-entity-id={entity.id}
-                className={`flex-1 text-white border-0 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group-hover:shadow-2xl ${
+                className={`flex-1 border-0 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group-hover:shadow-2xl ${
                   actionLoading === `follow-${entity.id}`
-                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 animate-pulse'
+                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 animate-pulse text-white'
                     : actionSuccess === `follow-${entity.id}`
-                    ? 'bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 animate-pulse'
+                    ? 'bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 animate-pulse text-white'
                     : entity.isFollowing
-                    ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
-                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white'
+                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
                 }`}
               >
                 {actionLoading === `follow-${entity.id}` ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {'dashboard.player.search.actions.processing'}
+                    جاري المعالجة...
                   </>
                 ) : actionSuccess === `follow-${entity.id}` ? (
                   <>
                     <Check className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
-                    {entity.isFollowing ? 'dashboard.player.search.actions.following' : 'dashboard.player.search.actions.follow'}
+                    {entity.isFollowing ? 'متابع' : 'متابعة'}
                   </>
                 ) : entity.isFollowing ? (
                   <>
                     <Check className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
-                    {'dashboard.player.search.actions.following'}
+                    متابع
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
-                    {'dashboard.player.search.actions.follow'}
+                    متابعة
                   </>
                 )}
               </Button>
@@ -1685,15 +1685,15 @@ export default function SearchPage() {
                 targetUserName={entity.name}
                 targetUserType={entity.type}
                 organizationName={entity?.specialization}
-                buttonText={'dashboard.player.search.actions.message'}
+                buttonText={'رسالة'}
                 buttonVariant="outline"
                 buttonSize="sm"
-                className={`flex-1 text-white border-0 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group-hover:shadow-2xl ${
+                className={`flex-1 border-0 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group-hover:shadow-2xl ${
                   actionLoading === `message-${entity.id}`
-                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 animate-pulse'
+                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 animate-pulse text-white'
                     : actionSuccess === `message-${entity.id}`
-                    ? 'bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 animate-pulse'
-                    : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700'
+                    ? 'bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 animate-pulse text-white'
+                    : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white'
                 }`}
               />
             </div>
@@ -1835,8 +1835,8 @@ export default function SearchPage() {
           </Card>
         ) : (
           <>
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {entities.map((entity, index) => (
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+              {entities.slice(0, 2).map((entity, index) => (
                 <EntityCard key={`${entity.id}-${entity.type}-${index}`} entity={entity} />
               ))}
             </div>
