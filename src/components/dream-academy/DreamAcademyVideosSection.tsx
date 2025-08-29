@@ -167,11 +167,24 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
                     host: 'https://www.youtube-nocookie.com' 
                   }, 
                   playerVars: { 
-                    rel: 0,
-                    modestbranding: 1,
-                    showinfo: 0,
+                    rel: 0,                    // منع ظهور الفيديوهات المقترحة
+                    modestbranding: 1,         // إخفاء شعار YouTube
+                    showinfo: 0,               // إخفاء معلومات الفيديو
                     origin: typeof window !== 'undefined' ? window.location.origin : '',
-                    enablejsapi: 1
+                    enablejsapi: 1,
+                    iv_load_policy: 3,         // منع ظهور التعليقات
+                    cc_load_policy: 0,         // منع الترجمة التلقائية
+                    fs: 1,                     // السماح بالملء الشاشة
+                    disablekb: 0,              // السماح بمفاتيح لوحة المفاتيح
+                    autoplay: 0,               // منع التشغيل التلقائي
+                    mute: 0,                   // عدم كتم الصوت
+                    loop: 0,                   // عدم التكرار
+                    playlist: '',              // منع قائمة التشغيل
+                    controls: 1,               // إظهار عناصر التحكم
+                    playsinline: 1,            // التشغيل داخل الصفحة
+                    color: 'white',            // لون شريط التقدم
+                    hl: 'ar',                  // اللغة العربية
+                    cc_lang_pref: 'ar'         // تفضيل الترجمة العربية
                   } 
                 } 
               }}
