@@ -142,6 +142,10 @@ export default function SearchPage() {
   const [hasMore, setHasMore] = useState(true);
   const [lastDoc, setLastDoc] = useState<DocumentSnapshot | null>(null);
   const [totalResults, setTotalResults] = useState(0);
+  
+  // حالة التنقل بين الصفحات
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(6); // 3 صفوف × 2 كروت
 
   // حالة الواجهة
   const [showFilters, setShowFilters] = useState(false);
@@ -1276,14 +1280,14 @@ export default function SearchPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {/* نوع الكيان */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">{'dashboard.player.search.filters.entityType'}</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">نوع الكيان</label>
           <select
             value={filters.type}
             onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value as any }))}
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            title={'dashboard.player.search.filters.entityType'}
+            title="نوع الكيان"
           >
-            <option value="all">{'dashboard.player.search.filters.allTypes'}</option>
+            <option value="all">جميع الأنواع</option>
             {Object.entries(ENTITY_TYPES).map(([key, value]) => (
               <option key={key} value={key}>{value.label}</option>
             ))}
@@ -1292,14 +1296,14 @@ export default function SearchPage() {
 
         {/* الدولة */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">{'dashboard.player.search.filters.country'}</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">الدولة</label>
           <select
             value={filters.country}
             onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            title={'dashboard.player.search.filters.country'}
+            title="الدولة"
           >
-            <option value="">{'dashboard.player.search.filters.allCountries'}</option>
+            <option value="">جميع الدول</option>
             {COUNTRIES.map(country => (
               <option key={country} value={country}>{country}</option>
             ))}
@@ -1308,7 +1312,7 @@ export default function SearchPage() {
 
         {/* التقييم الأدنى */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">{'dashboard.player.search.filters.minRating'}</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">التقييم الأدنى</label>
           <div className="flex gap-2">
             {[0, 3, 3.5, 4, 4.5].map(rating => (
               <Button
@@ -1316,8 +1320,9 @@ export default function SearchPage() {
                 variant={filters.minRating === rating ? "default" : "outline"}
                 size="sm"
                 onClick={() => setFilters(prev => ({ ...prev, minRating: rating }))}
+                className={`${filters.minRating === rating ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
               >
-                {rating > 0 ? `${rating}+` : 'dashboard.player.search.filters.all'}
+                {rating > 0 ? `${rating}+` : 'الكل'}
               </Button>
             ))}
           </div>
@@ -1325,7 +1330,7 @@ export default function SearchPage() {
 
         {/* خيارات إضافية */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">{'dashboard.player.search.filters.additionalOptions'}</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">خيارات إضافية</label>
           <div className="space-y-2">
             <label className="flex items-center gap-2">
               <input
@@ -1337,7 +1342,7 @@ export default function SearchPage() {
                 }))}
                 className="rounded border-gray-300 text-blue-600"
               />
-              <span className="text-sm">{'dashboard.player.search.filters.verifiedOnly'}</span>
+              <span className="text-sm">الحسابات المحققة فقط</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -1349,7 +1354,7 @@ export default function SearchPage() {
                 }))}
                 className="rounded border-gray-300 text-blue-600"
               />
-              <span className="text-sm">{'dashboard.player.search.filters.premiumOnly'}</span>
+              <span className="text-sm">الحسابات المميزة فقط</span>
             </label>
           </div>
         </div>
@@ -1360,7 +1365,7 @@ export default function SearchPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* أهداف اللاعب */}
           <div>
-            <label className="block text-sm font-medium mb-3 text-gray-700">{'dashboard.player.search.filters.playerGoals'}</label>
+            <label className="block text-sm font-medium mb-3 text-gray-700">أهداف اللاعب</label>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {[
                 'europeanLeague',
@@ -1419,7 +1424,42 @@ export default function SearchPage() {
                     }}
                     className="rounded border-gray-300 text-blue-600"
                   />
-                  <span className="text-sm">{'dashboard.player.search.filters.goals.${goal}'}</span>
+                  <span className="text-sm">{goal === 'europeanLeague' ? 'الدوري الأوروبي' :
+                    goal === 'nationalTeam' ? 'المنتخب الوطني' :
+                    goal === 'professionalClub' ? 'النادي الاحترافي' :
+                    goal === 'localChampionship' ? 'البطولة المحلية' :
+                    goal === 'regionalChampionship' ? 'البطولة الإقليمية' :
+                    goal === 'internationalChampionship' ? 'البطولة الدولية' :
+                    goal === 'teamCaptain' ? 'قائد الفريق' :
+                    goal === 'technicalSkills' ? 'المهارات التقنية' :
+                    goal === 'physicalFitness' ? 'اللياقة البدنية' :
+                    goal === 'individualAwards' ? 'الجوائز الفردية' :
+                    goal === 'inspireYouth' ? 'إلهام الشباب' :
+                    goal === 'firstDivision' ? 'الدوري الأول' :
+                    goal === 'sportsScholarship' ? 'المنحة الرياضية' :
+                    goal === 'topScorer' ? 'الهداف الأول' :
+                    goal === 'goalkeeperDefense' ? 'دفاع حارس المرمى' :
+                    goal === 'worldCup' ? 'كأس العالم' :
+                    goal === 'gulfLeague' ? 'دوري الخليج' :
+                    goal === 'professionalReputation' ? 'السمعة الاحترافية' :
+                    goal === 'olympics' ? 'الأولمبياد' :
+                    goal === 'bestYoungPlayer' ? 'أفضل لاعب شاب' :
+                    goal === 'leadershipSkills' ? 'مهارات القيادة' :
+                    goal === 'playWithStars' ? 'اللعب مع النجوم' :
+                    goal === 'clubStability' ? 'استقرار النادي' :
+                    goal === 'returnAsStar' ? 'العودة كنجم' :
+                    goal === 'futureTraining' ? 'التدريب المستقبلي' :
+                    goal === 'internationalTrials' ? 'التجارب الدولية' :
+                    goal === 'investmentClub' ? 'نادي الاستثمار' :
+                    goal === 'accreditedAcademy' ? 'الأكاديمية المعتمدة' :
+                    goal === 'fifaRegistration' ? 'تسجيل الفيفا' :
+                    goal === 'englishCourses' ? 'دورات اللغة الإنجليزية' :
+                    goal === 'additionalLanguages' ? 'اللغات الإضافية' :
+                    goal === 'sportsAnalysis' ? 'التحليل الرياضي' :
+                    goal === 'physicalPreparation' ? 'الإعداد البدني' :
+                    goal === 'psychologicalPreparation' ? 'الإعداد النفسي' :
+                    goal === 'coachingLicense' ? 'رخصة التدريب' :
+                    goal === 'clubManagement' ? 'إدارة النادي' : goal}</span>
                 </label>
               ))}
             </div>
@@ -1427,7 +1467,7 @@ export default function SearchPage() {
 
           {/* الخدمات المطلوبة */}
           <div>
-            <label className="block text-sm font-medium mb-3 text-gray-700">{'dashboard.player.search.filters.services'}</label>
+            <label className="block text-sm font-medium mb-3 text-gray-700">الخدمات المطلوبة</label>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {[
                 'playerTraining',
@@ -1462,7 +1502,18 @@ export default function SearchPage() {
                     }}
                     className="rounded border-gray-300 text-blue-600"
                   />
-                  <span className="text-sm">{'dashboard.player.search.filters.services.${service}'}</span>
+                  <span className="text-sm">{service === 'playerTraining' ? 'تدريب اللاعبين' :
+                    service === 'youthPrograms' ? 'برامج الشباب' :
+                    service === 'officialCompetitions' ? 'المنافسات الرسمية' :
+                    service === 'playerRepresentation' ? 'تمثيل اللاعبين' :
+                    service === 'contractNegotiation' ? 'تفاوض العقود' :
+                    service === 'advancedPrograms' ? 'البرامج المتقدمة' :
+                    service === 'talentDevelopment' ? 'تطوير المواهب' :
+                    service === 'personalTraining' ? 'التدريب الشخصي' :
+                    service === 'preparationPrograms' ? 'برامج الإعداد' :
+                    service === 'sportsConsultations' ? 'الاستشارات الرياضية' :
+                    service === 'legalConsultation' ? 'الاستشارات القانونية' :
+                    service === 'trainingCamps' ? 'معسكرات التدريب' : service}</span>
                 </label>
               ))}
             </div>
@@ -1470,28 +1521,29 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* ترتيب النتائج */}
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <label className="block text-sm font-medium mb-2 text-gray-700">{'dashboard.player.search.filters.sortResults'}</label>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { key: 'relevance', label: 'dashboard.player.search.sortOptions.relevance' },
-            { key: 'rating', label: 'dashboard.player.search.sortOptions.highestRated' },
-            { key: 'followers', label: 'dashboard.player.search.sortOptions.mostFollowed' },
-            { key: 'recent', label: 'dashboard.player.search.sortOptions.newest' },
-            { key: 'alphabetical', label: 'dashboard.player.search.sortOptions.alphabetical' }
-          ].map(sort => (
-            <Button
-              key={sort.key}
-              variant={filters.sortBy === sort.key ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilters(prev => ({ ...prev, sortBy: sort.key as any }))}
-            >
-              {sort.label}
-            </Button>
-          ))}
+              {/* ترتيب النتائج */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <label className="block text-sm font-medium mb-2 text-gray-700">ترتيب النتائج</label>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: 'relevance', label: 'الأكثر صلة' },
+              { key: 'rating', label: 'الأعلى تقييماً' },
+              { key: 'followers', label: 'الأكثر متابعة' },
+              { key: 'recent', label: 'الأحدث' },
+              { key: 'alphabetical', label: 'أبجدياً' }
+            ].map(sort => (
+              <Button
+                key={sort.key}
+                variant={filters.sortBy === sort.key ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilters(prev => ({ ...prev, sortBy: sort.key as any }))}
+                className={`${filters.sortBy === sort.key ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+              >
+                {sort.label}
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
 
       {/* أزرار التحكم */}
       <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
@@ -1608,11 +1660,30 @@ export default function SearchPage() {
             <div className="mb-4 group-hover:scale-105 transition-transform duration-300">
               <h4 className="font-semibold text-sm text-gray-700 mb-2 group-hover:text-gray-800 transition-colors duration-300">الخدمات المقدمة</h4>
               <div className="flex flex-wrap gap-1 group-hover:gap-2 transition-all duration-300">
-                {entity.services.slice(0, 3).map((service, index) => (
+                              {entity.services.slice(0, 3).map((service, index) => {
+                // تحويل مفاتيح الترجمة إلى نصوص عربية
+                const serviceText = service.includes('dashboard.player.search.services.') 
+                  ? service.replace('dashboard.player.search.services.', '')
+                    .replace('playerTraining', 'تدريب اللاعبين')
+                    .replace('youthPrograms', 'برامج الشباب')
+                    .replace('officialCompetitions', 'المنافسات الرسمية')
+                    .replace('playerRepresentation', 'تمثيل اللاعبين')
+                    .replace('contractNegotiation', 'تفاوض العقود')
+                    .replace('advancedPrograms', 'البرامج المتقدمة')
+                    .replace('talentDevelopment', 'تطوير المواهب')
+                    .replace('personalTraining', 'التدريب الشخصي')
+                    .replace('preparationPrograms', 'برامج الإعداد')
+                    .replace('sportsConsultations', 'الاستشارات الرياضية')
+                    .replace('legalConsultation', 'الاستشارات القانونية')
+                    .replace('trainingCamps', 'معسكرات التدريب')
+                  : service;
+                
+                return (
                   <Badge key={index} variant="outline" className="text-xs group-hover:scale-105 transition-transform duration-300">
-                    {service}
+                    {serviceText}
                   </Badge>
-                ))}
+                );
+              })}
                 {entity.services.length > 3 && (
                   <Badge variant="outline" className="text-xs group-hover:scale-105 transition-transform duration-300">
                     +{entity.services.length - 3} المزيد
@@ -1753,7 +1824,7 @@ export default function SearchPage() {
               variant={filters.type === 'all' ? "default" : "outline"}
               size="sm"
               onClick={() => handleFilterChange({ type: 'all' })}
-              className="rounded-full"
+              className={`rounded-full ${filters.type === 'all' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
             >
               جميع الأنواع
             </Button>
@@ -1763,14 +1834,9 @@ export default function SearchPage() {
                 variant={filters.type === key ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleFilterChange({ type: key as any })}
-                className="rounded-full"
+                className={`rounded-full ${filters.type === key ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
               >
-                {key === 'club' ? 'الأندية' : 
-                 key === 'agent' ? 'الوكلاء' : 
-                 key === 'scout' ? 'الكشافين' : 
-                 key === 'academy' ? 'الأكاديميات' : 
-                 key === 'sponsor' ? 'الرعاة' : 
-                 key === 'trainer' ? 'المدربين' : key}
+                {value.label}
               </Button>
             ))}
           </div>
@@ -1836,10 +1902,48 @@ export default function SearchPage() {
         ) : (
           <>
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-              {entities.slice(0, 2).map((entity, index) => (
-                <EntityCard key={`${entity.id}-${entity.type}-${index}`} entity={entity} />
-              ))}
+              {entities
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((entity, index) => (
+                  <EntityCard key={`${entity.id}-${entity.type}-${index}`} entity={entity} />
+                ))}
             </div>
+
+            {/* التنقل بين الصفحات */}
+            {entities.length > itemsPerPage && (
+              <div className="flex justify-center items-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2"
+                >
+                  السابق
+                </Button>
+                
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.ceil(entities.length / itemsPerPage) }, (_, i) => (
+                    <Button
+                      key={i + 1}
+                      variant={currentPage === i + 1 ? "default" : "outline"}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className="w-10 h-10 p-0"
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => Math.min(Math.ceil(entities.length / itemsPerPage), prev + 1))}
+                  disabled={currentPage === Math.ceil(entities.length / itemsPerPage)}
+                  className="px-4 py-2"
+                >
+                  التالي
+                </Button>
+              </div>
+            )}
 
             {/* تحميل المزيد */}
             {hasMore && (
