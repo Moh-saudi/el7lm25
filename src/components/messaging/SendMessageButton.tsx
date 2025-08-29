@@ -566,13 +566,18 @@ const SendMessageButton: React.FC<SendMessageButtonProps> = ({
 
   // زر بدء محادثة جديدة في صفحة البحث
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!sending) {
+        setIsOpen(open);
+      }
+    }}>
       <DialogTrigger asChild>
         <Button
           className={`flex items-center gap-2 ${className}`}
           variant={buttonVariant}
           size={buttonSize}
           disabled={sending}
+          onClick={() => setIsOpen(true)}
         >
           <MessageSquare className="h-4 w-4" />
           <span>{buttonText || 'رسالة'}</span>

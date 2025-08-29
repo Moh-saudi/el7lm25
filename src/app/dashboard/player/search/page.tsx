@@ -19,7 +19,8 @@ import {
   startAfter,
   DocumentSnapshot,
   increment,
-  setDoc
+  setDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ import {
   Calendar
 } from 'lucide-react';
 import SendMessageButton from '@/components/messaging/SendMessageButton';
+import { toast } from 'sonner';
 // تم إلغاء LanguageSwitcher مؤقتاً
 
 // أنواع البيانات
@@ -386,17 +388,17 @@ export default function SearchPage() {
                 city: agentData.current_location?.split(' - ')[1] || agentData.current_location || '',
                 address: agentData.office_address || ''
               },
-              description: agentData.specialization || 'dashboard.player.search.defaultDescriptions.agent',
-              specialization: agentData.specialization || 'dashboard.player.search.defaultSpecializations.playerAgent',
+              description: agentData.specialization || 'وكيل رياضي محترف',
+              specialization: agentData.specialization || 'وكيل رياضي',
               verified: agentData.is_fifa_licensed || false,
               rating: 4.5,
               reviewsCount: Math.floor(Math.random() * 500) + 100,
               followersCount: (agentData.stats?.players || 0) * 10,
               connectionsCount: agentData.stats?.contracts || 0,
-              achievements: agentData.is_fifa_licensed ? ['dashboard.player.search.achievements.fifaLicensed'] : [],
-              services: ['dashboard.player.search.services.playerRepresentation', 'dashboard.player.search.services.contractNegotiation'],
+              achievements: agentData.is_fifa_licensed ? ['مرخص من الفيفا'] : [],
+              services: ['تمثيل اللاعبين', 'تفاوض العقود'],
               established: agentData.established || '',
-              languages: agentData.spoken_languages || ['dashboard.player.search.languages.arabic'],
+              languages: agentData.spoken_languages || ['العربية'],
               createdAt: new Date(),
               lastActive: new Date(),
               isPremium: true,
@@ -451,7 +453,7 @@ export default function SearchPage() {
             
             const entity: SearchEntity = {
               id: doc.id,
-              name: academyData.name || 'dashboard.player.search.defaultNames.academy',
+              name: academyData.name || 'أكاديمية رياضية',
               type: 'academy',
               email: academyData.email || '',
               phone: academyData.phone || '',
@@ -463,17 +465,17 @@ export default function SearchPage() {
                 city: academyData.city || '',
                 address: academyData.address || ''
               },
-              description: academyData.description || 'dashboard.player.search.defaultDescriptions.academy',
-              specialization: Array.isArray(academyData.programs) ? academyData.programs.join(', ') : 'dashboard.player.search.defaultSpecializations.academy',
+              description: academyData.description || 'أكاديمية تدريب متخصصة',
+              specialization: Array.isArray(academyData.programs) ? academyData.programs.join(', ') : 'تدريب رياضي',
               verified: true,
               rating: 4.6,
               reviewsCount: Math.floor(Math.random() * 300) + 100,
               followersCount: (academyData.stats?.students || 0) * 5,
               connectionsCount: academyData.stats?.graduates || 0,
-              achievements: ['dashboard.player.search.achievements.certified', 'dashboard.player.search.achievements.advancedPrograms'],
-              services: ['dashboard.player.search.services.playerTraining', 'dashboard.player.search.services.advancedPrograms', 'dashboard.player.search.services.talentDevelopment'],
+              achievements: ['معتمدة', 'برامج متقدمة'],
+              services: ['تدريب اللاعبين', 'برامج متقدمة', 'تطوير المواهب'],
               established: academyData.established || '',
-              languages: ['dashboard.player.search.languages.arabic'],
+              languages: ['العربية'],
               createdAt: new Date(),
               lastActive: new Date(),
               isPremium: true,
@@ -531,7 +533,7 @@ export default function SearchPage() {
             
             const entity: SearchEntity = {
               id: doc.id,
-              name: trainerData.full_name || 'dashboard.player.search.defaultNames.trainer',
+              name: trainerData.full_name || 'مدرب رياضي',
               type: 'trainer',
               email: trainerData.email || '',
               phone: trainerData.phone || '',
@@ -543,17 +545,17 @@ export default function SearchPage() {
                 city: trainerData.current_location?.split(' - ')[1] || trainerData.current_location || '',
                 address: ''
               },
-              description: trainerData.specialization || 'dashboard.player.search.defaultDescriptions.trainer',
-              specialization: trainerData.specialization || 'dashboard.player.search.defaultSpecializations.physicalTraining',
+              description: trainerData.specialization || 'مدرب رياضي محترف',
+              specialization: trainerData.specialization || 'تدريب بدني',
               verified: trainerData.is_certified || false,
               rating: 4.4,
               reviewsCount: Math.floor(Math.random() * 150) + 30,
               followersCount: (trainerData.stats?.players || 0) * 20,
               connectionsCount: trainerData.stats?.training_sessions || 0,
-              achievements: trainerData.is_certified ? ['dashboard.player.search.achievements.certified', 'dashboard.player.search.achievements.advancedExperience'] : ['dashboard.player.search.achievements.local', 'dashboard.player.search.achievements.advancedExperience'],
-              services: ['dashboard.player.search.services.personalTraining', 'dashboard.player.search.services.preparationPrograms', 'dashboard.player.search.services.sportsConsultations'],
+              achievements: trainerData.is_certified ? ['معتمد', 'خبرة متقدمة'] : ['محلي', 'خبرة متقدمة'],
+              services: ['تدريب شخصي', 'برامج إعداد', 'استشارات رياضية'],
               established: trainerData.established || '',
-              languages: trainerData.spoken_languages || ['dashboard.player.search.languages.arabic'],
+              languages: trainerData.spoken_languages || ['العربية'],
               createdAt: new Date(),
               lastActive: new Date(),
               isPremium: true,
@@ -585,21 +587,21 @@ export default function SearchPage() {
         const mockEntities: SearchEntity[] = [
           {
             id: '1',
-            name: 'dashboard.player.search.mockEntities.alahly.name',
+            name: 'النادي الأهلي',
             type: 'club',
             email: 'info@alahly.com',
             phone: '+20223456789',
             website: 'www.alahly.com',
             profileImage: '/images/club-avatar.png',
             coverImage: '/images/hero-1.jpg',
-            location: { country: 'dashboard.player.search.mockEntities.alahly.location.country', city: 'dashboard.player.search.mockEntities.alahly.location.city' },
-            description: 'dashboard.player.search.mockEntities.alahly.description',
+            location: { country: 'مصر', city: 'القاهرة' },
+            description: 'أحد أكبر الأندية الرياضية في مصر والعالم العربي',
             verified: true,
             rating: 4.9,
             reviewsCount: 1200,
             followersCount: 5480000,
             connectionsCount: 1200,
-            achievements: ['dashboard.player.search.mockEntities.alahly.achievements.afcon', 'dashboard.player.search.mockEntities.alahly.achievements.egyptianLeague'],
+            achievements: ['كأس الأمم الأفريقية', 'الدوري المصري'],
             createdAt: new Date(),
             lastActive: new Date(),
             isPremium: true,
@@ -611,23 +613,23 @@ export default function SearchPage() {
           },
           {
             id: '2',
-            name: 'dashboard.player.search.mockEntities.starsAgency.name',
+            name: 'وكالة النجوم الرياضية',
             type: 'agent',
             email: 'contact@stars-agency.com',
             phone: '+97145678901',
             website: 'www.stars-agency.com',
             profileImage: '/images/agent-avatar.png',
             coverImage: '/images/hero-1.jpg',
-            location: { country: 'dashboard.player.search.mockEntities.starsAgency.location.country', city: 'dashboard.player.search.mockEntities.starsAgency.location.city' },
-            description: 'dashboard.player.search.mockEntities.starsAgency.description',
-            specialization: 'dashboard.player.search.mockEntities.starsAgency.specialization',
+            location: { country: 'الإمارات', city: 'دبي' },
+            description: 'وكالة تمثيل رياضي محترفة',
+            specialization: 'تمثيل اللاعبين',
             verified: true,
             rating: 4.8,
             reviewsCount: 340,
             followersCount: 89000,
             connectionsCount: 450,
-            achievements: ['dashboard.player.search.mockEntities.starsAgency.achievements'],
-            services: ['dashboard.player.search.mockEntities.starsAgency.services.contractNegotiation', 'dashboard.player.search.mockEntities.starsAgency.services.legalConsultation'],
+            achievements: ['مرخص من الفيفا'],
+            services: ['تفاوض العقود', 'استشارات قانونية'],
             createdAt: new Date(),
             lastActive: new Date(),
             isPremium: true,
@@ -639,23 +641,23 @@ export default function SearchPage() {
           },
           {
             id: '3',
-            name: 'dashboard.player.search.mockEntities.faisalAcademy.name',
+            name: 'أكاديمية فيصل الرياضية',
             type: 'academy',
             email: 'info@faisal-academy.com',
             phone: '+97123456789',
             website: 'www.faisal-academy.com',
             profileImage: '/images/club-avatar.png',
             coverImage: '/images/hero-1.jpg',
-            location: { country: 'dashboard.player.search.mockEntities.faisalAcademy.location.country', city: 'dashboard.player.search.mockEntities.faisalAcademy.location.city' },
-            description: 'dashboard.player.search.mockEntities.faisalAcademy.description',
-            specialization: 'dashboard.player.search.mockEntities.faisalAcademy.specialization',
+            location: { country: 'الإمارات', city: 'أبو ظبي' },
+            description: 'أكاديمية تدريب متخصصة في تطوير المواهب',
+            specialization: 'تدريب رياضي',
             verified: true,
             rating: 4.7,
             reviewsCount: 280,
             followersCount: 45000,
             connectionsCount: 320,
-            achievements: ['dashboard.player.search.mockEntities.faisalAcademy.achievements.bestAcademy', 'dashboard.player.search.mockEntities.faisalAcademy.achievements.certified'],
-            services: ['dashboard.player.search.mockEntities.faisalAcademy.services.youthPrograms', 'dashboard.player.search.mockEntities.faisalAcademy.services.talentDevelopment', 'dashboard.player.search.mockEntities.faisalAcademy.services.trainingCamps'],
+            achievements: ['أفضل أكاديمية', 'معتمدة'],
+            services: ['برامج الشباب', 'تطوير المواهب', 'معسكرات التدريب'],
             createdAt: new Date(),
             lastActive: new Date(),
             isPremium: true,
@@ -667,23 +669,23 @@ export default function SearchPage() {
           },
           {
             id: '4',
-            name: 'dashboard.player.search.mockEntities.ahmedExpert.name',
+            name: 'أحمد خبير التدريب',
             type: 'trainer',
             email: 'ahmed.expert@email.com',
             phone: '+20345678901',
             website: '',
             profileImage: '/images/user-avatar.svg',
             coverImage: '/images/hero-1.jpg',
-            location: { country: 'dashboard.player.search.mockEntities.ahmedExpert.location.country', city: 'dashboard.player.search.mockEntities.ahmedExpert.location.city' },
-            description: 'dashboard.player.search.mockEntities.ahmedExpert.description',
-            specialization: 'dashboard.player.search.mockEntities.ahmedExpert.specialization',
+            location: { country: 'مصر', city: 'الإسكندرية' },
+            description: 'مدرب رياضي محترف مع خبرة دولية',
+            specialization: 'تدريب بدني',
             verified: true,
             rating: 4.4,
             reviewsCount: 59,
             followersCount: 1200,
             connectionsCount: 85,
-            achievements: ['dashboard.player.search.mockEntities.ahmedExpert.achievements.certified', 'dashboard.player.search.mockEntities.ahmedExpert.achievements.internationalCertification'],
-            services: ['dashboard.player.search.mockEntities.ahmedExpert.services.personalTraining', 'dashboard.player.search.mockEntities.ahmedExpert.services.preparationPrograms', 'dashboard.player.search.mockEntities.ahmedExpert.services.sportsConsultations'],
+            achievements: ['معتمد', 'شهادة دولية'],
+            services: ['تدريب شخصي', 'برامج إعداد', 'استشارات رياضية'],
             createdAt: new Date(),
             lastActive: new Date(),
             isPremium: true,
@@ -1088,31 +1090,7 @@ export default function SearchPage() {
       const entity = entities.find(e => e.id === entityId);
       if (!entity) throw new Error('لم يتم العثور على الكيان');
 
-      // تحديد مجموعة Firestore الصحيحة حسب نوع الكيان
-      const collectionName =
-        entity.type === 'club' ? 'clubs' :
-        entity.type === 'agent' ? 'agents' :
-        entity.type === 'academy' ? 'academies' :
-        entity.type === 'trainer' ? 'trainers' : 'entities';
-
-      const entityRef = doc(db, collectionName, entityId);
-
-      // ضمان وجود المستند (يتجاهل لو موجود)
-      await setDoc(entityRef, { id: entityId }, { merge: true });
-
-      if (entity.isFollowing) {
-        await updateDoc(entityRef, {
-          followers: arrayRemove(user.uid),
-          followersCount: increment(-1)
-        });
-      } else {
-        await updateDoc(entityRef, {
-          followers: arrayUnion(user.uid),
-          followersCount: increment(1)
-        });
-      }
-      
-      // تحديث الحالة المحلية
+      // تحديث الحالة المحلية أولاً للحصول على استجابة فورية
       setEntities(prev => prev.map(e => 
         e.id === entityId 
           ? { 
@@ -1122,6 +1100,43 @@ export default function SearchPage() {
             }
           : e
       ));
+
+      // تحديد مجموعة Firestore الصحيحة حسب نوع الكيان
+      const collectionName =
+        entity.type === 'club' ? 'clubs' :
+        entity.type === 'agent' ? 'agents' :
+        entity.type === 'academy' ? 'academies' :
+        entity.type === 'trainer' ? 'trainers' : 'entities';
+
+      const entityRef = doc(db, collectionName, entityId);
+
+      // التحقق من وجود المستند أولاً
+      const entityDoc = await getDoc(entityRef);
+      
+      if (entityDoc.exists()) {
+        // المستند موجود، تحديث البيانات
+        if (entity.isFollowing) {
+          await updateDoc(entityRef, {
+            followers: arrayRemove(user.uid),
+            followersCount: increment(-1)
+          });
+        } else {
+          await updateDoc(entityRef, {
+            followers: arrayUnion(user.uid),
+            followersCount: increment(1)
+          });
+        }
+      } else {
+        // المستند غير موجود، إنشاء جديد
+        const initialData = {
+          id: entityId,
+          followers: entity.isFollowing ? [] : [user.uid],
+          followersCount: entity.isFollowing ? 0 : 1,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+        await setDoc(entityRef, initialData);
+      }
       
       // إظهار حالة النجاح
       setActionSuccess(`follow-${entityId}`);
@@ -1140,7 +1155,7 @@ export default function SearchPage() {
       
     } catch (error) {
       console.error('خطأ في المتابعة:', error);
-      // تحديث محلي فقط في حالة الخطأ
+      // إعادة الحالة المحلية في حالة الخطأ
       setEntities(prev => prev.map(e => 
         e.id === entityId 
           ? { 
@@ -1150,6 +1165,7 @@ export default function SearchPage() {
             }
           : e
       ));
+      toast.error('حدث خطأ في المتابعة');
     } finally {
       setActionLoading(null);
     }
@@ -1545,20 +1561,20 @@ export default function SearchPage() {
           </div>
         </div>
 
-      {/* أزرار التحكم */}
-      <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
-        <div className="text-sm text-gray-600">
-          {totalResults} {'dashboard.player.search.resultsFound'}
+              {/* أزرار التحكم */}
+        <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            {totalResults} نتيجة تم العثور عليها
+          </div>
+          <Button
+            variant="outline"
+            onClick={handleResetFilters}
+            className="flex items-center gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            إعادة تعيين المرشحات
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          onClick={handleResetFilters}
-          className="flex items-center gap-2"
-        >
-          <Filter className="w-4 h-4" />
-          {'dashboard.player.search.resetFilters'}
-        </Button>
-      </div>
     </Card>
   );
 
@@ -1916,7 +1932,7 @@ export default function SearchPage() {
                   variant="outline"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2"
+                  className="px-4 py-2 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
                 >
                   السابق
                 </Button>
@@ -1927,7 +1943,11 @@ export default function SearchPage() {
                       key={i + 1}
                       variant={currentPage === i + 1 ? "default" : "outline"}
                       onClick={() => setCurrentPage(i + 1)}
-                      className="w-10 h-10 p-0"
+                      className={`w-10 h-10 p-0 ${
+                        currentPage === i + 1 
+                          ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                          : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'
+                      }`}
                     >
                       {i + 1}
                     </Button>
@@ -1938,7 +1958,7 @@ export default function SearchPage() {
                   variant="outline"
                   onClick={() => setCurrentPage(prev => Math.min(Math.ceil(entities.length / itemsPerPage), prev + 1))}
                   disabled={currentPage === Math.ceil(entities.length / itemsPerPage)}
-                  className="px-4 py-2"
+                  className="px-4 py-2 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
                 >
                   التالي
                 </Button>
