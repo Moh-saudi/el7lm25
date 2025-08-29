@@ -25,6 +25,8 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
   const [category, setCategory] = useState<DreamAcademyCategory | null>(null);
   const [allCategories, setAllCategories] = useState<DreamAcademyCategory[]>([]);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
 
   // payment selection
   const [currencyRates, setCurrencyRates] = useState<any>({});
@@ -40,6 +42,8 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
 
   useEffect(() => {
     const load = async () => {
+      setVideoError(null);
+      setIsVideoLoading(false);
       const qs = query(collection(db, 'dream_academy_sources'), where('categoryId', '==', categoryId), where('isActive', '==', true));
       const snap = await getDocs(qs);
       const rows: DreamAcademySource[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
@@ -100,13 +104,130 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
 
       {(activeVideoId || activePlaylistId) && (
         <div className="mb-6">
-          <ReactPlayer
-            url={activePlaylistId ? `https://www.youtube.com/embed?listType=playlist&list=${activePlaylistId}` : (activeVideoId ? `https://www.youtube.com/watch?v=${activeVideoId}` : undefined)}
-            width="100%"
-            height="420px"
-            controls
-            config={{ youtube: { embedOptions: { host: 'https://www.youtube-nocookie.com' }, playerVars: { rel: 0 } } }}
-          />
+          {videoError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-red-700">
+                  <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">!</span>
+                  </div>
+                  <span className="text-sm font-medium">{videoError}</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setVideoError(null);
+                    setIsVideoLoading(true);
+                    // Force re-render of ReactPlayer
+                    const currentVideoId = activeVideoId;
+                    const currentPlaylistId = activePlaylistId;
+                    setActiveVideoId(null);
+                    setActivePlaylistId(null);
+                    setTimeout(() => {
+                      setActiveVideoId(currentVideoId);
+                      setActivePlaylistId(currentPlaylistId);
+                    }, 100);
+                  }}
+                  className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                >
+                  إعادة المحاولة
+                </button>
+              </div>
+              <div className="mt-2 text-sm text-red-600">
+                يمكنك المحاولة مرة أخرى أو اختيار فيديو آخر. إذا استمرت المشكلة، يمكنك مشاهدة الفيديو مباشرة على YouTube.
+              </div>
+              {(activeVideoId || activePlaylistId) && (
+                <div className="mt-3">
+                  <a
+                    href={activePlaylistId ? `https://www.youtube.com/playlist?list=${activePlaylistId}` : `https://www.youtube.com/watch?v=${activeVideoId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors"
+                  >
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                    مشاهدة على YouTube
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="relative">
+            <ReactPlayer
+              url={activePlaylistId ? `https://www.youtube.com/embed?listType=playlist&list=${activePlaylistId}` : (activeVideoId ? `https://www.youtube.com/watch?v=${activeVideoId}` : undefined)}
+              width="100%"
+              height="420px"
+              controls
+              playing={false}
+              light={false}
+              config={{ 
+                youtube: { 
+                  embedOptions: { 
+                    host: 'https://www.youtube-nocookie.com' 
+                  }, 
+                  playerVars: { 
+                    rel: 0,
+                    modestbranding: 1,
+                    showinfo: 0,
+                    origin: typeof window !== 'undefined' ? window.location.origin : '',
+                    enablejsapi: 1
+                  } 
+                } 
+              }}
+              onError={(error) => {
+                console.warn('Video player error:', error);
+                setVideoError('حدث خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى أو التحقق من اتصال الإنترنت.');
+                setIsVideoLoading(false);
+              }}
+              onReady={() => {
+                console.log('Video player ready');
+                setVideoError(null);
+                setIsVideoLoading(false);
+              }}
+              onBuffer={() => {
+                setIsVideoLoading(true);
+              }}
+              onBufferEnd={() => {
+                setIsVideoLoading(false);
+              }}
+              onStart={() => {
+                setIsVideoLoading(false);
+                setVideoError(null);
+              }}
+              fallback={
+                <div className="w-full h-[420px] bg-gray-100 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    {isVideoLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                        <div className="text-gray-500 mb-2">جاري تحميل الفيديو...</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-gray-500 mb-2">لا يمكن تحميل الفيديو</div>
+                        <div className="text-sm text-gray-400 mb-4">يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى</div>
+                        {(activeVideoId || activePlaylistId) && (
+                          <a
+                            href={activePlaylistId ? `https://www.youtube.com/playlist?list=${activePlaylistId}` : `https://www.youtube.com/watch?v=${activeVideoId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                            </svg>
+                            مشاهدة على YouTube
+                          </a>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              }
+            />
+          </div>
           {/* Increment views for the active source (best-effort) */}
           {(() => {
             const activeSource = sources.find(s => (s.sourceType === 'playlist' ? s.playlistId === activePlaylistId : s.videoId === activeVideoId));
@@ -127,6 +248,8 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
                 tabIndex={0}
                 className="text-left w-full outline-none"
                 onClick={() => {
+                  setVideoError(null);
+                  setIsVideoLoading(true);
                   if (s.sourceType === 'playlist' && s.playlistId) {
                     setActivePlaylistId(s.playlistId);
                     setActiveVideoId(null);
@@ -134,10 +257,20 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
                     setActiveVideoId(s.videoId);
                     setActivePlaylistId(null);
                   }
+                  
+                  // Set a timeout to show error if video doesn't load within 10 seconds
+                  setTimeout(() => {
+                    if (isVideoLoading) {
+                      setVideoError('استغرق تحميل الفيديو وقتاً طويلاً. يرجى المحاولة مرة أخرى.');
+                      setIsVideoLoading(false);
+                    }
+                  }, 10000);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
+                    setVideoError(null);
+                    setIsVideoLoading(true);
                     if (s.sourceType === 'playlist' && s.playlistId) {
                       setActivePlaylistId(s.playlistId);
                       setActiveVideoId(null);
@@ -145,6 +278,14 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
                       setActiveVideoId(s.videoId);
                       setActivePlaylistId(null);
                     }
+                    
+                    // Set a timeout to show error if video doesn't load within 10 seconds
+                    setTimeout(() => {
+                      if (isVideoLoading) {
+                        setVideoError('استغرق تحميل الفيديو وقتاً طويلاً. يرجى المحاولة مرة أخرى.');
+                        setIsVideoLoading(false);
+                      }
+                    }, 10000);
                   }
                 }}
               >
