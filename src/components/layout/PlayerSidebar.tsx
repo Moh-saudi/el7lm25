@@ -91,7 +91,7 @@ const PlayerSidebar: React.FC<PlayerSidebarProps> = ({ collapsed, setCollapsed }
       description: 'مشاهدة فيديوهات اللاعبين'
     },
     {
-      title: 'البحث عن الفرص والأندية',
+      title: 'البحث عن الفرص والأندية والأكاديميات',
       href: '/dashboard/player/search',
       icon: Search,
       description: 'البحث عن فرص جديدة'

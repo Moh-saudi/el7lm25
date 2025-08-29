@@ -466,7 +466,7 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType: prop
           },
           {
             id: 'player-search',
-            label: 'البحث',
+            label: 'البحث عن الفرص والأندية والأكاديميات',
             icon: Search,
             href: `/dashboard/player/search`,
             color: 'text-indigo-600',

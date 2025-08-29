@@ -1727,10 +1727,10 @@ export default function SearchPage() {
                             {/* تم إلغاء مبدل اللغة مؤقتاً */}
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            {'dashboard.player.search.title'}
+            البحث عن الفرص والأندية والأكاديميات
           </h1>
           <p className="text-gray-600 text-lg mb-8">
-            {'dashboard.player.search.subtitle'}
+            اكتشف أفضل الفرص للانضمام للأندية والأكاديميات والعمل مع الوكلاء المحترفين
           </p>
 
           {/* شريط البحث */}
@@ -1739,7 +1739,7 @@ export default function SearchPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 type="text"
-                placeholder={'dashboard.player.search.searchPlaceholder'}
+                placeholder="البحث عن أندية، أكاديميات، وكلاء، مدربين..."
                 value={filters.searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10 pr-4 py-3 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-xl shadow-lg"
@@ -1755,7 +1755,7 @@ export default function SearchPage() {
               onClick={() => handleFilterChange({ type: 'all' })}
               className="rounded-full"
             >
-              {'dashboard.player.search.filters.allTypes'}
+              جميع الأنواع
             </Button>
             {Object.entries(ENTITY_TYPES).map(([key, value]) => (
               <Button
@@ -1765,7 +1765,12 @@ export default function SearchPage() {
                 onClick={() => handleFilterChange({ type: key as any })}
                 className="rounded-full"
               >
-                {'dashboard.player.search.entityTypes.${key}'}
+                {key === 'club' ? 'الأندية' : 
+                 key === 'agent' ? 'الوكلاء' : 
+                 key === 'scout' ? 'الكشافين' : 
+                 key === 'academy' ? 'الأكاديميات' : 
+                 key === 'sponsor' ? 'الرعاة' : 
+                 key === 'trainer' ? 'المدربين' : key}
               </Button>
             ))}
           </div>
@@ -1780,13 +1785,13 @@ export default function SearchPage() {
               className="flex items-center gap-2"
             >
               <Filter className="w-4 h-4" />
-              {'dashboard.player.search.advancedFilters'}
+              المرشحات المتقدمة
             </Button>
           </div>
 
           {/* عدد النتائج */}
           <div className="text-sm text-gray-600">
-            {totalResults > 0 && `${'dashboard.player.search.resultsCount'} ${totalResults}`}
+            {totalResults > 0 && `تم العثور على ${totalResults} نتيجة`}
           </div>
         </div>
 
@@ -1816,16 +1821,16 @@ export default function SearchPage() {
           <Card className="p-12 text-center">
             <div className="flex flex-col items-center gap-4">
               <Search size={64} className="text-gray-300" />
-              <h3 className="text-2xl font-bold text-gray-900">{'dashboard.player.search.noResults.title'}</h3>
-              <p className="text-gray-500 max-w-md">
-                {'dashboard.player.search.noResults.description'}
-              </p>
-              <Button
-                onClick={handleResetFilters}
-                className="mt-4"
-              >
-                {'dashboard.player.search.noResults.resetFilters'}
-              </Button>
+                          <h3 className="text-2xl font-bold text-gray-900">لم يتم العثور على نتائج</h3>
+            <p className="text-gray-500 max-w-md">
+              جرب تغيير معايير البحث أو استخدام كلمات مفتاحية مختلفة
+            </p>
+            <Button
+              onClick={handleResetFilters}
+              className="mt-4"
+            >
+              إعادة تعيين المرشحات
+            </Button>
             </div>
           </Card>
         ) : (
@@ -1847,11 +1852,11 @@ export default function SearchPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      {'dashboard.player.search.loadingMore'}
+                      جاري التحميل...
                     </>
                   ) : (
                     <>
-                      {'dashboard.player.search.loadMore'}
+                      تحميل المزيد
                       <ArrowRight className="w-4 h-4 mr-2" />
                     </>
                   )}
