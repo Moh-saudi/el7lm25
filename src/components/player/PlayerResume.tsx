@@ -167,7 +167,7 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
         document.body.removeChild(loadingMessage);
       }
       
-      alert('خطأ في إنشاء PDF. يرجى المحاولة مرة أخرى.\n\nالتفاصيل: ' + error.message);
+      alert('خطأ في إنشاء PDF. يرجى المحاولة مرة أخرى.\n\nالتفاصيل: ' + (error as Error).message);
     }
   };
 
@@ -203,7 +203,7 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
               
               alert('تم تنزيل الصورة بنجاح!');
             } catch (error) {
-              alert('خطأ في تنزيل الصورة: ' + error.message);
+              alert('خطأ في تنزيل الصورة: ' + (error as Error).message);
             }
           }}
           className="flex gap-2 items-center px-4 py-2 text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors"
@@ -262,6 +262,19 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
                   <Flag className="w-4 h-4" />
                   {player?.nationality || 'غير محدد'}
                 </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* معلومات المنصة والتاريخ */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-blue-600">منصة الحلم لاكتشاف المواهب الكروية 2025</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span>تاريخ الإنشاء: {dayjs().format('DD/MM/YYYY')}</span>
+                <span>آخر تحديث: {dayjs().format('DD/MM/YYYY HH:mm')}</span>
               </div>
             </div>
           </div>
@@ -768,8 +781,11 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
         {/* Footer */}
         <div className="border-t-2 border-gray-300 pt-6 mt-8">
           <div className="text-center text-gray-600 text-sm">
+            <p className="font-semibold text-blue-600 mb-2">منصة الحلم لاكتشاف المواهب الكروية 2025</p>
             <p>تم إنشاء هذه السيرة الذاتية بتاريخ {dayjs().format('DD/MM/YYYY')}</p>
-            <p>جميع المعلومات المذكورة صحيحة وقت إنشاء الوثيقة</p>
+            <p>آخر تحديث: {dayjs().format('DD/MM/YYYY HH:mm')}</p>
+            <p className="mt-2">جميع المعلومات المذكورة صحيحة وقت إنشاء الوثيقة</p>
+            <p className="text-xs mt-1">هذه الوثيقة تم إعدادها بواسطة منصة الحلم المتخصصة في اكتشاف وتطوير المواهب الكروية</p>
           </div>
         </div>
       </div>
@@ -778,7 +794,7 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
        <style jsx>{`
          @media print {
            @page {
-             margin: 1cm;
+             margin: 0.8cm;
              size: A4;
            }
            
@@ -809,10 +825,55 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
            /* تحسينات إضافية للطباعة */
            h1, h2, h3 {
              page-break-after: avoid;
+             break-after: avoid;
            }
            
            .page-break {
              page-break-before: always;
+             break-before: always;
+           }
+           
+           /* تحسينات للتباعد في الطباعة */
+           .mb-8 {
+             margin-bottom: 1.5rem !important;
+           }
+           
+           .mb-6 {
+             margin-bottom: 1rem !important;
+           }
+           
+           .mb-4 {
+             margin-bottom: 0.75rem !important;
+           }
+           
+           /* تحسينات للشبكات في الطباعة */
+           .grid {
+             display: grid !important;
+             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+             gap: 0.5rem !important;
+           }
+           
+           /* تحسينات للبطاقات في الطباعة */
+           .bg-gray-50 {
+             background-color: #f9fafb !important;
+             border: 1px solid #e5e7eb !important;
+             padding: 0.75rem !important;
+             margin-bottom: 0.75rem !important;
+           }
+           
+           /* تحسينات للصور في الطباعة */
+           .w-24.h-24 {
+             width: 80px !important;
+             height: 80px !important;
+           }
+           
+           .w-16.h-16 {
+             width: 60px !important;
+             height: 60px !important;
+           }
+           
+           .h-32 {
+             height: 100px !important;
            }
            
            /* إخفاء أزرار التحكم عند الطباعة */
@@ -952,13 +1013,29 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
            
            /* تحسينات للنصوص */
            .text-lg {
-             font-size: 1.125rem !important;
-             line-height: 1.75rem !important;
+             font-size: 1rem !important;
+             line-height: 1.5rem !important;
            }
            
            .text-sm {
-             font-size: 0.875rem !important;
-             line-height: 1.25rem !important;
+             font-size: 0.8rem !important;
+             line-height: 1.2rem !important;
+           }
+           
+           .text-xs {
+             font-size: 0.7rem !important;
+             line-height: 1rem !important;
+           }
+           
+           /* تحسينات للعناوين */
+           .text-3xl {
+             font-size: 1.5rem !important;
+             line-height: 2rem !important;
+           }
+           
+           .text-xl {
+             font-size: 1.25rem !important;
+             line-height: 1.75rem !important;
            }
            
            .font-bold {
@@ -1059,8 +1136,21 @@ const PlayerResume: React.FC<PlayerResumeProps> = ({ player, playerOrganization 
            /* تحسينات للشبكات */
            .grid {
              display: grid !important;
-             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
-             gap: 1rem !important;
+             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+             gap: 0.5rem !important;
+           }
+           
+           /* تحسينات للشبكات الكبيرة */
+           .md\\:grid-cols-2 {
+             grid-template-columns: repeat(2, 1fr) !important;
+           }
+           
+           .md\\:grid-cols-3 {
+             grid-template-columns: repeat(3, 1fr) !important;
+           }
+           
+           .md\\:grid-cols-4 {
+             grid-template-columns: repeat(4, 1fr) !important;
            }
            
            /* تحسينات للبطاقات */

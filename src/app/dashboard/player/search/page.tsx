@@ -288,30 +288,30 @@ export default function SearchPage() {
             }
             
             // تحويل بيانات النادي إلى تنسيق SearchEntity
-                         const entity: SearchEntity = {
-               id: doc.id,
+            const entity: SearchEntity = {
+              id: doc.id,
                name: clubData.name || 'نادي رياضي',
-               type: 'club',
-               email: clubData.email || '',
-               phone: clubData.phone || '',
-               website: clubData.website || '',
-               profileImage: clubData.logo || '/images/club-avatar.png',
-               coverImage: clubData.coverImage || '/images/hero-1.jpg',
-               location: {
-                 country: clubData.country || '',
-                 city: clubData.city || '',
-                 address: clubData.address || ''
-               },
+              type: 'club',
+              email: clubData.email || '',
+              phone: clubData.phone || '',
+              website: clubData.website || '',
+              profileImage: clubData.logo || '/images/club-avatar.png',
+              coverImage: clubData.coverImage || '/images/hero-1.jpg',
+              location: {
+                country: clubData.country || '',
+                city: clubData.city || '',
+                address: clubData.address || ''
+              },
                description: clubData.description || 'نادي رياضي محترف',
                specialization: clubData.type || 'كرة القدم',
-               verified: true, // جميع الأندية المسجلة محققة
-               rating: 4.5, // تقييم افتراضي
-               reviewsCount: Math.floor(Math.random() * 500) + 100,
-               followersCount: (clubData.stats?.players || 0) * 10,
-               connectionsCount: clubData.stats?.contracts || 0,
-               achievements: clubData.trophies?.map((t: any) => `${t.name} (${t.year})`) || [],
+              verified: true, // جميع الأندية المسجلة محققة
+              rating: 4.5, // تقييم افتراضي
+              reviewsCount: Math.floor(Math.random() * 500) + 100,
+              followersCount: (clubData.stats?.players || 0) * 10,
+              connectionsCount: clubData.stats?.contracts || 0,
+              achievements: clubData.trophies?.map((t: any) => `${t.name} (${t.year})`) || [],
                services: ['تدريب اللاعبين', 'برامج الشباب', 'المنافسات الرسمية'],
-               established: clubData.founded || '',
+              established: clubData.founded || '',
                languages: ['العربية'],
               createdAt: new Date(),
               lastActive: new Date(),
@@ -1112,20 +1112,20 @@ export default function SearchPage() {
 
       // التحقق من وجود المستند أولاً
       const entityDoc = await getDoc(entityRef);
-      
+
       if (entityDoc.exists()) {
         // المستند موجود، تحديث البيانات
-        if (entity.isFollowing) {
-          await updateDoc(entityRef, {
-            followers: arrayRemove(user.uid),
-            followersCount: increment(-1)
-          });
-        } else {
-          await updateDoc(entityRef, {
-            followers: arrayUnion(user.uid),
-            followersCount: increment(1)
-          });
-        }
+      if (entity.isFollowing) {
+        await updateDoc(entityRef, {
+          followers: arrayRemove(user.uid),
+          followersCount: increment(-1)
+        });
+      } else {
+        await updateDoc(entityRef, {
+          followers: arrayUnion(user.uid),
+          followersCount: increment(1)
+        });
+      }
       } else {
         // المستند غير موجود، إنشاء جديد
         const initialData = {
@@ -1537,44 +1537,44 @@ export default function SearchPage() {
         </div>
       </div>
 
-              {/* ترتيب النتائج */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
+      {/* ترتيب النتائج */}
+      <div className="mt-4 pt-4 border-t border-gray-200">
           <label className="block text-sm font-medium mb-2 text-gray-700">ترتيب النتائج</label>
-          <div className="flex flex-wrap gap-2">
-            {[
+        <div className="flex flex-wrap gap-2">
+          {[
               { key: 'relevance', label: 'الأكثر صلة' },
               { key: 'rating', label: 'الأعلى تقييماً' },
               { key: 'followers', label: 'الأكثر متابعة' },
               { key: 'recent', label: 'الأحدث' },
               { key: 'alphabetical', label: 'أبجدياً' }
-            ].map(sort => (
-              <Button
-                key={sort.key}
-                variant={filters.sortBy === sort.key ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilters(prev => ({ ...prev, sortBy: sort.key as any }))}
+          ].map(sort => (
+            <Button
+              key={sort.key}
+              variant={filters.sortBy === sort.key ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilters(prev => ({ ...prev, sortBy: sort.key as any }))}
                 className={`${filters.sortBy === sort.key ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-              >
-                {sort.label}
-              </Button>
-            ))}
-          </div>
+            >
+              {sort.label}
+            </Button>
+          ))}
         </div>
+      </div>
 
-              {/* أزرار التحكم */}
-        <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
+      {/* أزرار التحكم */}
+      <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
+        <div className="text-sm text-gray-600">
             {totalResults} نتيجة تم العثور عليها
-          </div>
-          <Button
-            variant="outline"
-            onClick={handleResetFilters}
-            className="flex items-center gap-2"
-          >
-            <Filter className="w-4 h-4" />
-            إعادة تعيين المرشحات
-          </Button>
         </div>
+        <Button
+          variant="outline"
+          onClick={handleResetFilters}
+          className="flex items-center gap-2"
+        >
+          <Filter className="w-4 h-4" />
+            إعادة تعيين المرشحات
+        </Button>
+      </div>
     </Card>
   );
 
@@ -1904,15 +1904,15 @@ export default function SearchPage() {
             <div className="flex flex-col items-center gap-4">
               <Search size={64} className="text-gray-300" />
                           <h3 className="text-2xl font-bold text-gray-900">لم يتم العثور على نتائج</h3>
-            <p className="text-gray-500 max-w-md">
+              <p className="text-gray-500 max-w-md">
               جرب تغيير معايير البحث أو استخدام كلمات مفتاحية مختلفة
-            </p>
-            <Button
-              onClick={handleResetFilters}
-              className="mt-4"
-            >
+              </p>
+              <Button
+                onClick={handleResetFilters}
+                className="mt-4"
+              >
               إعادة تعيين المرشحات
-            </Button>
+              </Button>
             </div>
           </Card>
         ) : (
@@ -1921,8 +1921,8 @@ export default function SearchPage() {
               {entities
                 .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                 .map((entity, index) => (
-                  <EntityCard key={`${entity.id}-${entity.type}-${index}`} entity={entity} />
-                ))}
+                <EntityCard key={`${entity.id}-${entity.type}-${index}`} entity={entity} />
+              ))}
             </div>
 
             {/* التنقل بين الصفحات */}
