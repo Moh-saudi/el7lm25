@@ -27,6 +27,7 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   // payment selection
   const [currencyRates, setCurrencyRates] = useState<any>({});
@@ -153,60 +154,91 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
               )}
             </div>
           )}
-          <div className="relative">
-          <ReactPlayer
-            url={activePlaylistId ? `https://www.youtube.com/embed?listType=playlist&list=${activePlaylistId}` : (activeVideoId ? `https://www.youtube.com/watch?v=${activeVideoId}` : undefined)}
-            width="100%"
-            height="420px"
-            controls
-              playing={false}
-              light={false}
-              config={{ 
-                youtube: { 
-                  embedOptions: { 
-                    host: 'https://www.youtube-nocookie.com' 
-                  }, 
-                  playerVars: { 
-                    rel: 0,                    // منع ظهور الفيديوهات المقترحة
-                    modestbranding: 1,         // إخفاء شعار YouTube
-                    showinfo: 0,               // إخفاء معلومات الفيديو
-                    origin: typeof window !== 'undefined' ? window.location.origin : '',
-                    enablejsapi: 1,
-                    iv_load_policy: 3,         // منع ظهور التعليقات
-                    cc_load_policy: 0,         // منع الترجمة التلقائية
-                    fs: 1,                     // السماح بالملء الشاشة
-                    disablekb: 0,              // السماح بمفاتيح لوحة المفاتيح
-                    autoplay: 0,               // منع التشغيل التلقائي
-                    mute: 0,                   // عدم كتم الصوت
-                    loop: 0,                   // عدم التكرار
-                    playlist: '',              // منع قائمة التشغيل
-                    controls: 1,               // إظهار عناصر التحكم
-                    playsinline: 1,            // التشغيل داخل الصفحة
-                    color: 'white',            // لون شريط التقدم
-                    hl: 'ar',                  // اللغة العربية
-                    cc_lang_pref: 'ar'         // تفضيل الترجمة العربية
-                  } 
-                } 
-              }}
-              onError={(error) => {
-                console.warn('Video player error:', error);
-                let errorMessage = 'حدث خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى أو التحقق من اتصال الإنترنت.';
-                
-                // تحسين رسائل الخطأ بناءً على نوع الخطأ
-                if (error && typeof error === 'object') {
-                  const errorStr = error.toString().toLowerCase();
-                  if (errorStr.includes('connection_reset') || errorStr.includes('net::err_connection_reset')) {
-                    errorMessage = 'فشل الاتصال بخوادم YouTube. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.';
-                  } else if (errorStr.includes('network') || errorStr.includes('timeout')) {
-                    errorMessage = 'انقطع الاتصال بالشبكة. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.';
-                  } else if (errorStr.includes('blocked') || errorStr.includes('cors')) {
-                    errorMessage = 'تم حظر الاتصال بخوادم YouTube. يرجى المحاولة مرة أخرى أو استخدام الرابط المباشر.';
+          <div className="relative youtube-player-container">
+                     <ReactPlayer
+             url={activePlaylistId ? `https://www.youtube.com/embed?listType=playlist&list=${activePlaylistId}&rel=0&modestbranding=1&showinfo=0` : (activeVideoId ? `https://www.youtube.com/watch?v=${activeVideoId}&rel=0&modestbranding=1&showinfo=0` : undefined)}
+             width="100%"
+             height="420px"
+             controls
+               playing={false}
+               light={false}
+                             config={{ 
+                 youtube: { 
+                   embedOptions: { 
+                     host: 'https://www.youtube.com' 
+                   }, 
+                                       playerVars: { 
+                      rel: 0,                    // منع ظهور الفيديوهات المقترحة
+                      modestbranding: 1,         // إخفاء شعار YouTube
+                      showinfo: 0,               // إخفاء معلومات الفيديو
+                      origin: typeof window !== 'undefined' ? window.location.origin : '',
+                      enablejsapi: 1,
+                      iv_load_policy: 3,         // منع ظهور التعليقات
+                      cc_load_policy: 0,         // منع الترجمة التلقائية
+                      fs: 1,                     // السماح بالملء الشاشة
+                      disablekb: 0,              // السماح بمفاتيح لوحة المفاتيح
+                      autoplay: 0,               // منع التشغيل التلقائي
+                      mute: 0,                   // عدم كتم الصوت
+                      loop: 0,                   // عدم التكرار
+                      playlist: '',              // منع قائمة التشغيل
+                      controls: 1,               // إظهار عناصر التحكم
+                      playsinline: 1,            // التشغيل داخل الصفحة
+                      color: 'white',            // لون شريط التقدم
+                      hl: 'ar',                  // اللغة العربية
+                      cc_lang_pref: 'ar',        // تفضيل الترجمة العربية
+                      end: 0,                    // منع إظهار نهاية الفيديو
+                      start: 0,                  // بداية الفيديو من البداية
+                      vq: 'hd720',               // جودة الفيديو
+                      wmode: 'transparent',      // شفافية الخلفية
+                      allowfullscreen: true,     // السماح بالملء الشاشة
+                      allowscriptaccess: 'always' // السماح بالوصول للـ JavaScript
+                    } 
+                 } 
+               }}
+                                                           onError={(error) => {
+                  // Suppress YouTube player deprecation warnings
+                  if (error && typeof error === 'object' && error.toString().includes('-ms-high-contrast')) {
+                    console.log('YouTube player compatibility warning (ignored):', error);
+                    return;
                   }
-                }
-                
-                setVideoError(errorMessage);
-                setIsVideoLoading(false);
-              }}
+                  
+                  console.warn('Video player error:', error);
+                  let errorMessage = 'حدث خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى أو التحقق من اتصال الإنترنت.';
+                  
+                  // تحسين رسائل الخطأ بناءً على نوع الخطأ
+                  if (error && typeof error === 'object') {
+                    const errorStr = error.toString().toLowerCase();
+                    const errorCode = error?.data || error?.code || error?.message || '';
+                    
+                                         // معالجة خطأ 150 (عادة مشكلة في إعدادات YouTube)
+                     if (errorCode === 150 || errorStr.includes('150')) {
+                       errorMessage = 'هذا الفيديو غير متاح للتشغيل المباشر. يرجى النقر على "مشاهدة على YouTube" للوصول إليه.';
+                       // إظهار رسالة الخطأ فوراً لخطأ 150
+                       setVideoError(errorMessage);
+                       setIsVideoLoading(false);
+                       console.log('YouTube error 150 (video not available for embedding):', error);
+                       return; // لا نحاول إعادة المحاولة لخطأ 150
+                                         } else if (errorStr.includes('postmessage') || errorStr.includes('origin') || errorStr.includes('target origin')) {
+                       errorMessage = 'مشكلة في الاتصال مع YouTube. يرجى المحاولة مرة أخرى أو استخدام الرابط المباشر.';
+                       // تجاهل أخطاء postMessage لأنها لا تؤثر على التشغيل
+                       console.log('YouTube postMessage error (ignored):', error);
+                       return;
+                     } else if (errorStr.includes('connection_reset') || errorStr.includes('net::err_connection_reset')) {
+                      errorMessage = 'فشل الاتصال بخوادم YouTube. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.';
+                    } else if (errorStr.includes('network') || errorStr.includes('timeout')) {
+                      errorMessage = 'انقطع الاتصال بالشبكة. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.';
+                    } else if (errorStr.includes('blocked') || errorStr.includes('cors')) {
+                      errorMessage = 'تم حظر الاتصال بخوادم YouTube. يرجى المحاولة مرة أخرى أو استخدام الرابط المباشر.';
+                    } else if (errorStr.includes('embed') || errorStr.includes('embedding')) {
+                      errorMessage = 'هذا الفيديو لا يدعم التشغيل المباشر. يرجى النقر على "مشاهدة على YouTube".';
+                    } else if (errorStr.includes('private') || errorStr.includes('unavailable')) {
+                      errorMessage = 'هذا الفيديو غير متاح أو خاص. يرجى النقر على "مشاهدة على YouTube" للتحقق من إمكانية الوصول.';
+                    }
+                  }
+                  
+                  setVideoError(errorMessage);
+                  setIsVideoLoading(false);
+                }}
               onReady={() => {
                 console.log('Video player ready');
                 setVideoError(null);
@@ -222,37 +254,56 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
                 setIsVideoLoading(false);
                 setVideoError(null);
               }}
-              fallback={
-                <div className="w-full h-[420px] bg-gray-100 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    {isVideoLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                        <div className="text-gray-500 mb-2">جاري تحميل الفيديو...</div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-gray-500 mb-2">لا يمكن تحميل الفيديو</div>
-                        <div className="text-sm text-gray-400 mb-4">يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى</div>
-                        {(activeVideoId || activePlaylistId) && (
-                          <a
-                            href={activePlaylistId ? `https://www.youtube.com/playlist?list=${activePlaylistId}` : `https://www.youtube.com/watch?v=${activeVideoId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                            </svg>
-                            مشاهدة على YouTube
-                          </a>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              }
+                             fallback={
+                 <div className="w-full h-[420px] bg-gray-100 rounded-lg flex items-center justify-center">
+                   <div className="text-center">
+                     {isVideoLoading ? (
+                       <>
+                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                         <div className="text-gray-500 mb-2">جاري تحميل الفيديو...</div>
+                       </>
+                     ) : videoError ? (
+                       <>
+                         <div className="text-gray-500 mb-2">خطأ في تحميل الفيديو</div>
+                         <div className="text-sm text-gray-400 mb-4">{videoError}</div>
+                         {(activeVideoId || activePlaylistId) && (
+                           <a
+                             href={activePlaylistId ? `https://www.youtube.com/playlist?list=${activePlaylistId}` : `https://www.youtube.com/watch?v=${activeVideoId}`}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                           >
+                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                               <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                               <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                             </svg>
+                             مشاهدة على YouTube
+                           </a>
+                         )}
+                       </>
+                     ) : (
+                       <>
+                         <div className="text-gray-500 mb-2">لا يمكن تحميل الفيديو</div>
+                         <div className="text-sm text-gray-400 mb-4">يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى</div>
+                         {(activeVideoId || activePlaylistId) && (
+                           <a
+                             href={activePlaylistId ? `https://www.youtube.com/playlist?list=${activePlaylistId}` : `https://www.youtube.com/watch?v=${activeVideoId}`}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                           >
+                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                               <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                               <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                             </svg>
+                             مشاهدة على YouTube
+                           </a>
+                         )}
+                       </>
+                     )}
+                   </div>
+                 </div>
+               }
             />
           </div>
           {/* Increment views for the active source (best-effort) */}
@@ -278,6 +329,7 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
                 onClick={() => {
                   setVideoError(null);
                   setIsVideoLoading(true);
+                  setRetryCount(0); // إعادة تعيين عداد المحاولات
                   if (s.sourceType === 'playlist' && s.playlistId) {
                     setActivePlaylistId(s.playlistId);
                     setActiveVideoId(null);
@@ -391,13 +443,13 @@ export default function DreamAcademyVideosSection({ categoryId }: Props) {
               <label className="text-sm">نوع الجلسة</label>
               <Select value={sessionCategory} onValueChange={(v) => setSessionCategory(v as DreamAcademyCategoryId)}>
                 <SelectTrigger><SelectValue placeholder="اختر النوع" /></SelectTrigger>
-                <SelectContent>
-                  {allCategories.map((c) => (
-                    <SelectItem key={c.id} value={c.id as any}>
-                      {(c as any).titleAr || c.title || (c as any).titleEn || c.id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                                 <SelectContent>
+                   {allCategories.map((c) => (
+                     <SelectItem key={`session-${c.id}`} value={c.id as any}>
+                       {(c as any).titleAr || c.title || (c as any).titleEn || c.id}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
               </Select>
             </div>
             <div>

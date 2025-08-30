@@ -1363,6 +1363,69 @@ html, body, * {
   }
 }
 
+/* YouTube Player Compatibility - Ignore deprecated -ms-high-contrast warnings */
+.youtube-player-container {
+  /* Force modern color mode */
+  forced-color-adjust: none;
+  /* Suppress -ms-high-contrast warnings */
+  -ms-high-contrast: none;
+}
+
+/* Hide YouTube related videos and suggestions */
+.youtube-player-container iframe {
+  /* Hide related videos overlay */
+  position: relative;
+  /* Suppress -ms-high-contrast warnings */
+  -ms-high-contrast: none;
+}
+
+/* Additional CSS to hide YouTube suggestions */
+.youtube-player-container iframe::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Hide YouTube end screen and related videos */
+.youtube-player-container .ytp-endscreen-content,
+.youtube-player-container .ytp-pause-overlay,
+.youtube-player-container .ytp-show-cards-title,
+.youtube-player-container .ytp-cards-button,
+.youtube-player-container .ytp-watermark {
+  display: none !important;
+}
+
+/* Global suppression of -ms-high-contrast warnings */
+* {
+  -ms-high-contrast: none;
+}
+
+/* Suppress deprecated -ms-high-contrast warnings */
+@media (forced-colors: active) {
+  .youtube-player-container {
+    forced-color-adjust: auto;
+  }
+}
+
+/* Legacy support for older browsers (suppress warnings) */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+  .youtube-player-container {
+    /* Suppress deprecated property warnings */
+  }
+}
+
+/* Modern forced colors mode */
+@media (forced-colors: active) {
+  .youtube-player-container iframe {
+    forced-color-adjust: none;
+  }
+}
+
 
 
 @layer base {
