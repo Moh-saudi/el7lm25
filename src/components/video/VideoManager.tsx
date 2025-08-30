@@ -14,7 +14,12 @@ import {
   Link,
   FileVideo
 } from 'lucide-react';
-import ReactPlayer from 'react-player/lazy';
+import dynamic from 'next/dynamic';
+
+const ReactPlayer = dynamic(() => import('react-player/lazy'), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">جاري تحميل الفيديو...</div>
+});
 import { Video } from '@/types/player';
 
 interface VideoManagerProps {
@@ -175,120 +180,160 @@ const VideoManager: React.FC<VideoManagerProps> = ({
   return (
     <div className="space-y-6">
       {/* عرض الفيديوهات الموجودة */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {videos.map((video, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="relative bg-white rounded-lg shadow-md overflow-hidden"
-          >
-            {editingIndex === index ? (
-              // وضع التعديل
-              <div className="p-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    رابط الفيديو
-                  </label>
-                  <input
-                    type="url"
-                    value={video.url}
-                    onChange={(e) => {
-                      const updatedVideos = [...videos];
-                      updatedVideos[index] = { ...video, url: e.target.value };
-                      onUpdate(updatedVideos);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="https://..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    وصف الفيديو
-                  </label>
-                  <textarea
-                    value={video.desc}
-                    onChange={(e) => {
-                      const updatedVideos = [...videos];
-                      updatedVideos[index] = { ...video, desc: e.target.value };
-                      onUpdate(updatedVideos);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    placeholder="اكتب وصف للفيديو..."
-                  />
-                </div>
-                
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEditVideo(index, video)}
-                    className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                  >
-                    <Save className="w-4 h-4" />
-                    حفظ
-                  </button>
-                  <button
-                    onClick={() => setEditingIndex(null)}
-                    className="flex items-center gap-2 px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                  >
-                    <Cancel className="w-4 h-4" />
-                    إلغاء
-                  </button>
-                </div>
-              </div>
-            ) : (
-              // وضع العرض
-              <>
-                <div className="aspect-video">
-                  <ReactPlayer
-                    url={video.url}
-                    width="100%"
-                    height="100%"
-                    controls
-                    light
-                    playIcon={
-                      <div className="flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full">
-                        <Play className="w-8 h-8 text-white" />
-                      </div>
-                    }
-                  />
-                </div>
-                
-                <div className="p-4">
-                  <p className="text-gray-700 text-sm mb-3">
-                    {video.desc || 'لا يوجد وصف'}
-                  </p>
+      {videos.length === 0 ? (
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <FileVideo className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-600 mb-2">لا توجد فيديوهات</h3>
+          <p className="text-gray-500 mb-4">ابدأ بإضافة فيديو جديد لعرض مهاراتك</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {videos.map((video, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="relative bg-white rounded-lg shadow-md overflow-hidden"
+            >
+              {editingIndex === index ? (
+                // وضع التعديل
+                <div className="p-4 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      رابط الفيديو
+                    </label>
+                    <input
+                      type="url"
+                      value={video.url}
+                      onChange={(e) => {
+                        const updatedVideos = [...videos];
+                        updatedVideos[index] = { ...video, url: e.target.value };
+                        onUpdate(updatedVideos);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://..."
+                    />
+                  </div>
                   
-                  <div className="flex justify-between items-center">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setEditingIndex(index)}
-                        className="flex items-center gap-1 px-2 py-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        تعديل
-                      </button>
-                      <button
-                        onClick={() => handleDeleteVideo(index)}
-                        className="flex items-center gap-1 px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        حذف
-                      </button>
-                    </div>
-                    
-                    <span className="text-xs text-gray-500">
-                      فيديو {index + 1}
-                    </span>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      وصف الفيديو
+                    </label>
+                    <textarea
+                      value={video.desc}
+                      onChange={(e) => {
+                        const updatedVideos = [...videos];
+                        updatedVideos[index] = { ...video, desc: e.target.value };
+                        onUpdate(updatedVideos);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows={3}
+                      placeholder="اكتب وصف للفيديو..."
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditVideo(index, video)}
+                      className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-md hover:shadow-lg"
+                    >
+                      <Save className="w-4 h-4" />
+                      حفظ
+                    </button>
+                    <button
+                      onClick={() => setEditingIndex(null)}
+                      className="flex items-center gap-2 px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors shadow-md hover:shadow-lg"
+                    >
+                      <Cancel className="w-4 h-4" />
+                      إلغاء
+                    </button>
                   </div>
                 </div>
-              </>
-            )}
-          </motion.div>
-        ))}
-      </div>
+              ) : (
+                // وضع العرض
+                <>
+                  <div className="aspect-video">
+                    <ReactPlayer
+                      url={video.url}
+                      width="100%"
+                      height="100%"
+                      controls
+                      light
+                      playIcon={
+                        <div className="flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full">
+                          <Play className="w-8 h-8 text-white" />
+                        </div>
+                      }
+                      config={{
+                        youtube: {
+                          embedOptions: {
+                            host: 'https://www.youtube.com'
+                          },
+                          playerVars: {
+                            origin: typeof window !== 'undefined' ? window.location.origin : '',
+                            rel: 0,
+                            modestbranding: 1,
+                            showinfo: 0,
+                            enablejsapi: 1,
+                            iv_load_policy: 3,
+                            cc_load_policy: 0,
+                            fs: 1,
+                            disablekb: 0,
+                            autoplay: 0,
+                            mute: 0,
+                            loop: 0,
+                            controls: 1,
+                            playsinline: 1,
+                            color: 'white',
+                            hl: 'ar',
+                            cc_lang_pref: 'ar',
+                            end: 0,
+                            start: 0,
+                            vq: 'hd720',
+                            wmode: 'transparent',
+                            allowfullscreen: true,
+                            allowscriptaccess: 'always'
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="p-4">
+                    <p className="text-gray-700 text-sm mb-3">
+                      {video.desc || 'لا يوجد وصف'}
+                    </p>
+                    
+                    <div className="flex justify-between items-center">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditingIndex(index)}
+                          className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                          تعديل
+                        </button>
+                        <button
+                          onClick={() => handleDeleteVideo(index)}
+                          className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors shadow-md hover:shadow-lg"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          حذف
+                        </button>
+                      </div>
+                      
+                      <span className="text-xs text-gray-500">
+                        فيديو {index + 1}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          ))}
+        </div>
+      )}
 
       {/* زر إضافة فيديو جديد */}
       {videos.length < maxVideos && !isAddingVideo && (
@@ -321,18 +366,19 @@ const VideoManager: React.FC<VideoManagerProps> = ({
                     setUploadMethod('url');
                   }}
                   className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                  title="إغلاق"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* اختيار طريقة الإضافة */}
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-4 mb-4">
                 <button
                   onClick={() => setUploadMethod('url')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
-                    uploadMethod === 'url'
-                      ? 'bg-blue-600 text-white'
+                    uploadMethod === 'url' 
+                      ? 'bg-blue-600 text-white' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -342,12 +388,12 @@ const VideoManager: React.FC<VideoManagerProps> = ({
                 <button
                   onClick={() => setUploadMethod('file')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
-                    uploadMethod === 'file'
-                      ? 'bg-blue-600 text-white'
+                    uploadMethod === 'file' 
+                      ? 'bg-blue-600 text-white' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  <FileVideo className="w-4 h-4" />
+                  <Upload className="w-4 h-4" />
                   رفع ملف
                 </button>
               </div>
@@ -364,23 +410,22 @@ const VideoManager: React.FC<VideoManagerProps> = ({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="https://www.youtube.com/watch?v=..."
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    يمكنك استخدام روابط من YouTube, Vimeo, أو رابط مباشر لملف الفيديو
-                  </p>
                 </div>
               ) : (
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ملف الفيديو
+                  </label>
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="video/*"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) {
-                        handleFileUpload(file);
-                      }
+                      if (file) handleFileUpload(file);
                     }}
                     className="hidden"
+                    title="اختر ملف فيديو"
                   />
                   <button
                     onClick={() => fileInputRef.current?.click()}
@@ -437,6 +482,38 @@ const VideoManager: React.FC<VideoManagerProps> = ({
                       height="100%"
                       controls
                       light
+                      config={{
+                        youtube: {
+                          embedOptions: {
+                            host: 'https://www.youtube.com'
+                          },
+                          playerVars: {
+                            origin: typeof window !== 'undefined' ? window.location.origin : '',
+                            rel: 0,
+                            modestbranding: 1,
+                            showinfo: 0,
+                            enablejsapi: 1,
+                            iv_load_policy: 3,
+                            cc_load_policy: 0,
+                            fs: 1,
+                            disablekb: 0,
+                            autoplay: 0,
+                            mute: 0,
+                            loop: 0,
+                            controls: 1,
+                            playsinline: 1,
+                            color: 'white',
+                            hl: 'ar',
+                            cc_lang_pref: 'ar',
+                            end: 0,
+                            start: 0,
+                            vq: 'hd720',
+                            wmode: 'transparent',
+                            allowfullscreen: true,
+                            allowscriptaccess: 'always'
+                          }
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -446,7 +523,7 @@ const VideoManager: React.FC<VideoManagerProps> = ({
                 <button
                   onClick={handleAddVideo}
                   disabled={!newVideo.url || isUploading}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md hover:shadow-lg font-semibold"
                 >
                   <Plus className="w-4 h-4" />
                   إضافة الفيديو
@@ -457,7 +534,7 @@ const VideoManager: React.FC<VideoManagerProps> = ({
                     setNewVideo({ url: '', desc: '' });
                     setUploadMethod('url');
                   }}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                  className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors shadow-md hover:shadow-lg"
                 >
                   إلغاء
                 </button>
