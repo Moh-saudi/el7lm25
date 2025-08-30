@@ -34,7 +34,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-// import './styles.css';
+import './styles.css';
 
 // Language configurations
 const languages = {
@@ -627,7 +627,7 @@ export default function AdvancedLandingPage() {
       icon: '🎓',
       bgColor: 'from-blue-500 to-indigo-600',
       buttonText: 'انضم للمدرسة',
-      buttonAction: '/dashboard/dream-academy'
+      buttonAction: '/auth/register'
     }
   ];
 
@@ -787,7 +787,6 @@ export default function AdvancedLandingPage() {
               <div className="hidden md:flex items-center space-x-3 space-x-reverse">
                 <Button 
                   variant="outline" 
-                  onClick={() => window.location.href = '/auth/login'}
                   className={`rounded-full ${
                     isDarkMode 
                       ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500' 
@@ -796,13 +795,11 @@ export default function AdvancedLandingPage() {
                 >
                   {t.nav.login}
                 </Button>
-                <Button 
-                  onClick={() => window.location.href = '/auth/register'}
-                  className={`rounded-full ${
-                    isDarkMode
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}>
+                <Button className={`rounded-full ${
+                  isDarkMode
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}>
                   {t.nav.signup}
                 </Button>
               </div>
@@ -852,10 +849,6 @@ export default function AdvancedLandingPage() {
                 <div className="flex flex-col space-y-3 pt-4">
                   <Button 
                     variant="outline" 
-                    onClick={() => {
-                      window.location.href = '/auth/login';
-                      setIsMenuOpen(false);
-                    }}
                     className={`rounded-full ${
                       isDarkMode 
                         ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500' 
@@ -864,16 +857,11 @@ export default function AdvancedLandingPage() {
                   >
                     {t.nav.login}
                   </Button>
-                  <Button 
-                    onClick={() => {
-                      window.location.href = '/auth/register';
-                      setIsMenuOpen(false);
-                    }}
-                    className={`rounded-full ${
-                      isDarkMode
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}>
+                  <Button className={`rounded-full ${
+                    isDarkMode
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}>
                     {t.nav.signup}
                   </Button>
                 </div>
@@ -2522,7 +2510,7 @@ export default function AdvancedLandingPage() {
                 title: 'الخدمات', 
                 items: [
                   { name: 'اكتشاف المواهب', link: '/dashboard/player' },
-                  { name: 'مدرسة الحلم', link: '/dashboard/dream-academy' },
+                  { name: 'مدرسة الحلم', link: '/dream-academy' },
                   { name: 'نظام الإحالات', link: '/dashboard/player/referrals' },
                   { name: 'التدريب الاحترافي', link: '/dashboard/trainer' }
                 ]
