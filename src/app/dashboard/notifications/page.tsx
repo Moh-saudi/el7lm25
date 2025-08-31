@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/auth-provider';
-import { useTranslation } from '@/lib/translations/simple-context';
 
 interface Notification {
   id: string;
@@ -15,7 +14,6 @@ interface Notification {
 
 export default function NotificationsPage() {
   const { user } = useAuth();
-  const { t } = useTranslation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,16 +23,16 @@ export default function NotificationsPage() {
       const mockNotifications: Notification[] = [
         {
           id: '1',
-          title: t('notifications.welcome.title'),
-          message: t('notifications.welcome.message'),
+          title: 'مرحباً بك في النظام',
+          message: 'تم تسجيل دخولك بنجاح إلى منصة الحلم',
           type: 'success',
           timestamp: new Date(),
           read: false,
         },
         {
           id: '2',
-          title: t('notifications.system.title'),
-          message: t('notifications.system.message'),
+          title: 'تحديث النظام',
+          message: 'تم تحديث النظام بنجاح. استمتع بالميزات الجديدة!',
           type: 'info',
           timestamp: new Date(Date.now() - 3600000), // ساعة مضت
           read: true,
@@ -43,7 +41,7 @@ export default function NotificationsPage() {
       setNotifications(mockNotifications);
       setLoading(false);
     }, 1000);
-  }, [t]);
+  }, []);
 
   const markAsRead = (id: string) => {
     setNotifications(prev =>
@@ -108,10 +106,10 @@ export default function NotificationsPage() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t('notifications.title')}
+            الإشعارات
           </h1>
           <p className="text-gray-600">
-            {t('notifications.subtitle')}
+            تابع آخر التحديثات والإشعارات
           </p>
         </div>
 
@@ -119,14 +117,14 @@ export default function NotificationsPage() {
         <div className="mb-6 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">
-              {notifications.filter(n => !n.read).length} {t('notifications.unread')}
+              {notifications.filter(n => !n.read).length} غير مقروءة
             </span>
           </div>
           <button
             onClick={markAllAsRead}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            {t('notifications.markAllRead')}
+            تحديد الكل كمقروء
           </button>
         </div>
 
@@ -136,10 +134,10 @@ export default function NotificationsPage() {
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📭</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {t('notifications.empty.title')}
+                لا توجد إشعارات
               </h3>
               <p className="text-gray-600">
-                {t('notifications.empty.message')}
+                ستظهر هنا الإشعارات الجديدة عند وصولها
               </p>
             </div>
           ) : (
@@ -177,7 +175,7 @@ export default function NotificationsPage() {
                       onClick={() => markAsRead(notification.id)}
                       className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                     >
-                      {t('notifications.markRead')}
+                      تحديد كمقروء
                     </button>
                   )}
                 </div>

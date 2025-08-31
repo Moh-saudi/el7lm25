@@ -34,14 +34,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '@/lib/context/SidebarContext';
 import { useAuth } from '@/lib/firebase/auth-provider';
-import { useTranslation } from '@/lib/translations/simple-context';
 
 const Sidebar = () => {
   const { user, userData } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const { isOpen, toggleSidebar } = useSidebar();
-  const { t, direction } = useTranslation();
+  const t = (key) => key; // دالة بسيطة لإرجاع النص كما هو
+  const direction = 'rtl';
 
   // قائمة اللاعب مع الترجمة
   const playerMenuItems = [
