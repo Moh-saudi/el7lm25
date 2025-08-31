@@ -134,7 +134,7 @@
         pointer-events: none;
         user-select: none;
       `;
-      watermark.textContent = '© El7hm 2024';
+      watermark.textContent = '© El7lm 2024';
       document.body.appendChild(watermark);
     }
     

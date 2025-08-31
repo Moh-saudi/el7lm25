@@ -122,7 +122,7 @@ export default function OfflinePage() {
               <li>• تجربة اتصال بيانات الجوال</li>
               <li>• التواصل مع الدعم الفني</li>
             </ul>
-            <p className="mt-4">support@el7hm.com</p>
+            <p className="mt-4">support@el7lm.com</p>
           </div>
         </div>
       </div>

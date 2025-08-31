@@ -2104,7 +2104,7 @@ export default function PlayerProfile() {
                       type="url"
                       value={video.url || ''}
                       onChange={(e) => handleVideoChange(index, 'url', e.target.value)}
-                      placeholder="https://youtube.com/watch?v=..."
+                      placeholder="https://www.youtube-nocookie.com/watch?v=..."
                       className="p-2 w-full text-sm rounded-md border focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                     />
                   ) : (

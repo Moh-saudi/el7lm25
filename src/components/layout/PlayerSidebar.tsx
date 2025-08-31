@@ -97,6 +97,18 @@ const PlayerSidebar: React.FC<PlayerSidebarProps> = ({ collapsed, setCollapsed }
       description: 'البحث عن فرص جديدة'
     },
     {
+      title: 'البحث عن لاعبين',
+      href: '/dashboard/player/search-players',
+      icon: Users,
+      description: 'البحث عن لاعبين آخرين'
+    },
+    {
+      title: 'فيديوهات اللاعبين المشتركة',
+      href: '/dashboard/player/shared-videos',
+      icon: Play,
+      description: 'مشاهدة فيديوهات اللاعبين'
+    },
+    {
       title: 'الإحصائيات',
       href: '/dashboard/player/stats',
       icon: BarChart3,
@@ -143,7 +155,7 @@ const PlayerSidebar: React.FC<PlayerSidebarProps> = ({ collapsed, setCollapsed }
                   <span className="text-white font-bold text-sm">E</span>
                 </div>
                 <div>
-                  <h2 className="font-bold text-gray-900">El7hm</h2>
+                  <h2 className="font-bold text-gray-900">El7lm</h2>
                   <p className="text-xs text-gray-500">KUWAIT CLUB</p>
                 </div>
               </div>

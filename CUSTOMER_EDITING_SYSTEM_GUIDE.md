@@ -279,3 +279,5 @@ const handleEditChange = (field: keyof Customer, value: any) => {
 
 **نظام التعديل الجديد يوفر مرونة كاملة في إدارة بيانات العملاء مع حماية شاملة! ✏️🛡️**
 
+
+

@@ -83,7 +83,7 @@ class WhatsAppService {
 
 لا تشارك هذا الرمز مع أي شخص.
 
-El7hm Team`;
+El7lm Team`;
   }
 
   // توليد OTP عشوائي

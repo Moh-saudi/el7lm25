@@ -53,7 +53,7 @@ export default function Footer() {
         {/* Logo and Company Info */}
         <div className="flex items-center space-x-3 space-x-reverse">
           <Image 
-            src="/el7hm-logo.png" 
+                          src="/el7lm-logo.png" 
             alt="شعار الحلم" 
             width={48} 
             height={48} 

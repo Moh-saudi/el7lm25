@@ -5,10 +5,10 @@ const admin = require('firebase-admin');
 
 // تكوين Firebase Admin
 try {
-  const serviceAccount = require('../el7hm-87884-cfa610cfcb73.json');
+  const serviceAccount = require('../el7lm-87884-cfa610cfcb73.json');
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    projectId: 'el7hm-87884'
+    projectId: 'el7lm-87884'
   });
   console.log('✅ تم تهيئة Firebase Admin للطوارئ');
 } catch (error) {
@@ -21,7 +21,7 @@ const db = admin.firestore();
 
 async function createEmergencyAdminSession() {
   try {
-    const EMAIL = 'admin@el7hm.com';
+    const EMAIL = 'admin@el7lm.com';
     
     console.log('\n🚨 إنشاء جلسة طوارئ للأدمن');
     console.log('═══════════════════════════════════════');

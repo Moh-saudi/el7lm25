@@ -150,7 +150,7 @@
 #### ترجمات الهيدر:
 ```typescript
 header: {
-  logoAlt: "شعار El7hm",
+  logoAlt: "شعار El7lm",
   searchPlaceholder: "بحث...",
   loginButton: "تسجيل الدخول",
   menuToggle: "تبديل القائمة",
@@ -168,8 +168,8 @@ header: {
 #### ترجمات الفوتر:
 ```typescript
 footer: {
-  logoAlt: "El7hm",
-  companyName: "El7hm (el7lm) under Misk Holding",
+  logoAlt: "El7lm",
+  companyName: "El7lm (el7lm) under Misk Holding",
   copyright: "© {{year}} All rights reserved",
   about: "About Platform",
   contact: "Contact Us",
@@ -277,7 +277,7 @@ sidebar: {
 #### ترجمات الهيدر:
 ```typescript
 header: {
-  logoAlt: "El7hm Logo",
+  logoAlt: "El7lm Logo",
   searchPlaceholder: "Search...",
   loginButton: "Login",
   menuToggle: "Toggle Menu",
@@ -295,8 +295,8 @@ header: {
 #### ترجمات الفوتر:
 ```typescript
 footer: {
-  logoAlt: "El7hm",
-  companyName: "El7hm (el7lm) under Misk Holding",
+  logoAlt: "El7lm",
+  companyName: "El7lm (el7lm) under Misk Holding",
   copyright: "© {{year}} All rights reserved",
   about: "About Platform",
   contact: "Contact Us",

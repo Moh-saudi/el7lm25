@@ -299,7 +299,7 @@ export default function AdminDreamAcademyVideosPage() {
             const payload: DreamAcademySource = {
               provider: 'youtube',
               sourceType: 'video',
-              url: `https://www.youtube.com/watch?v=${it.videoId}`,
+              url: `https://www.youtube-nocookie.com/watch?v=${it.videoId}`,
               categoryId: draft.categoryId as DreamAcademyCategoryId,
               order: (idx * 100000) + (page * 1000) + it.order,
               isActive: true,
@@ -363,7 +363,7 @@ export default function AdminDreamAcademyVideosPage() {
           const payload: DreamAcademySource = {
             provider: 'youtube',
             sourceType: 'video',
-            url: `https://www.youtube.com/watch?v=${it.videoId}`,
+            url: `https://www.youtube-nocookie.com/watch?v=${it.videoId}`,
             categoryId: draft.categoryId as DreamAcademyCategoryId,
             order: (page * 1000) + it.order, // keep pages separated to preserve order
             isActive: true,
@@ -427,9 +427,9 @@ export default function AdminDreamAcademyVideosPage() {
     };
     const playlistId = s.playlistId || ensurePlaylistId(s.url);
     if (s.sourceType === 'playlist' && playlistId) {
-      url = `https://www.youtube.com/embed?listType=playlist&list=${playlistId}`;
+      url = `https://www.youtube-nocookie.com/embed?listType=playlist&list=${playlistId}`;
     } else if (s.videoId) {
-      url = `https://www.youtube.com/watch?v=${s.videoId}`;
+      url = `https://www.youtube-nocookie.com/watch?v=${s.videoId}`;
     } else if (s.url) {
       url = s.url;
     }
@@ -479,7 +479,7 @@ export default function AdminDreamAcademyVideosPage() {
           <div className="md:col-span-2">
             <label className="text-sm">الرابط (YouTube فيديو أو Playlist)</label>
             <Input
-              placeholder="https://www.youtube.com/watch?v=... أو https://www.youtube.com/playlist?list=..."
+              placeholder="https://www.youtube-nocookie.com/watch?v=... أو https://www.youtube-nocookie.com/playlist?list=..."
               value={draft.url || ''}
               onChange={(e) => {
                 const val = e.target.value;
@@ -697,7 +697,7 @@ export default function AdminDreamAcademyVideosPage() {
                 width="100%"
                 height="420px"
                 controls
-                config={{ youtube: { embedOptions: { host: 'https://www.youtube-nocookie.com' }, playerVars: { rel: 0 } } }}
+                config={{ youtube: { embedOptions: { host: 'https://www.youtube-nocookie.com' }, playerVars: { rel: 0, origin: 'https://www.youtube-nocookie.com', host: 'https://www.youtube-nocookie.com' } } }}
               />
             ) : (
               <div className="text-sm text-gray-500">لا يمكن تشغيل هذا الرابط</div>

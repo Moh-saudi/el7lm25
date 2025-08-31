@@ -79,7 +79,7 @@ async function send4jawalySMS(phone: string, message: string) {
       body: JSON.stringify({
         phone: phone.replace('+', ''),
         message,
-        sender_name: 'EL7HM'
+        sender_name: 'EL7LM'
       })
     });
 

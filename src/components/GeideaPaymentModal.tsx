@@ -325,7 +325,7 @@ export default function GeideaPaymentModal({
     setState({ loading: true, error: null, isTestMode: false });
 
     try {
-      const orderId = merchantReferenceId || `EL7HM_${Date.now()}`;
+      const orderId = merchantReferenceId || `EL7LM_${Date.now()}`;
       const payload = {
         amount: amount,
         currency: currency,

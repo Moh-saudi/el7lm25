@@ -81,7 +81,7 @@ curl -X POST https://beon.chat/api/send/message/sms \
   -H "Content-Type: application/json" \
   -H "beon-token: vSCuMzZwLjDxzR882YphwEgW" \
   -d '{
-    "name": "El7hm",
+    "name": "El7lm",
     "phoneNumber": "+201017799580",
     "message": "Test message"
   }'

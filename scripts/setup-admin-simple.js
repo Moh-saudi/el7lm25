@@ -12,7 +12,7 @@ console.log('Collection ID: users');
 console.log(`Document ID: ${UID}`);
 console.log('\nالحقول:');
 console.log('accountType     | string  | admin');
-console.log('email          | string  | admin@el7hm.com');
+console.log('email          | string  | admin@el7lm.com');
 console.log('name           | string  | مدير النظام');
 console.log('phone          | string  | +966500000000');
 console.log('verified       | boolean | true');
@@ -24,7 +24,7 @@ console.log('─'.repeat(40));
 console.log('Collection ID: admins');
 console.log(`Document ID: ${UID}`);
 console.log('\nالحقول:');
-console.log('email          | string  | admin@el7hm.com');
+console.log('email          | string  | admin@el7lm.com');
 console.log('name           | string  | مدير النظام');
 console.log('phone          | string  | +966500000000');
 console.log('role           | string  | superadmin');
@@ -33,7 +33,7 @@ console.log('isActive       | boolean | true');
 
 console.log('\n🔑 3. معلومات تسجيل الدخول');
 console.log('─'.repeat(40));
-console.log('البريد الإلكتروني: admin@el7hm.com');
+console.log('البريد الإلكتروني: admin@el7lm.com');
 console.log('كلمة المرور: Admin123!@#');
 console.log('رابط تسجيل الدخول: http://localhost:3003/admin/login');
 

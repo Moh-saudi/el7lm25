@@ -42,7 +42,7 @@ TOKENS: {
 URL: https://beon.chat/api/send/message/sms
 Headers: beon-token: vSCuMzZwLjDxzR882YphwEgW
 Body: {
-  "name": "El7hm",
+  "name": "El7lm",
   "phoneNumber": "+201017799580",
   "message": "Test message"
 }
@@ -54,7 +54,7 @@ URL: https://beon.chat/api/send/message/otp
 Headers: beon-token: vSCuMzZwLjDxzR882YphwEgW
 Body: {
   "phoneNumber": "+201017799580",
-  "name": "El7hm",
+  "name": "El7lm",
   "type": "sms",
   "otp_length": 4,
   "lang": "ar"
@@ -83,7 +83,7 @@ Body: {
 #### **عند النجاح:**
 ```
 🔧 === بدء اختبار مباشر مع BeOn API ===
-📋 بيانات الاختبار المباشر: { name: 'El7hm', phoneNumber: '+201017799580', message: 'Direct API Test' }
+📋 بيانات الاختبار المباشر: { name: 'El7lm', phoneNumber: '+201017799580', message: 'Direct API Test' }
 📱 استجابة BeOn API المباشرة: { status: 200, statusText: 'OK' }
 ✅ اختبار BeOn API المباشر نجح
 ```

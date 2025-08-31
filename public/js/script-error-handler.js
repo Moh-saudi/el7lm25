@@ -1,4 +1,4 @@
-// El7hm - Script Error Handler
+// El7lm - Script Error Handler
 // معالج شامل لأخطاء السكريبتات مع إعادة المحاولة الذكية
 
 console.log('🛡️ تحميل معالج أخطاء السكريبتات...');

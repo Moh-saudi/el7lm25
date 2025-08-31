@@ -334,3 +334,5 @@ const filteredByEmployee = customers.filter(customer =>
 - زيادة كفاءة العمل
 - تحليل البيانات لاتخاذ قرارات أفضل
 
+
+

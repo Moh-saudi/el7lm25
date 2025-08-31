@@ -60,16 +60,16 @@ node scripts/test-firebase-local.js
 
 # بناء Docker image محلياً
 echo "🐳 Building Docker image..."
-docker build -t el7hm-test .
+docker build -t el7lm-test .
 
 # اختبار Docker container
 echo "🧪 Testing Docker container..."
-docker run --rm -d --name el7hm-test-container -p 3001:3000 \
+docker run --rm -d --name el7lm-test-container -p 3001:3000 \
     -e NODE_ENV=production \
     -e FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID" \
     -e FIREBASE_PRIVATE_KEY="$FIREBASE_PRIVATE_KEY" \
     -e FIREBASE_CLIENT_EMAIL="$FIREBASE_CLIENT_EMAIL" \
-    el7hm-test
+    el7lm-test
 
 # انتظار بدء التطبيق
 echo "⏳ Waiting for application to start..."
@@ -81,8 +81,8 @@ if curl -f http://localhost:3001 > /dev/null 2>&1; then
     echo "✅ Application is responding"
 else
     echo "❌ Application is not responding"
-    docker logs el7hm-test-container
-    docker stop el7hm-test-container
+    docker logs el7lm-test-container
+    docker stop el7lm-test-container
     exit 1
 fi
 
@@ -96,7 +96,7 @@ fi
 
 # إيقاف container
 echo "🛑 Stopping test container..."
-docker stop el7hm-test-container
+docker stop el7lm-test-container
 
 echo "✨ Build and test completed successfully!"
 echo "🎉 Ready for deployment to Coolify" 

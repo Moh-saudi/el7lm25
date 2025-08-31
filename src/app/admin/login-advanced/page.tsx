@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 export default function AdminLoginAdvancedPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('admin@el7hm.com');
+  const [email, setEmail] = useState('admin@el7lm.com');
   const [password, setPassword] = useState('Admin123!@#');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);

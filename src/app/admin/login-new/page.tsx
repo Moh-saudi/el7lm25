@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 export default function AdminLoginNewPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('admin@el7hm.com');
+  const [email, setEmail] = useState('admin@el7lm.com');
   const [password, setPassword] = useState('Admin123!@#');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -274,7 +274,7 @@ export default function AdminLoginNewPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="admin@el7hm.com"
+                    placeholder="admin@el7lm.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required

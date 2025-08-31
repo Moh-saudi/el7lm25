@@ -1,4 +1,4 @@
-# نظام OTP الموحد - El7hm
+# نظام OTP الموحد - El7lm
 
 ## نظرة عامة
 
@@ -61,7 +61,7 @@ BEON_SMS_TOKEN=vSCuMzZwLjDxzR882YphwEgW
 BEON_SMS_TOKEN_REGULAR=SPb4sgedfe
 BEON_SMS_TOKEN_TEMPLATE=SPb4sbemr5bwb7sjzCqTcL
 BEON_SMS_TOKEN_BULK=nzQ7ytW8q6yfQdJRFM57yRfR
-BEON_SENDER_NAME=El7hm
+BEON_SENDER_NAME=El7lm
 BEON_TEMPLATE_ID=133
 
 # WhatsApp Configuration
@@ -372,10 +372,10 @@ http://localhost:3000/test-beon-complete
 ## الدعم
 
 للمساعدة والدعم التقني:
-- 📧 Email: info@el7hm.com
+- 📧 Email: info@el7lm.com
 - 📱 WhatsApp: +201017799580
-- 🌐 Website: https://el7hm.com
+- 🌐 Website: https://el7lm.com
 
 ---
 
-**تم التطوير بواسطة فريق El7hm** 🏆 
+**تم التطوير بواسطة فريق El7lm** 🏆 

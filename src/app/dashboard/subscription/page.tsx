@@ -856,7 +856,7 @@ function SubscriptionStatusContent() {
         <body>
           <div class="invoice-container">
             <div class="header">
-              <img src="/el7hm-logo.png" alt="Logo" class="logo" />
+              <img src="/el7lm-logo.png" alt="Logo" class="logo" />
               <div class="company-info">
                 <div><b>الحلم (el7lm) تحت مِيسك القابضة</b> <span style="font-size:1.2em;">🚀</span></div>
                 <div>قطر- الدوحة - مركز قطر للمال</div>

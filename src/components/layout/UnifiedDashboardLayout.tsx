@@ -28,7 +28,7 @@ const UnifiedDashboardLayout: React.FC<UnifiedDashboardLayoutProps> = ({
   children,
   accountType = 'player',
   title = 'لوحة التحكم',
-  logo = '/el7hm-logo.png',
+  logo = '/el7lm-logo.png',
   showFooter = true,
   showFloatingChat = true
 }) => {

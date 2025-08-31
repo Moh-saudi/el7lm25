@@ -263,7 +263,7 @@ export function AuthProvider({ children }: FirebaseAuthProviderProps) {
               }
             } else {
               // Handle new or admin users
-              const adminEmails = ['admin@el7lm.com', 'admin@el7hm-go.com', 'admin@el7lm-go.com'];
+              const adminEmails = ['admin@el7lm.com', 'admin@el7lm-go.com', 'admin@el7lm-go.com'];
               if (adminEmails.includes(user.email || '')) {
                 const adminData: UserData = {
                   uid: user.uid,

@@ -135,12 +135,12 @@ function SubscriptionStatusContent() {
         <body>
           <div class="invoice-container">
             <div class="header">
-              <img src="/el7hm-logo.png" alt="Logo" class="logo" />
+              <img src="/el7lm-logo.png" alt="Logo" class="logo" />
               <div class="company-info">
-                <div><b>mesk llc & El7hm</b> <span style="font-size:1.2em;">🚀</span></div>
+                <div><b>mesk llc & El7lm</b> <span style="font-size:1.2em;">🚀</span></div>
                 <div>قطر- الدوحة - مركز قطر للمال</div>
                 <div>الرقم الضريبي: 02289</div>
-                <div>البريد: el7hm@mesk.qa</div>
+                <div>البريد: El7lm@mesk.qa</div>
                 <div>هاتف: 97472053188 قطر - 201017799580 مصر</div>
               </div>
             </div>
@@ -182,13 +182,13 @@ function SubscriptionStatusContent() {
             </div>
             <div class="footer">
               <div class="icons">💙 ⚽ 🏅 🥇 🏆</div>
-              منصة mesk llc & El7hm - جميع الحقوق محفوظة &copy; ${new Date().getFullYear()}
+              منصة mesk llc & El7lm - جميع الحقوق محفوظة &copy; ${new Date().getFullYear()}
               <div style="margin-top:8px; font-size:13px; color:#888;">تم إصدار هذه الفاتورة إلكترونيًا ولا تحتاج إلى توقيع.</div>
               <div style="margin-top:18px; text-align:center;">
                 <div style="display:inline-block; border:1px dashed #1976d2; border-radius:8px; padding:12px 24px; background:#f5faff;">
                   <div style="font-size:1.1em; color:#1976d2; font-weight:bold; margin-bottom:4px;">التوقيع الإلكتروني</div>
                   <img src="/signature.png" alt="التوقيع الإلكتروني" style="height:48px; margin-bottom:4px;" onerror="this.style.display='none'" />
-                  <div style="font-size:0.95em; color:#555;">تمت الموافقة إلكترونيًا بواسطة إدارة mesk llc & El7hm</div>
+                  <div style="font-size:0.95em; color:#555;">تمت الموافقة إلكترونيًا بواسطة إدارة mesk llc & El7lm</div>
                 </div>
               </div>
             </div>

@@ -35,7 +35,7 @@ const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     const cleanCountryCode = formData.countryCode.replace(/[^0-9]/g, '');
     const timestamp = Date.now();
     const randomSuffix = Math.random().toString(36).substring(2, 8);
-    const firebaseEmail = `user_${cleanCountryCode}_${cleanPhone}_${timestamp}_${randomSuffix}@el7hm.com`;
+    const firebaseEmail = `user_${cleanCountryCode}_${cleanPhone}_${timestamp}_${randomSuffix}@el7lm.com`;
     
     const registrationData = {
       full_name: formData.name,

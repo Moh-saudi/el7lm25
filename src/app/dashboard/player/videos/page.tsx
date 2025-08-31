@@ -38,35 +38,43 @@ export default function VideosPage(props: any) {
   useEffect(() => {
     const fetchVideos = async () => {
       if (!user) {
+        console.log('المستخدم غير مسجل دخول، إعادة توجيه...');
         router.push('/auth/login');
         return;
       }
 
       try {
+        console.log('جاري جلب الفيديوهات للمستخدم:', user.uid);
         setIsLoading(true);
         const playerDoc = await getDoc(doc(db, 'players', user.uid));
         
         if (playerDoc.exists()) {
           const data = playerDoc.data();
+          console.log('تم العثور على بيانات اللاعب:', data);
           // تأكد أن كل فيديو له desc نصي وليس undefined
           const safeVideos = (data.videos || []).map((v: any) => ({
             url: v.url,
             desc: v.desc ?? ''
           }));
+          console.log('الفيديوهات المحملة:', safeVideos);
           setVideos(safeVideos);
         } else {
-          console.log('لا توجد بيانات للاعب');
+          console.log('لا توجد بيانات للاعب، إنشاء قائمة فارغة');
+          setVideos([]);
         }
       } catch (error) {
         console.error('خطأ في جلب الفيديوهات:', error);
         setSaveMessage({ type: 'error', text: 'حدث خطأ أثناء جلب الفيديوهات' });
+        setVideos([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchVideos();
-  }, [user, router, t]);
+    if (user && !loading) {
+      fetchVideos();
+    }
+  }, [user, loading, router]);
 
   // حفظ الفيديوهات في Firebase
   const handleSaveVideos = async () => {
@@ -222,7 +230,7 @@ export default function VideosPage(props: any) {
         <Button 
           onClick={handleSaveVideos}
           disabled={isSaving}
-          className="px-8 py-3 text-lg"
+          className="px-8 py-3 text-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
         >
           {isSaving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
         </Button>

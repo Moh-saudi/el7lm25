@@ -120,10 +120,10 @@ export default function AboutPage() {
           </p>
           <div className="flex flex-col gap-4 items-center md:flex-row md:justify-center">
             <a
-              href="mailto:info@el7hm.com"
+              href="mailto:info@el7lm.com"
               className="px-6 py-3 text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700"
             >
-              info@el7hm.com
+              info@el7lm.com
             </a>
             <a
               href="tel:+201017799580"

@@ -145,8 +145,8 @@ export default function FontShowcase() {
           
           <MixedFontText className="text-lg font-medium">
             {locale === 'ar'
-              ? 'El7hm منصة - Professional Football Platform'
-              : 'El7hm منصة - Professional Football Platform'
+              ? 'El7lm منصة - Professional Football Platform'
+: 'El7lm منصة - Professional Football Platform'
             }
           </MixedFontText>
           

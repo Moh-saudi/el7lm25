@@ -203,8 +203,8 @@ class AdminNotificationService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: 'admin@el7hm.com',
-          subject: `[El7hm Admin] ${notification.title}`,
+          to: 'admin@el7lm.com',
+subject: `[El7lm Admin] ${notification.title}`,
           message: notification.message,
           type: notification.type,
           priority: notification.priority

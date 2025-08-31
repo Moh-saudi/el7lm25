@@ -83,8 +83,8 @@ export class EmailService {
         otp_code: otp,
         email: email,
         to_email: email,
-        platform_name: 'el7hm',
-        support_email: 'info@el7hm.com'
+        platform_name: 'el7lm',
+support_email: 'info@el7lm.com'
       };
 
       // إرسال البريد الإلكتروني

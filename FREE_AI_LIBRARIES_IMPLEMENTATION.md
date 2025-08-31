@@ -493,3 +493,5 @@ await logChatAction(customer, aiResponse, true);
 
 هذا النظام يوفر تتبعاً شاملاً لإجراءات الموظفين مع دعم AI مجاني لتحسين خدمة العملاء.
 
+
+

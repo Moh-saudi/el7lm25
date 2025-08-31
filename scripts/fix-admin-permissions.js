@@ -5,10 +5,10 @@ const admin = require('firebase-admin');
 
 // تكوين Firebase Admin
 try {
-  const serviceAccount = require('../el7hm-87884-cfa610cfcb73.json');
+  const serviceAccount = require('../el7lm-87884-cfa610cfcb73.json');
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    projectId: 'el7hm-87884'
+    projectId: 'el7lm-87884'
   });
   console.log('✅ تم تهيئة Firebase Admin بنجاح');
 } catch (error) {
@@ -26,9 +26,9 @@ async function fixAdminPermissions() {
     
     // قائمة بالإيميلات المحتملة للأدمن
     const possibleAdminEmails = [
-      'admin@el7hm.com',
+      'admin@el7lm.com',
       'admin@peachscore.com',
-      'el7hm@gmail.com',
+      'el7lm@gmail.com';
       'admin@gmail.com'
     ];
     
@@ -133,7 +133,7 @@ async function fixAdminPermissions() {
     // إنشاء مستخدم جديد إذا لم يوجد أي مستخدم
     console.log('\n🔄 إنشاء مستخدم أدمن احتياطي...');
     
-    const adminEmail = 'admin@el7hm.com';
+    const adminEmail = 'admin@el7lm.com';
     const adminPassword = 'Admin123!@#';
     
     try {

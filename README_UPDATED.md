@@ -1,4 +1,4 @@
-# El7hm - Football Player Management Platform
+# El7lm - Football Player Management Platform
 
 A comprehensive platform for managing football players, clubs, and agents with features including player profiles, contract management, payment processing, and more.
 
@@ -302,9 +302,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For support and questions:
-- 📧 Email: info@el7hm.com
+- 📧 Email: info@el7lm.com
 - 📱 Phone: +20 10 1779 9580
-- 🌐 Website: [el7hm.com](https://el7hm.com)
+- 🌐 Website: [el7lm.com](https://el7lm.com)
 
 ## Roadmap
 
@@ -318,7 +318,7 @@ For support and questions:
 
 ---
 
-Made with ❤️ by the El7hm team
+Made with ❤️ by the El7lm team
 
 ## Payment System Documentation
 

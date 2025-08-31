@@ -1,4 +1,4 @@
-// Font Optimizer for El7hm Platform
+// Font Optimizer for El7lm Platform
 class FontOptimizer {
   constructor() {
     this.fontsLoaded = false;

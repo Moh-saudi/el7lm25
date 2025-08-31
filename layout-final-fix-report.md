@@ -35,12 +35,12 @@
   <div className="flex-shrink-0">
     <img
       className="h-12 w-auto"
-      src="/el7hm-logo.png"
+      src="/el7lm-logo.png"
       alt="الحلم el7lm"
     />
   </div>
   <div className="mr-3">
-    <h1 className="text-xl font-bold text-blue-600">El7hm</h1>
+    <h1 className="text-xl font-bold text-blue-600">El7lm</h1>
     <p className="text-xs text-gray-500">منصة الحلم الرياضية</p>
   </div>
 </div>

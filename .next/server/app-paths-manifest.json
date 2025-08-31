@@ -1,0 +1,5 @@
+{
+  "/dashboard/player/page": "app/dashboard/player/page.js",
+  "/dashboard/player/videos/page": "app/dashboard/player/videos/page.js",
+  "/dashboard/player/stats/page": "app/dashboard/player/stats/page.js"
+}

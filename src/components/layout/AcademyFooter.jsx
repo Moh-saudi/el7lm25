@@ -10,13 +10,13 @@ export default function AcademyFooter() {
         {/* الشعار والاسم */}
         <div className="flex items-center space-x-2 space-x-reverse">
           <img 
-            src="/el7hm-logo.png" 
-            alt="الحلم el7hm Logo" 
+            src="/el7lm-logo.png" 
+            alt="الحلم El7lm Logo" 
             className="h-8 w-8"
           />
           <div className="flex flex-col">
-            <span className="font-bold text-gray-800 dark:text-gray-200">الحلم el7hm</span>
-            <span className="text-sm text-gray-600 dark:text-gray-400">© {year} الحلم el7hm</span>
+            <span className="font-bold text-gray-800 dark:text-gray-200">الحلم El7lm</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">© {year} الحلم El7lm</span>
           </div>
         </div>
 

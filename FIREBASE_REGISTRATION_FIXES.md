@@ -10,11 +10,11 @@
 #### أ. تحسين إنشاء البريد الإلكتروني
 ```typescript
 // قبل الإصلاح
-firebaseEmail = `user_${formData.countryCode}${cleanPhone}@el7hm.local`;
+firebaseEmail = `user_${formData.countryCode}${cleanPhone}@el7lm.local`;
 
 // بعد الإصلاح
 const cleanCountryCode = (formData.countryCode || '').replace(/[^0-9]/g, '');
-firebaseEmail = `user_${cleanCountryCode}_${cleanPhone}@el7hm.local`;
+firebaseEmail = `user_${cleanCountryCode}_${cleanPhone}@el7lm.local`;
 ```
 
 #### ب. التحقق من صحة البيانات
@@ -127,7 +127,7 @@ const cleanCountryCode = (formData.countryCode || '').replace(/[^0-9]/g, '');
 ### 3. تحسين تنسيق البريد الإلكتروني
 ```typescript
 // استخدام فاصل (_) بين رمز الدولة ورقم الهاتف
-firebaseEmail = `user_${cleanCountryCode}_${cleanPhone}@el7hm.local`;
+firebaseEmail = `user_${cleanCountryCode}_${cleanPhone}@el7lm.local`;
 ```
 
 ## كيفية الاختبار
@@ -155,7 +155,7 @@ firebaseEmail = `user_${cleanCountryCode}_${cleanPhone}@el7hm.local`;
 
 ## ملاحظات مهمة
 
-1. **تنسيق البريد الإلكتروني**: الآن يستخدم `user_966_123456789@el7hm.local` بدلاً من `user_+966123456789@el7hm.local`
+1. **تنسيق البريد الإلكتروني**: الآن يستخدم `user_966_123456789@el7lm.local` بدلاً من `user_+966123456789@el7lm.local`
 
 2. **تنظيف البيانات**: يتم تنظيف رموز الدول من الأحرف غير الرقمية
 

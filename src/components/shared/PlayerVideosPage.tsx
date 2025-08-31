@@ -911,12 +911,13 @@ export default function PlayerVideosPage({ accountType }: PlayerVideosPageProps)
                           enablejsapi: 1,
                           end: 99999,
                           start: 0,
-                          widget_referrer: typeof window !== 'undefined' ? window.location.origin : '',
-                          origin: typeof window !== 'undefined' ? window.location.origin : '',
+                          widget_referrer: 'https://www.youtube-nocookie.com',
+                          origin: 'https://www.youtube-nocookie.com',
                           autohide: 1,
                           wmode: 'transparent',
                           html5: 1,
                           playerapiid: `player_${video.id}`,
+                          host: 'https://www.youtube-nocookie.com'
                         },
                         embedOptions: {
                           host: 'https://www.youtube-nocookie.com',

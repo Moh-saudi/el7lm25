@@ -89,7 +89,7 @@ export const initializeSecureConsole = (): void => {
       console.log('%c🛡️ التطبيق محمي', 'color: #ff6b6b; font-size: 20px; font-weight: bold;');
       console.log('%cإذا كنت مطور، تحقق من بيئة التطوير المحلية', 'color: #666; font-size: 14px;');
       console.log('%c⚠️ تسجيل البيانات الحساسة محظور في الإنتاج', 'color: #ff9500; font-size: 12px;');
-      console.log('%c📧 للدعم التقني: support@el7hm.com', 'color: #007AFF; font-size: 12px;');
+      console.log('%c📧 للدعم التقني: support@el7lm.com', 'color: #007AFF; font-size: 12px;');
       
     } catch (e) {
       // فشل في تنظيف الكونسول - لا بأس

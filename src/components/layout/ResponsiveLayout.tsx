@@ -69,6 +69,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useMediaQuery } from 'react-responsive';
+import LogoutScreen from '@/components/auth/LogoutScreen';
 
 // ===== Context للتحكم في التخطيط =====
 interface LayoutContextType {
@@ -471,6 +472,22 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType: prop
             href: `/dashboard/player/search`,
             color: 'text-indigo-600',
             bgColor: 'bg-indigo-50'
+          },
+          {
+            id: 'player-search-players',
+            label: 'البحث عن لاعبين',
+            icon: Users,
+            href: `/dashboard/player/search-players`,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50'
+          },
+          {
+            id: 'player-shared-videos',
+            label: 'فيديوهات اللاعبين المشتركة',
+            icon: Play,
+            href: `/dashboard/player/shared-videos`,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-50'
           }
         ]
       });
@@ -1044,11 +1061,20 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType: prop
     }
   };
 
+  const [showLogoutScreen, setShowLogoutScreen] = useState(false);
+
   const handleLogout = async () => {
     const confirmed = window.confirm('هل أنت متأكد من تسجيل الخروج؟');
     if (confirmed) {
-      await logout();
-      router.push('/');
+      try {
+        await logout();
+        setShowLogoutScreen(true);
+        console.log('✅ تم تسجيل الخروج بنجاح وتم عرض شاشة تسجيل الخروج');
+      } catch (error) {
+        console.error('❌ خطأ في تسجيل الخروج:', error);
+        // حتى لو فشل تسجيل الخروج، نعرض شاشة تسجيل الخروج
+        setShowLogoutScreen(true);
+      }
     }
   };
 
@@ -1332,6 +1358,9 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({ accountType: prop
           </div>
         </div>
       </motion.div>
+
+      {/* شاشة تسجيل الخروج */}
+      {showLogoutScreen && <LogoutScreen />}
     </>
   );
 };

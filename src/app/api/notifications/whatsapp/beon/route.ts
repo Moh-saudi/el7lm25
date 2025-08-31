@@ -131,14 +131,14 @@ async function sendBeOnOTP(phoneNumber: string, name: string, type: string = 'wh
     // إنشاء FormData
     const formData = new FormData();
     formData.append('phoneNumber', phoneNumber);
-    formData.append('name', name || 'El7hm User');
+    formData.append('name', name || 'El7lm User');
     formData.append('type', type); // whatsapp أو sms
     formData.append('otp_length', '6');
     formData.append('lang', 'ar');
 
     console.log('📱 BeOn API request data:', {
       phoneNumber,
-      name: name || 'El7hm User',
+      name: name || 'El7lm User',
       type,
       otp_length: 6,
       lang: 'ar'

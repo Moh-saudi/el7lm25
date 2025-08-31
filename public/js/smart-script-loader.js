@@ -1,4 +1,4 @@
-// El7hm - Smart Script Loader
+// El7lm - Smart Script Loader
 // تحميل ذكي للسكريبتات حسب الحاجة فقط
 
 console.log('🚀 تحميل أداة التحميل الذكي...');

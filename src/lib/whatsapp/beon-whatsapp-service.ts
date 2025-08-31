@@ -73,7 +73,7 @@ class BeOnWhatsAppService {
 
 لا تشارك هذا الرمز مع أي شخص.
 
-El7hm Team`;
+El7lm Team`;
   }
 
   // إرسال رسالة WhatsApp عبر BeOn API الجديد
@@ -86,7 +86,7 @@ El7hm Team`;
       // استخدام API الجديد لإرسال OTP
       const formData = new FormData();
       formData.append('phoneNumber', phoneNumber);
-      formData.append('name', 'El7hm User');
+      formData.append('name', 'El7lm User');
       formData.append('type', type || 'whatsapp'); // استخدام WhatsApp كافتراضي
       formData.append('otp_length', '6');
       formData.append('lang', 'ar');
@@ -150,7 +150,7 @@ El7hm Team`;
     try {
       const formData = new FormData();
       formData.append('phoneNumber', phoneNumber);
-      formData.append('name', 'El7hm User');
+      formData.append('name', 'El7lm User');
       formData.append('type', 'sms');
       formData.append('otp_length', '6');
       formData.append('lang', 'ar');

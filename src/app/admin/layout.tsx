@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'El7hm - لوحة الإدارة',
-  description: 'لوحة إدارة منصة El7hm',
+  title: 'El7lm - لوحة الإدارة',
+description: 'لوحة إدارة منصة El7lm',
 }
 
 export default function AdminLayout({

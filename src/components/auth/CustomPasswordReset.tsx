@@ -61,8 +61,8 @@ export default function CustomPasswordReset({
         user_name: 'المستخدم الكريم',
         user_email: email,
         reset_link: resetLink,
-        platform_name: 'el7hm',
-        support_email: 'info@el7hm.com'
+        platform_name: 'el7lm',
+support_email: 'info@el7lm.com'
       };
 
       await emailjs.send(

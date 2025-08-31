@@ -6,10 +6,10 @@ const admin = require('firebase-admin');
 
 // تكوين Firebase Admin باستخدام ملف المفتاح الموجود
 try {
-  const serviceAccount = require('../el7hm-87884-cfa610cfcb73.json');
+  const serviceAccount = require('../el7lm-87884-cfa610cfcb73.json');
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    projectId: 'el7hm-87884'
+    projectId: 'el7lm-87884'
   });
   console.log('✅ تم تهيئة Firebase Admin بنجاح باستخدام Service Account');
 } catch (error) {
@@ -32,7 +32,7 @@ async function setupAdminUser() {
     // إنشاء مستند في users collection
     const userData = {
       uid: UID,
-      email: 'admin@el7hm.com',
+      email: 'admin@el7lm.com',
       name: 'مدير النظام',
       phone: '+966500000000',
       accountType: 'admin',
@@ -48,7 +48,7 @@ async function setupAdminUser() {
     // إنشاء مستند في admins collection
     const adminData = {
       name: 'مدير النظام',
-      email: 'admin@el7hm.com',
+      email: 'admin@el7lm.com',
       phone: '+966500000000',
       role: 'superadmin',
       permissions: ['all'],
@@ -67,7 +67,7 @@ async function setupAdminUser() {
       description: 'تم إعداد حساب مدير جديد عبر setup script',
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       metadata: {
-        email: 'admin@el7hm.com',
+        email: 'admin@el7lm.com',
         role: 'superadmin'
       }
     });
@@ -75,7 +75,7 @@ async function setupAdminUser() {
     console.log('✅ تم تسجيل العملية في adminLogs');
     console.log('\n🎉 تم إعداد حساب المدير بنجاح!');
     console.log('──────────────────────────────────────');
-    console.log('📧 البريد الإلكتروني: admin@el7hm.com');
+    console.log('📧 البريد الإلكتروني: admin@el7lm.com');
     console.log('🔑 كلمة المرور: Admin123!@#');
     console.log('🌐 رابط تسجيل الدخول: http://localhost:3003/admin/login');
     console.log('──────────────────────────────────────');

@@ -12,7 +12,7 @@ export default function AdminFooter() {
         {/* الشعار والاسم */}
         <div className="flex items-center space-x-3 space-x-reverse">
           <img 
-            src="/el7hm-logo.png" 
+            src="/el7lm-logo.png" 
             alt="شعار الحلم" 
             className="h-10 w-10 drop-shadow-sm"
           />

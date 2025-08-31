@@ -6,9 +6,9 @@ const { getFirestore, doc, setDoc } = require('firebase/firestore');
 // تكوين Firebase - نفس التكوين من ملف config.ts
 const firebaseConfig = {
   apiKey: "AIzaSyBRxNNE1HLqtOcC9YY9fQ1gOUKXG6gV8K8",
-  authDomain: "el7hm-87884.firebaseapp.com",
-  projectId: "el7hm-87884",
-  storageBucket: "el7hm-87884.appspot.com",
+  authDomain: "el7lm-87884.firebaseapp.com",
+  projectId: "el7lm-87884",
+  storageBucket: "el7lm-87884.appspot.com",
   messagingSenderId: "253649001591",
   appId: "1:253649001591:web:8b8b8b8b8b8b8b8b"
 };
@@ -20,7 +20,7 @@ const db = getFirestore(app);
 
 async function createSimpleAdmin() {
   try {
-    const EMAIL = 'admin@el7hm.com';
+    const EMAIL = 'admin@el7lm.com';
     const PASSWORD = 'Admin123!@#';
     
     console.log('\n🔧 إنشاء حساب أدمن بسيط');
@@ -91,7 +91,7 @@ async function createSimpleAdmin() {
     console.log('1. تأكد من تشغيل المشروع (npm run dev)');
     console.log('2. تحقق من اتصال الإنترنت');
     console.log('3. جرب البيانات التالية:');
-    console.log('   📧 admin@el7hm.com');
+    console.log('   📧 admin@el7lm.com');
     console.log('   🔑 Admin123!@#');
   }
 }

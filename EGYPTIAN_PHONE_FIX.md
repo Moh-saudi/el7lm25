@@ -95,3 +95,5 @@ if (targetCountryCode === '20' && cleanPhone.startsWith('2') && cleanPhone.lengt
 
 الآن جميع الأرقام المصرية ستعمل بشكل صحيح في واتساب! 🎉
 
+
+

@@ -1,11 +1,11 @@
 /**
- * 🚀 El7hm - نظام تحسين الأداء الشامل
+ * 🚀 El7lm - نظام تحسين الأداء الشامل
  * حل مشكلة التحميل البطيء وتحسين تجربة المستخدم
  */
 
 // 🚀 نظام تحسين الأداء الشامل (بدون console logs مزعجة)
 
-// Performance Optimizer for El7hm Platform
+// Performance Optimizer for El7lm Platform
 class PerformanceOptimizer {
   constructor() {
     this.init();

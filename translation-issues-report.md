@@ -19,32 +19,32 @@
 **الترجمات المفقودة**:
 ```typescript
 // مفقود في الجزء الإنجليزي
-'academy.footer.title': 'El7hm for Academies',
+'academy.footer.title': 'El7lm for Academies',
 'academy.footer.about': 'About',
 'academy.footer.contact': 'Contact Us',
 'academy.footer.privacy': 'Privacy',
 
-'club.footer.title': 'El7hm for Clubs',
+'club.footer.title': 'El7lm for Clubs',
 'club.footer.about': 'About',
 'club.footer.contact': 'Contact Us',
 'club.footer.privacy': 'Privacy',
 
-'agent.footer.title': 'El7hm for Agents',
+'agent.footer.title': 'El7lm for Agents',
 'agent.footer.about': 'About',
 'agent.footer.contact': 'Contact Us',
 'agent.footer.privacy': 'Privacy',
 
-'trainer.footer.title': 'El7hm for Trainers',
+'trainer.footer.title': 'El7lm for Trainers',
 'trainer.footer.about': 'About',
 'trainer.footer.contact': 'Contact Us',
 'trainer.footer.privacy': 'Privacy',
 
-'player.footer.title': 'El7hm for Players',
+'player.footer.title': 'El7lm for Players',
 'player.footer.about': 'About',
 'player.footer.contact': 'Contact Us',
 'player.footer.privacy': 'Privacy',
 
-'admin.footer.title': 'El7hm for Administration',
+'admin.footer.title': 'El7lm for Administration',
 'admin.footer.about': 'About',
 'admin.footer.contact': 'Contact Us',
 'admin.footer.privacy': 'Privacy'
@@ -91,32 +91,32 @@
 
 ```typescript
 // Dashboard Footers - English
-'academy.footer.title': 'El7hm for Academies',
+'academy.footer.title': 'El7lm for Academies',
 'academy.footer.about': 'About',
 'academy.footer.contact': 'Contact Us',
 'academy.footer.privacy': 'Privacy',
 
-'club.footer.title': 'El7hm for Clubs',
+'club.footer.title': 'El7lm for Clubs',
 'club.footer.about': 'About',
 'club.footer.contact': 'Contact Us',
 'club.footer.privacy': 'Privacy',
 
-'agent.footer.title': 'El7hm for Agents',
+'agent.footer.title': 'El7lm for Agents',
 'agent.footer.about': 'About',
 'agent.footer.contact': 'Contact Us',
 'agent.footer.privacy': 'Privacy',
 
-'trainer.footer.title': 'El7hm for Trainers',
+'trainer.footer.title': 'El7lm for Trainers',
 'trainer.footer.about': 'About',
 'trainer.footer.contact': 'Contact Us',
 'trainer.footer.privacy': 'Privacy',
 
-'player.footer.title': 'El7hm for Players',
+'player.footer.title': 'El7lm for Players',
 'player.footer.about': 'About',
 'player.footer.contact': 'Contact Us',
 'player.footer.privacy': 'Privacy',
 
-'admin.footer.title': 'El7hm for Administration',
+'admin.footer.title': 'El7lm for Administration',
 'admin.footer.about': 'About',
 'admin.footer.contact': 'Contact Us',
 'admin.footer.privacy': 'Privacy'

@@ -6,7 +6,7 @@ console.log('══════════════════════�
 
 const testAccounts = [
   {
-    email: 'marwan.fedail@el7hm.com',
+    email: 'marwan.fedail@el7lm.com',
     password: 'Marwan123!@#',
     name: 'مروان فضيل',
     accountType: 'player',
@@ -16,7 +16,7 @@ const testAccounts = [
     position: 'مهاجم صريح'
   },
   {
-    email: 'ahmed.player@el7hm.com',
+    email: 'ahmed.player@el7lm.com',
     password: 'Ahmed123!@#',
     name: 'أحمد اللاعب',
     accountType: 'player',
@@ -26,7 +26,7 @@ const testAccounts = [
     position: 'وسط دفاعي'
   },
   {
-    email: 'mohammed.club@el7hm.com',
+    email: 'mohammed.club@el7lm.com',
     password: 'Mohammed123!@#',
     name: 'محمد النادي',
     accountType: 'club',
@@ -36,7 +36,7 @@ const testAccounts = [
     clubName: 'نادي النصر'
   },
   {
-    email: 'sara.academy@el7hm.com',
+    email: 'sara.academy@el7lm.com',
     password: 'Sara123!@#',
     name: 'سارة الأكاديمية',
     accountType: 'academy',
@@ -46,7 +46,7 @@ const testAccounts = [
     academyName: 'أكاديمية النجوم'
   },
   {
-    email: 'ali.agent@el7hm.com',
+    email: 'ali.agent@el7lm.com',
     password: 'Ali123!@#',
     name: 'علي الوكيل',
     accountType: 'agent',
@@ -56,7 +56,7 @@ const testAccounts = [
     agencyName: 'وكالة النجوم الرياضية'
   },
   {
-    email: 'fatima.trainer@el7hm.com',
+    email: 'fatima.trainer@el7lm.com',
     password: 'Fatima123!@#',
     name: 'فاطمة المدرب',
     accountType: 'trainer',

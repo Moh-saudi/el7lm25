@@ -130,7 +130,7 @@ export default class AppErrorBoundary extends React.Component<AppErrorBoundaryPr
                 {/* معلومات إضافية */}
                 <div className="text-sm text-gray-500">
                   <p>إذا استمرت المشكلة، يرجى التواصل مع الدعم الفني</p>
-                  <p>support@el7hm.com</p>
+                  <p>support@el7lm.com</p>
                 </div>
               </div>
             </div>

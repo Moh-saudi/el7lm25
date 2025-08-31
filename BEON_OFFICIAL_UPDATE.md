@@ -99,7 +99,7 @@ TOKENS: {
 #### **عند النجاح:**
 ```
 🔧 === بدء اختبار مباشر مع BeOn API ===
-📋 بيانات الاختبار المباشر: { name: 'El7hm', phoneNumber: '+201017799580', message: 'Direct API Test' }
+📋 بيانات الاختبار المباشر: { name: 'El7lm', phoneNumber: '+201017799580', message: 'Direct API Test' }
 📱 استجابة BeOn API المباشرة: { status: 200, statusText: 'OK' }
 ✅ اختبار BeOn API المباشر نجح
 ```

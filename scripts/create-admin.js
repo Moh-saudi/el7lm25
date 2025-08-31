@@ -8,7 +8,7 @@ const admin = require('firebase-admin');
 try {
   // محاولة استخدام التكوين الافتراضي من متغيرات البيئة
   admin.initializeApp({
-    projectId: 'el7hm-87884' // Project ID من ملف .env.local
+    projectId: 'el7lm-87884' // Project ID من ملف .env.local
   });
   console.log('✅ تم تهيئة Firebase Admin بنجاح');
 } catch (error) {

@@ -457,7 +457,7 @@ const Sidebar = () => {
               <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                 <span className="text-blue-600 font-bold text-sm">E</span>
               </div>
-              <span className="text-white font-bold text-lg">El7hm</span>
+              <span className="text-white font-bold text-lg">El7lm</span>
             </div>
         <button
           onClick={toggleSidebar}

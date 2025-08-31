@@ -5,10 +5,10 @@ const admin = require('firebase-admin');
 
 // تكوين Firebase Admin
 try {
-  const serviceAccount = require('../el7hm-87884-cfa610cfcb73.json');
+  const serviceAccount = require('../el7lm-87884-cfa610cfcb73.json');
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    projectId: 'el7hm-87884'
+    projectId: 'el7lm-87884'
   });
   console.log('✅ تم تهيئة Firebase Admin بنجاح');
 } catch (error) {
@@ -26,7 +26,7 @@ async function createTestAccounts() {
     
     const testAccounts = [
       {
-        email: 'marwan.fedail@el7hm.com',
+        email: 'marwan.fedail@el7lm.com',
         password: 'Marwan123!@#',
         name: 'مروان فضيل',
         accountType: 'player',
@@ -36,7 +36,7 @@ async function createTestAccounts() {
         position: 'مهاجم صريح'
       },
       {
-        email: 'ahmed.player@el7hm.com',
+        email: 'ahmed.player@el7lm.com',
         password: 'Ahmed123!@#',
         name: 'أحمد اللاعب',
         accountType: 'player',
@@ -46,7 +46,7 @@ async function createTestAccounts() {
         position: 'وسط دفاعي'
       },
       {
-        email: 'mohammed.club@el7hm.com',
+        email: 'mohammed.club@el7lm.com',
         password: 'Mohammed123!@#',
         name: 'محمد النادي',
         accountType: 'club',
@@ -56,7 +56,7 @@ async function createTestAccounts() {
         clubName: 'نادي النصر'
       },
       {
-        email: 'sara.academy@el7hm.com',
+        email: 'sara.academy@el7lm.com',
         password: 'Sara123!@#',
         name: 'سارة الأكاديمية',
         accountType: 'academy',
@@ -66,7 +66,7 @@ async function createTestAccounts() {
         academyName: 'أكاديمية النجوم'
       },
       {
-        email: 'ali.agent@el7hm.com',
+        email: 'ali.agent@el7lm.com',
         password: 'Ali123!@#',
         name: 'علي الوكيل',
         accountType: 'agent',
@@ -76,7 +76,7 @@ async function createTestAccounts() {
         agencyName: 'وكالة النجوم الرياضية'
       },
       {
-        email: 'fatima.trainer@el7hm.com',
+        email: 'fatima.trainer@el7lm.com',
         password: 'Fatima123!@#',
         name: 'فاطمة المدرب',
         accountType: 'trainer',

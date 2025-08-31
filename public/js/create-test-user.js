@@ -1,4 +1,4 @@
-// Create test user script for El7hm
+// Create test user script for El7lm
 // This script can be run in the browser console on the registration page
 async function createTestUser() {
   try {
@@ -74,7 +74,7 @@ async function createTestUser() {
 
 // Instructions for use
 console.log(`
-=== El7hm Test User Creator ===
+=== El7lm Test User Creator ===
 Run this function in the browser console to create a test user:
 
 createTestUser().then(result => console.log('Done!', result));

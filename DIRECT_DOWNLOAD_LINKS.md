@@ -1,4 +1,4 @@
-# روابط التحميل المباشرة - منصة El7hm
+# روابط التحميل المباشرة - منصة El7lm
 
 ## 🎯 الملفات الأكثر أهمية
 
@@ -21,7 +21,7 @@ file:///D:/el7lm25-main%20(1)/el7lm25-main/README.md
 
 ### ملف ZIP شامل
 ```
-file:///D:/el7lm25-main%20(1)/el7lm25-main/EL7HM_PROJECT_DOCUMENTS.zip
+file:///D:/el7lm25-main%20(1)/el7lm25-main/EL7LM_PROJECT_DOCUMENTS.zip
 ```
 
 **المحتوى**:
@@ -68,7 +68,7 @@ Copy-Item "PROJECT_PDR_DOCUMENT.md" "C:\Users\$env:USERNAME\Desktop\"
 Copy-Item "*.md" "C:\Users\$env:USERNAME\Desktop\"
 
 # نسخ ملف ZIP
-Copy-Item "EL7HM_PROJECT_DOCUMENTS.zip" "C:\Users\$env:USERNAME\Desktop\"
+Copy-Item "EL7LM_PROJECT_DOCUMENTS.zip" "C:\Users\$env:USERNAME\Desktop\"
 ```
 
 ## 📋 قائمة سريعة للملفات
@@ -80,7 +80,7 @@ Copy-Item "EL7HM_PROJECT_DOCUMENTS.zip" "C:\Users\$env:USERNAME\Desktop\"
 | `README.md` | 35.1 KB | ⭐⭐⭐⭐ |
 | `CUSTOMER_MANAGEMENT_GUIDE.md` | 8.7 KB | ⭐⭐⭐⭐ |
 | `EMPLOYEE_PERMISSIONS_SYSTEM_GUIDE.md` | 11.6 KB | ⭐⭐⭐⭐ |
-| `EL7HM_PROJECT_DOCUMENTS.zip` | ~200 KB | ⭐⭐⭐⭐⭐ |
+| `EL7LM_PROJECT_DOCUMENTS.zip` | ~200 KB | ⭐⭐⭐⭐⭐ |
 
 ## 🎯 للفريق
 
@@ -99,9 +99,9 @@ Copy-Item "EL7HM_PROJECT_DOCUMENTS.zip" "C:\Users\$env:USERNAME\Desktop\"
 ## 📞 الدعم الفوري
 
 إذا واجهت أي مشكلة:
-- **البريد الإلكتروني**: support@el7hm.com
+- **البريد الإلكتروني**: support@el7lm.com
 - **الهاتف**: +20 10 1779 9580
-- **الموقع**: https://el7hm.com
+- **الموقع**: https://el7lm.com
 
 ---
 

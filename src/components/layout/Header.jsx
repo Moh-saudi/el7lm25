@@ -168,8 +168,8 @@ const Header = () => {
            
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <img src="/el7hm-logo.png" alt={'header.logoAlt'} className="w-auto h-10" />
-            <span className="hidden md:block text-xl font-bold text-gray-800">El7hm</span>
+                          <img src="/el7lm-logo.png" alt={'header.logoAlt'} className="w-auto h-10" />
+              <span className="hidden md:block text-xl font-bold text-gray-800">El7lm</span>
           </div>
            
           {/* Search Bar */}
@@ -193,7 +193,7 @@ const Header = () => {
               onClick={() => {
                 const newLang = language === 'ar' ? 'en' : 'ar';
                 setLanguage(newLang);
-                localStorage.setItem('el7hm-language', newLang);
+                localStorage.setItem('el7lm-language', newLang);
                 window.location.reload();
               }}
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"

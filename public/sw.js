@@ -1,4 +1,4 @@
-// Service Worker for El7hm - Enhanced Error Handling
+// Service Worker for El7lm - Enhanced Error Handling
 const CACHE_VERSION = 'v1.2.0';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;

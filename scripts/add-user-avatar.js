@@ -2,13 +2,13 @@ const admin = require('firebase-admin');
 
 // تهيئة Firebase Admin
 try {
-  const serviceAccount = require('./el7hm-87884-cfa610cfcb73.json');
+  const serviceAccount = require('./el7lm-87884-cfa610cfcb73.json');
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
 } catch (error) {
   console.log('❌ خطأ في تحميل ملف الخدمة:', error.message);
-  console.log('💡 تأكد من وجود ملف el7hm-87884-cfa610cfcb73.json في مجلد scripts');
+  console.log('💡 تأكد من وجود ملف el7lm-87884-cfa610cfcb73.json في مجلد scripts');
   process.exit(1);
 }
 
