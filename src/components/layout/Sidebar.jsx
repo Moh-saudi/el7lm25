@@ -33,16 +33,15 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '@/lib/context/SidebarContext';
-// تم حذف الترجمة
 import { useAuth } from '@/lib/firebase/auth-provider';
+import { useTranslation } from '@/lib/translations/simple-context';
 
 const Sidebar = () => {
   const { user, userData } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const { isOpen, toggleSidebar } = useSidebar();
-  const t = (key) => key;
-  const direction = 'rtl';
+  const { t, direction } = useTranslation();
 
   // قائمة اللاعب مع الترجمة
   const playerMenuItems = [
@@ -170,10 +169,15 @@ const Sidebar = () => {
         icon: <Users className="w-5 h-5" />,
         path: '/dashboard/club/referrals'
       },
-      {
-        title: 'sidebar.common.messages',
-        icon: <MessageSquare className="w-5 h-5" />,
-        path: '/dashboard/messages'
+          {
+      title: 'sidebar.common.messages',
+      icon: <MessageSquare className="w-5 h-5" />,
+      path: '/dashboard/messages'
+    },
+    {
+      title: 'sidebar.player.notifications',
+      icon: <Bell className="w-5 h-5" />,
+      path: '/dashboard/notifications'
     }
   ];
 
@@ -223,6 +227,16 @@ const Sidebar = () => {
       title: 'sidebar.player.referrals',
       icon: <Users className="w-5 h-5" />,
       path: '/dashboard/agent/referrals'
+    },
+    {
+      title: 'sidebar.common.messages',
+      icon: <MessageSquare className="w-5 h-5" />,
+      path: '/dashboard/messages'
+    },
+    {
+      title: 'sidebar.player.notifications',
+      icon: <Bell className="w-5 h-5" />,
+      path: '/dashboard/notifications'
     }
   ];
 
@@ -272,6 +286,16 @@ const Sidebar = () => {
       title: 'sidebar.player.referrals',
       icon: <Users className="w-5 h-5" />,
       path: '/dashboard/academy/referrals'
+    },
+    {
+      title: 'sidebar.common.messages',
+      icon: <MessageSquare className="w-5 h-5" />,
+      path: '/dashboard/messages'
+    },
+    {
+      title: 'sidebar.player.notifications',
+      icon: <Bell className="w-5 h-5" />,
+      path: '/dashboard/notifications'
     }
   ];
 
@@ -316,6 +340,16 @@ const Sidebar = () => {
       title: 'sidebar.player.referrals',
       icon: <Users className="w-5 h-5" />,
       path: '/dashboard/trainer/referrals'
+    },
+    {
+      title: 'sidebar.common.messages',
+      icon: <MessageSquare className="w-5 h-5" />,
+      path: '/dashboard/messages'
+    },
+    {
+      title: 'sidebar.player.notifications',
+      icon: <Bell className="w-5 h-5" />,
+      path: '/dashboard/notifications'
     }
   ];
 
@@ -380,6 +414,11 @@ const Sidebar = () => {
       title: 'sidebar.marketer.messages',
       icon: <MessageSquare className="w-5 h-5" />, 
       path: '/dashboard/marketer/messages'
+    },
+    {
+      title: 'sidebar.player.notifications',
+      icon: <Bell className="w-5 h-5" />,
+      path: '/dashboard/notifications'
     }
   ];
 
@@ -401,6 +440,8 @@ const Sidebar = () => {
         return trainerMenuItems;
       case 'marketer':
         return marketerMenuItems; // استخدام قائمة المسوق المخصصة
+      case 'parent':
+        return playerMenuItems; // استخدام قائمة اللاعب للوالد
       default:
         return playerMenuItems;
     }
