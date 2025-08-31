@@ -4,7 +4,8 @@
 import FontProvider, { FontHeading, FontText, MixedFontText } from '@/components/shared/FontProvider';
 
 export default function FontShowcase() {
-  const { locale, t } = useTranslation();
+  const locale = 'ar';
+  const t = (key: string) => key;
 
   return (
     <FontProvider className="p-8 space-y-8 bg-white rounded-lg shadow-lg max-w-4xl mx-auto my-8">

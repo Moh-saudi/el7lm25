@@ -8,13 +8,14 @@ interface DashboardFontWrapperProps {
 }
 
 export default function DashboardFontWrapper({ children, className = '' }: DashboardFontWrapperProps) {
-  const { locale, isRTL } = useTranslation();
+  const locale = 'ar';
+  const isRTL = true;
   
   // تحديد الخط حسب اللغة
   const fontClass = locale === 'en' ? 'font-english' : 'font-arabic';
   
   return (
-    <div className={`min-h-screen ${fontClass} ${className}`} style={{ isRTL }} lang={locale}>
+    <div className={`min-h-screen ${fontClass} ${className}`} style={{ direction: isRTL ? 'rtl' : 'ltr' }} lang={locale}>
       {children}
     </div>
   );
