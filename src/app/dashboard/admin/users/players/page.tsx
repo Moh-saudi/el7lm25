@@ -17,7 +17,6 @@ import {
   DocumentSnapshot
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { supabase } from '@/lib/supabase/config';
 import {
   User,
   Users,
@@ -211,11 +210,16 @@ export default function PlayersManagement() {
               }
             }
 
-            // جلب إحصائيات الميديا
-            const mediaCount = await getPlayerMediaCount(docSnap.id);
-
-            // جلب الإحصائيات
-            const stats = await getPlayerStats(docSnap.id);
+            // Performance: القائمة لا تجلب media/stats لكل لاعب.
+            // هذه البيانات التفصيلية تُحمّل فقط عند الحاجة في شاشة التفاصيل.
+            const mediaCount = { images: 0, videos: 0, documents: 0 };
+            const stats = {
+              profileViews: 0,
+              videoViews: 0,
+              matches: 0,
+              goals: 0,
+              assists: 0
+            };
 
             return {
               id: docSnap.id,
@@ -331,85 +335,6 @@ export default function PlayersManagement() {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
-
-  const getPlayerMediaCount = async (playerId: string) => {
-    const mediaCount = {
-      images: 0,
-      videos: 0,
-      documents: 0
-    };
-
-    try {
-      const buckets = ['playeravatar', 'player-images', 'videos'];
-      
-      for (const bucket of buckets) {
-        try {
-          const { data: files } = await supabase.storage
-            .from(bucket)
-            .list(playerId);
-          
-          if (files) {
-            const images = files.filter(f => 
-              f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-            );
-            const videos = files.filter(f => 
-              f.name.match(/\.(mp4|avi|mov|wmv|webm)$/i)
-            );
-            const docs = files.filter(f => 
-              f.name.match(/\.(pdf|doc|docx|txt)$/i)
-            );
-            
-            mediaCount.images += images.length;
-            mediaCount.videos += videos.length;
-            mediaCount.documents += docs.length;
-          }
-        } catch (error) {
-          // تجاهل الأخطاء لبوكتات غير موجودة
-        }
-      }
-    } catch (error) {
-      console.error('Error getting media count:', error);
-    }
-
-    return mediaCount;
-  };
-
-  const getPlayerStats = async (playerId: string) => {
-    // إحصائيات افتراضية حقيقية (أصفار) - لا توجد بيانات وهمية
-    const defaultStats = {
-      profileViews: 0,
-      videoViews: 0,
-      matches: 0,
-      goals: 0,
-      assists: 0
-    };
-
-    try {
-      const statsDoc = await getDoc(doc(db, 'player_stats', playerId));
-      if (statsDoc.exists()) {
-        const data = statsDoc.data();
-        return {
-          profileViews: data.profileViews || 0,
-          videoViews: data.videoViews || 0,
-          matches: data.matches || 0,
-          goals: data.goals || 0,
-          assists: data.assists || 0
-        };
-      }
-    } catch (error: any) {
-      // معالجة صامتة للأخطاء - الإحصائيات ليست حرجة
-      if (error.code === 'permission-denied') {
-        // عدم طباعة أخطاء الصلاحيات لتجنب التكرار
-        return defaultStats;
-      } else if (error.code !== 'not-found') {
-        // طباعة الأخطاء الأخرى فقط (غير not-found)
-        console.warn(`📊 [STATS] Non-critical error loading stats for ${playerId}:`, error.code);
-      }
-    }
-    
-    // إرجاع إحصائيات حقيقية (أصفار) في جميع الحالات
-    return defaultStats;
   };
 
   const togglePlayerVerification = async (playerId: string, isVerified: boolean) => {
