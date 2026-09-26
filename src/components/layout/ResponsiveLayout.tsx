@@ -1521,7 +1521,6 @@ const ResponsiveHeader: React.FC = () => {
       query(
         collection(db, 'interaction_notifications'),
         where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc'),
         limit(5)
       ),
       (snapshot) => {
