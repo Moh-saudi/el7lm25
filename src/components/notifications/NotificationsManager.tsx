@@ -94,7 +94,7 @@ export default function NotificationsManager({
       console.error('خطأ في جلب الإشعارات النظامية:', error);
     });
 
-    const unsubscribeInteractionNotifications = onSnapshot(interactionNotificationsQuery, async (snapshot) => {
+    const unsubscribeInteractionNotifications = onSnapshot(interactionNotificationsQuery, (snapshot) => {
       const interactionNotificationsData = snapshot.docs.map((doc) => {
           const data = doc.data();
           
