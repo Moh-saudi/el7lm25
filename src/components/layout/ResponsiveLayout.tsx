@@ -1496,97 +1496,47 @@ const ResponsiveHeader: React.FC = () => {
     }
   };
 
-  // جلب الإشعارات الأخيرة من Firebase
-  const fetchRecentNotifications = async () => {
-    if (!user?.uid) return;
-    
+  // جلب الإشعارات الأخيرة من Firebase.
+  // صفحات الإشعارات نفسها تملك subscription خاصاً بها، لذلك لا نكرر
+  // realtime listeners من الهيدر على نفس الصفحة.
+  const subscribeToRecentNotifications = () => {
+    if (!user?.uid || pathname.includes('/notifications')) return undefined;
+
     setNotificationsLoading(true);
-    try {
-      // محاولة جلب من مجموعة interaction_notifications أولاً
-      const interactionNotificationsQuery = query(
+
+    const mapNotifications = (snapshot: any) => snapshot.docs.map((notificationDoc: any) => {
+      const data = notificationDoc.data();
+      return {
+        id: notificationDoc.id,
+        title: data.title || 'إشعار جديد',
+        message: data.message || 'لا توجد تفاصيل',
+        time: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+        type: data.type || 'general',
+        read: data.isRead || false,
+        notificationId: notificationDoc.id
+      };
+    });
+
+    const interactionUnsubscribe = onSnapshot(
+      query(
         collection(db, 'interaction_notifications'),
-        where('userId', '==', user.uid),
-        limit(5)
-      );
-
-      const unsubscribe = onSnapshot(interactionNotificationsQuery, (snapshot) => {
-        const notifications = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            title: data.title || 'إشعار جديد',
-            message: data.message || 'لا توجد تفاصيل',
-            time: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
-            type: data.type || 'general',
-            read: data.isRead || false,
-            notificationId: doc.id
-          };
-        });
-        
-        // ترتيب البيانات يدوياً حسب التاريخ
-        const sortedNotifications = notifications.sort((a, b) => {
-          return b.time.getTime() - a.time.getTime();
-        });
-        
-        setRecentNotifications(sortedNotifications);
-        const unreadCount = sortedNotifications.filter(notif => !notif.read).length;
-        setNewNotificationsCount(unreadCount);
-      }, (error) => {
-        console.error('خطأ في جلب interaction_notifications:', error);
-        // إذا فشل، جرب مجموعة notifications العادية
-        fetchRegularNotifications();
-      });
-
-      return unsubscribe;
-    } catch (error) {
-      console.error('خطأ في جلب الإشعارات:', error);
-      // إذا فشل، جرب مجموعة notifications العادية
-      fetchRegularNotifications();
-    } finally {
-      setNotificationsLoading(false);
-    }
-  };
-
-  // جلب الإشعارات العادية كبديل
-  const fetchRegularNotifications = async () => {
-    if (!user?.uid) return;
-    
-    try {
-      const notificationsQuery = query(
-        collection(db, 'notifications'),
         where('userId', '==', user.uid),
         orderBy('createdAt', 'desc'),
         limit(5)
-      );
+      ),
+      (snapshot) => {
+        const notifications = mapNotifications(snapshot);
+        setRecentNotifications(notifications);
+        setNewNotificationsCount(notifications.filter((notification: any) => !notification.read).length);
+        setNotificationsLoading(false);
+      },
+      (error) => {
+        console.error('خطأ في جلب interaction_notifications:', error);
+        setNotificationsLoading(false);
+      }
+    );
 
-      const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
-        const notifications = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            title: data.title || 'إشعار جديد',
-            message: data.message || 'لا توجد تفاصيل',
-            time: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
-            type: data.type || 'general',
-            read: data.isRead || false,
-            notificationId: doc.id
-          };
-        });
-        
-        // ترتيب البيانات يدوياً حسب التاريخ
-        const sortedNotifications = notifications.sort((a, b) => {
-          return b.time.getTime() - a.time.getTime();
-        });
-        
-        setRecentNotifications(sortedNotifications);
-        const unreadCount = sortedNotifications.filter(notif => !notif.read).length;
-        setNewNotificationsCount(unreadCount);
-      });
-
-      return unsubscribe;
-    } catch (error) {
-      console.error('خطأ في جلب notifications العادية:', error);
-    }
+    return () => interactionUnsubscribe();
   };
 
   // التعامل مع الرسالة
@@ -1644,34 +1594,24 @@ const ResponsiveHeader: React.FC = () => {
 
   // جلب البيانات عند تحميل المكون
   useEffect(() => {
-    if (user?.uid) {
-      let unsubscribeMessages: (() => void) | undefined;
-      let unsubscribeNotifications: (() => void) | undefined;
+    if (!user?.uid) return;
 
-      // جلب الرسائل
-      fetchRecentMessages().then(unsubscribe => {
-        unsubscribeMessages = unsubscribe;
-      }).catch(error => {
-        console.error('خطأ في جلب الرسائل:', error);
-      });
+    let unsubscribeMessages: (() => void) | undefined;
+    let unsubscribeNotifications: (() => void) | undefined;
 
-      // جلب الإشعارات
-      fetchRecentNotifications().then(unsubscribe => {
-        unsubscribeNotifications = unsubscribe;
-      }).catch(error => {
-        console.error('خطأ في جلب الإشعارات:', error);
-      });
+    fetchRecentMessages().then(unsubscribe => {
+      unsubscribeMessages = unsubscribe;
+    }).catch(error => {
+      console.error('خطأ في جلب الرسائل:', error);
+    });
 
-      return () => {
-        if (typeof unsubscribeMessages === 'function') {
-          unsubscribeMessages();
-        }
-        if (typeof unsubscribeNotifications === 'function') {
-          unsubscribeNotifications();
-        }
-      };
-    }
-  }, [user?.uid]);
+    unsubscribeNotifications = subscribeToRecentNotifications();
+
+    return () => {
+      unsubscribeMessages?.();
+      unsubscribeNotifications?.();
+    };
+  }, [user?.uid, pathname]);
 
   // إغلاق القوائم المنسدلة عند النقر خارجها
   useEffect(() => {
