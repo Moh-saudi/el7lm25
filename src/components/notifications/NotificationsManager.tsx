@@ -10,8 +10,7 @@ import {
   orderBy,
   doc,
   updateDoc,
-  limit,
-  getDoc
+  limit
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
@@ -64,25 +63,6 @@ export default function NotificationsManager({
   const [interactionNotifications, setInteractionNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // جلب معلومات المرسل
-  const fetchSenderInfo = async (senderId: string) => {
-    try {
-      const userDoc = await getDoc(doc(db, 'users', senderId));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        return {
-          senderId,
-          senderName: userData.displayName || userData.name || 'مستخدم غير معروف',
-          senderAvatar: userData.photoURL || userData.avatar,
-          senderAccountType: userData.accountType
-        };
-      }
-    } catch (error) {
-      console.error('خطأ في جلب معلومات المرسل:', error);
-    }
-    return null;
-  };
-
   // جلب الإشعارات
   useEffect(() => {
     if (!user || !userData) return;
@@ -99,7 +79,7 @@ export default function NotificationsManager({
     const interactionNotificationsQuery = query(
       collection(db, 'interaction_notifications'),
       where('userId', '==', user.uid),
-      limit(100)
+      limit(50)
     );
 
     const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
@@ -118,14 +98,14 @@ export default function NotificationsManager({
         snapshot.docs.map(async (doc) => {
           const data = doc.data();
           
-          // جلب معلومات المرسل إذا كان موجوداً
-          let senderInfo = {};
-          if (data.viewerId || data.senderId) {
-            const senderData = await fetchSenderInfo(data.viewerId || data.senderId);
-            if (senderData) {
-              senderInfo = senderData;
-            }
-          }
+          // Performance: استخدم بيانات المرسل المضمنة في الإشعار.
+          // لا ننفذ getDoc() منفصلًا لكل إشعار.
+          const senderInfo = {
+            senderId: data.senderId || data.viewerId,
+            senderName: data.senderName || data.viewerName,
+            senderAvatar: data.senderAvatar || data.viewerAvatar,
+            senderAccountType: data.senderAccountType || data.viewerAccountType
+          };
 
           return {
             id: doc.id,
@@ -163,7 +143,7 @@ export default function NotificationsManager({
       unsubscribeNotifications();
       unsubscribeInteractionNotifications();
     };
-  }, [user, userData]);
+  }, [user?.uid]);
 
   // دمج الإشعارات
   useEffect(() => {
