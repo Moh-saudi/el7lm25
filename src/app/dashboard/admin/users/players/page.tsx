@@ -17,7 +17,6 @@ import {
   DocumentSnapshot
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { supabase } from '@/lib/supabase/config';
 import {
   User,
   Users,
@@ -109,7 +108,7 @@ interface PlayerData {
     goals: number;
     assists: number;
   };
-  mediaCount: {
+  mediaCount?: {
     images: number;
     videos: number;
     documents: number;
@@ -156,20 +155,16 @@ export default function PlayersManagement() {
     totalValue: 0
   });
 
+  // Performance: one debounced fetch pipeline prevents duplicate requests
+  // when search and filters change around the same time.
   useEffect(() => {
-    fetchPlayers(true);
-  }, [selectedPosition, selectedCountry, selectedStatus, selectedAge]);
-
-  useEffect(() => {
-    if (searchTerm) {
-      const delayedSearch = setTimeout(() => {
-        fetchPlayers(true);
-      }, 500);
-      return () => clearTimeout(delayedSearch);
-    } else {
+    const delay = searchTerm ? 500 : 0;
+    const timer = setTimeout(() => {
       fetchPlayers(true);
-    }
-  }, [searchTerm]);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, selectedPosition, selectedCountry, selectedStatus, selectedAge]);
 
   const fetchPlayers = async (reset = false) => {
     try {
@@ -211,12 +206,7 @@ export default function PlayersManagement() {
               }
             }
 
-            // جلب إحصائيات الميديا
-            const mediaCount = await getPlayerMediaCount(docSnap.id);
-
-            // جلب الإحصائيات
-            const stats = await getPlayerStats(docSnap.id);
-
+            // Performance: لا توجد طلبات إضافية لكل لاعب أثناء تحميل القائمة.
             return {
               id: docSnap.id,
               firstName: data.firstName || '',
@@ -237,9 +227,7 @@ export default function PlayersManagement() {
               isActive: data.isActive !== false,
               registrationDate: data.createdAt,
               lastLogin: data.lastLogin,
-              stats,
-              mediaCount,
-              bio: data.bio,
+               bio: data.bio,
               achievements: data.achievements || [],
               marketValue: data.marketValue || 0,
               currentClub: data.currentClub,
@@ -333,85 +321,6 @@ export default function PlayersManagement() {
     }
   };
 
-  const getPlayerMediaCount = async (playerId: string) => {
-    const mediaCount = {
-      images: 0,
-      videos: 0,
-      documents: 0
-    };
-
-    try {
-      const buckets = ['playeravatar', 'player-images', 'videos'];
-      
-      for (const bucket of buckets) {
-        try {
-          const { data: files } = await supabase.storage
-            .from(bucket)
-            .list(playerId);
-          
-          if (files) {
-            const images = files.filter(f => 
-              f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-            );
-            const videos = files.filter(f => 
-              f.name.match(/\.(mp4|avi|mov|wmv|webm)$/i)
-            );
-            const docs = files.filter(f => 
-              f.name.match(/\.(pdf|doc|docx|txt)$/i)
-            );
-            
-            mediaCount.images += images.length;
-            mediaCount.videos += videos.length;
-            mediaCount.documents += docs.length;
-          }
-        } catch (error) {
-          // تجاهل الأخطاء لبوكتات غير موجودة
-        }
-      }
-    } catch (error) {
-      console.error('Error getting media count:', error);
-    }
-
-    return mediaCount;
-  };
-
-  const getPlayerStats = async (playerId: string) => {
-    // إحصائيات افتراضية حقيقية (أصفار) - لا توجد بيانات وهمية
-    const defaultStats = {
-      profileViews: 0,
-      videoViews: 0,
-      matches: 0,
-      goals: 0,
-      assists: 0
-    };
-
-    try {
-      const statsDoc = await getDoc(doc(db, 'player_stats', playerId));
-      if (statsDoc.exists()) {
-        const data = statsDoc.data();
-        return {
-          profileViews: data.profileViews || 0,
-          videoViews: data.videoViews || 0,
-          matches: data.matches || 0,
-          goals: data.goals || 0,
-          assists: data.assists || 0
-        };
-      }
-    } catch (error: any) {
-      // معالجة صامتة للأخطاء - الإحصائيات ليست حرجة
-      if (error.code === 'permission-denied') {
-        // عدم طباعة أخطاء الصلاحيات لتجنب التكرار
-        return defaultStats;
-      } else if (error.code !== 'not-found') {
-        // طباعة الأخطاء الأخرى فقط (غير not-found)
-        console.warn(`📊 [STATS] Non-critical error loading stats for ${playerId}:`, error.code);
-      }
-    }
-    
-    // إرجاع إحصائيات حقيقية (أصفار) في جميع الحالات
-    return defaultStats;
-  };
-
   const togglePlayerVerification = async (playerId: string, isVerified: boolean) => {
     try {
       await updateDoc(doc(db, 'players', playerId), {
@@ -478,12 +387,6 @@ export default function PlayersManagement() {
       'نشط': player.isActive ? 'نعم' : 'لا',
       'النادي الحالي': player.currentClub || '',
       'القيمة السوقية': player.marketValue || 0,
-      'عدد الصور': player.mediaCount.images,
-      'عدد الفيديوهات': player.mediaCount.videos,
-      'مشاهدات الملف': player.stats?.profileViews || 0,
-      'عدد المباريات': player.stats?.matches || 0,
-      'عدد الأهداف': player.stats?.goals || 0,
-      'عدد التمريرات الحاسمة': player.stats?.assists || 0,
       'تاريخ التسجيل': player.registrationDate?.toDate()?.toLocaleDateString('ar-SA') || ''
     }));
 
@@ -825,10 +728,7 @@ export default function PlayersManagement() {
                     
                     <TableCell>
                       <div className="space-y-1 text-sm">
-                        <div>👁️ {player.stats?.profileViews || 0} مشاهدة</div>
-                        <div>⚽ {player.stats?.matches || 0} مباراة</div>
-                        <div>🥅 {player.stats?.goals || 0} هدف</div>
-                        <div>🎯 {player.stats?.assists || 0} تمريرة</div>
+                        <div className="text-gray-400">الإحصائيات: تُحمّل عند فتح التفاصيل</div>
                       </div>
                     </TableCell>
                     
@@ -836,15 +736,15 @@ export default function PlayersManagement() {
                       <div className="flex gap-3 text-sm">
                         <div className="flex items-center gap-1">
                           <ImageIcon className="w-3 h-3" />
-                          {player.mediaCount.images}
+                          {player.mediaCount?.images ?? '—'}
                         </div>
                         <div className="flex items-center gap-1">
                           <Video className="w-3 h-3" />
-                          {player.mediaCount.videos}
+                          {player.mediaCount?.videos ?? '—'}
                         </div>
                         <div className="flex items-center gap-1">
                           <FileText className="w-3 h-3" />
-                          {player.mediaCount.documents}
+                          {player.mediaCount?.documents ?? '—'}
                         </div>
                       </div>
                     </TableCell>

@@ -10,8 +10,7 @@ import {
   orderBy,
   doc,
   updateDoc,
-  limit,
-  getDoc
+  limit
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
@@ -57,40 +56,22 @@ export default function NotificationsManager({
   showTestButtons = false,
   accountType
 }: NotificationsManagerProps) {
-  const { user, userData } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [systemNotifications, setSystemNotifications] = useState<Notification[]>([]);
   const [interactionNotifications, setInteractionNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // جلب معلومات المرسل
-  const fetchSenderInfo = async (senderId: string) => {
-    try {
-      const userDoc = await getDoc(doc(db, 'users', senderId));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        return {
-          senderId,
-          senderName: userData.displayName || userData.name || 'مستخدم غير معروف',
-          senderAvatar: userData.photoURL || userData.avatar,
-          senderAccountType: userData.accountType
-        };
-      }
-    } catch (error) {
-      console.error('خطأ في جلب معلومات المرسل:', error);
-    }
-    return null;
-  };
-
   // جلب الإشعارات
   useEffect(() => {
-    if (!user || !userData) return;
+    const userId = user?.uid;
+    if (!userId) return;
 
     // جلب الإشعارات النظامية
     const notificationsQuery = query(
       collection(db, 'notifications'),
-      where('userId', '==', user.uid),
+      where('userId', '==', userId),
       orderBy('createdAt', 'desc'),
       limit(100)
     );
@@ -98,8 +79,8 @@ export default function NotificationsManager({
     // جلب الإشعارات التفاعلية
     const interactionNotificationsQuery = query(
       collection(db, 'interaction_notifications'),
-      where('userId', '==', user.uid),
-      limit(100)
+      where('userId', '==', userId),
+      limit(50)
     );
 
     const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
@@ -113,19 +94,18 @@ export default function NotificationsManager({
       console.error('خطأ في جلب الإشعارات النظامية:', error);
     });
 
-    const unsubscribeInteractionNotifications = onSnapshot(interactionNotificationsQuery, async (snapshot) => {
-      const interactionNotificationsData = await Promise.all(
-        snapshot.docs.map(async (doc) => {
+    const unsubscribeInteractionNotifications = onSnapshot(interactionNotificationsQuery, (snapshot) => {
+      const interactionNotificationsData = snapshot.docs.map((doc) => {
           const data = doc.data();
           
-          // جلب معلومات المرسل إذا كان موجوداً
-          let senderInfo = {};
-          if (data.viewerId || data.senderId) {
-            const senderData = await fetchSenderInfo(data.viewerId || data.senderId);
-            if (senderData) {
-              senderInfo = senderData;
-            }
-          }
+          // Performance: استخدم بيانات المرسل المضمنة في الإشعار.
+          // لا ننفذ getDoc() منفصلًا لكل إشعار.
+          const senderInfo = {
+            senderId: data.senderId || data.viewerId,
+            senderName: data.senderName || data.viewerName,
+            senderAvatar: data.senderAvatar || data.viewerAvatar,
+            senderAccountType: data.senderAccountType || data.viewerAccountType
+          };
 
           return {
             id: doc.id,
@@ -144,8 +124,7 @@ export default function NotificationsManager({
             actionType: data.type,
             ...senderInfo
           } as Notification;
-        })
-      );
+        });
       
       // ترتيب البيانات يدوياً حسب التاريخ
       const sortedData = interactionNotificationsData.sort((a, b) => {
@@ -163,7 +142,7 @@ export default function NotificationsManager({
       unsubscribeNotifications();
       unsubscribeInteractionNotifications();
     };
-  }, [user, userData]);
+  }, [user?.uid]);
 
   // دمج الإشعارات
   useEffect(() => {

@@ -7,7 +7,6 @@ import {
   query, 
   where, 
   onSnapshot,
-  orderBy,
   limit,
   doc,
   updateDoc
@@ -53,7 +52,7 @@ import { toast } from 'sonner';
 import { InteractionNotification } from '@/lib/notifications/interaction-notifications';
 
 const InteractionNotifications: React.FC = () => {
-  const { user, userData } = useAuth();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<InteractionNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -61,10 +60,7 @@ const InteractionNotifications: React.FC = () => {
 
   // جلب الإشعارات
   useEffect(() => {
-    console.log('🔍 بدء جلب الإشعارات:', { user: !!user, userData: !!userData, userId: user?.uid });
-    
-    if (!user || !userData) {
-      console.log('⚠️ لا يمكن جلب الإشعارات - بيانات المستخدم غير متوفرة');
+    if (!user?.uid) {
       return;
     }
 
@@ -80,20 +76,8 @@ const InteractionNotifications: React.FC = () => {
         ...doc.data()
       })) as InteractionNotification[];
       
-      console.log('📊 تم جلب الإشعارات:', { 
-        count: notificationsData.length, 
-        unread: notificationsData.filter(n => !n.isRead).length 
-      });
-      
-      // ترتيب البيانات محلياً
-      const sortedNotifications = notificationsData.sort((a, b) => {
-        const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt);
-        const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt);
-        return dateB.getTime() - dateA.getTime();
-      });
-      
-      setNotifications(sortedNotifications);
-      setUnreadCount(sortedNotifications.filter(n => !n.isRead).length);
+      setNotifications(notificationsData);
+      setUnreadCount(notificationsData.filter(n => !n.isRead).length);
       setLoading(false);
     }, (error) => {
       console.error('❌ خطأ في جلب الإشعارات:', error);
@@ -101,7 +85,7 @@ const InteractionNotifications: React.FC = () => {
     });
 
     return () => unsubscribe();
-  }, [user, userData]);
+  }, [user?.uid]);
 
   // تحديد الإشعار كمقروء
   const markAsRead = async (notificationId: string) => {
