@@ -73,9 +73,15 @@ export default function TrainerPlayersPage() {
 
       // Performance: trainer_id is the canonical field used by the player
       // creation/update flows, so load the trainer's players with one query.
+      // Preserve legacy ownership records while keeping a single Firestore query.
       const playersQuery = query(
         collection(db, 'players'),
-        where('trainer_id', '==', user.uid)
+        or(
+          where('trainer_id', '==', user.uid),
+          where('trainerId', '==', user.uid),
+          where('created_by', '==', user.uid),
+          where('official_contact.email', '==', user.email || '')
+        )
       );
 
       const snapshot = await getDocs(playersQuery);
