@@ -66,119 +66,29 @@ export default function TrainerPlayersPage() {
   }, [user]);
 
   const loadPlayers = async () => {
+    if (!user?.uid) return;
+
     try {
       setLoading(true);
-      console.log('🔍 محاولة جلب اللاعبين للمدرب:', user?.uid);
-      console.log('🔍 إيميل المدرب:', user?.email);
-      
-      // جرب جميع الطرق الممكنة للبحث
-      const queries = [
-        // البحث بـ trainer_id
-        query(collection(db, 'players'), where('trainer_id', '==', user?.uid)),
-        // البحث بـ trainerId
-        query(collection(db, 'players'), where('trainerId', '==', user?.uid)),
-        // البحث بـ created_by
-        query(collection(db, 'players'), where('created_by', '==', user?.uid)),
-        // البحث بـ created_by_type = 'trainer'
-        query(collection(db, 'players'), where('created_by_type', '==', 'trainer')),
-      ];
 
-      // إضافة البحث بالإيميل إذا كان متوفراً
-      if (user?.email) {
-        queries.push(
-          query(collection(db, 'players'), where('official_contact.email', '==', user.email))
-        );
-      }
-      
-      const snapshots = await Promise.all(queries.map(q => getDocs(q)));
-      
-      console.log('📊 نتائج البحث:');
-      console.log('  - trainer_id:', snapshots[0].size, 'مستندات');
-      console.log('  - trainerId:', snapshots[1].size, 'مستندات');
-      console.log('  - created_by:', snapshots[2].size, 'مستندات');
-      console.log('  - created_by_type=trainer:', snapshots[3].size, 'مستندات');
-      if (snapshots[4]) {
-        console.log('  - official_contact.email:', snapshots[4].size, 'مستندات');
-      }
-      
-      // ادمج جميع النتائج
-      const allDocs = [];
-      snapshots.forEach((snapshot, index) => {
-        snapshot.docs.forEach(doc => {
-          const data = doc.data();
-          console.log(`📄 من الاستعلام ${index}:`, {
-            id: doc.id,
-            trainer_id: data.trainer_id,
-            trainerId: data.trainerId,
-            created_by: data.created_by,
-            created_by_type: data.created_by_type,
-            full_name: data.full_name,
-            name: data.name
-          });
-          allDocs.push(doc);
-        });
-      });
-      
-      // تجنب التكرار
-      const uniqueDocs = allDocs.filter((doc, index, self) => 
-        index === self.findIndex(d => d.id === doc.id)
+      // Performance: trainer_id is the canonical field used by the player
+      // creation/update flows, so load the trainer's players with one query.
+      const playersQuery = query(
+        collection(db, 'players'),
+        where('trainer_id', '==', user.uid)
       );
-      
-      // فلترة اللاعبين المرتبطين بهذا المدرب فقط
-      console.log('🔍 بدء فلترة اللاعبين للمدرب. معرف المدرب:', user?.uid);
-      console.log('🔍 إيميل المدرب:', user?.email);
-      
-      const filteredDocs = uniqueDocs.filter(doc => {
-        const data = doc.data();
-        const matches = {
-          trainer_id: data.trainer_id === user?.uid,
-          trainerId: data.trainerId === user?.uid,
-          created_by: data.created_by === user?.uid,
-          created_by_type_trainer: data.created_by_type === 'trainer' && data.created_by === user?.uid,
-          email_match: data.official_contact?.email === user?.email
-        };
-        
-        const isMatch = matches.trainer_id || matches.trainerId || matches.created_by || matches.created_by_type_trainer || matches.email_match;
-        
-        console.log(`📄 فحص اللاعب: ${data.full_name || data.name}`, {
-          player_trainer_id: data.trainer_id,
-          player_trainerId: data.trainerId,
-          player_created_by: data.created_by,
-          player_created_by_type: data.created_by_type,
-          player_email: data.official_contact?.email,
-          matches,
-          isMatch
-        });
-        
-        return isMatch;
-      });
-      
-      let playersData = filteredDocs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
+
+      const snapshot = await getDocs(playersQuery);
+      const playersData = snapshot.docs.map(playerDoc => ({
+        id: playerDoc.id,
+        ...playerDoc.data()
       })) as Player[];
-      
-      console.log('🔍 اللاعبين بعد الفلترة:', playersData);
-      console.log('📊 إجمالي اللاعبين بعد الفلترة:', playersData.length);
-      
-      // إذا لم نجد أي لاعبين بعد الفلترة، اعرض جميع اللاعبين للتشخيص
-      if (playersData.length === 0 && uniqueDocs.length > 0) {
-        console.log('⚠️ لم توجد مطابقات! سأعرض جميع اللاعبين للتشخيص...');
-        playersData = uniqueDocs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data(),
-          _debug_note: 'عرض للتشخيص - غير مفلتر'
-        })) as Player[];
-        console.log('🔍 جميع اللاعبين (بدون فلترة):', playersData);
-      }
-      
+
       setPlayers(playersData);
-      console.log('🎯 تحديث state: setPlayers تم تنفيذه بنجاح');
     } catch (error) {
       console.error('❌ خطأ في تحميل اللاعبين:', error);
     } finally {
       setLoading(false);
-      console.log('🎯 تم تعيين loading = false');
     }
   };
 
