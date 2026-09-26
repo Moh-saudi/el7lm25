@@ -155,20 +155,16 @@ export default function PlayersManagement() {
     totalValue: 0
   });
 
+  // Performance: one debounced fetch pipeline prevents duplicate requests
+  // when search and filters change around the same time.
   useEffect(() => {
-    fetchPlayers(true);
-  }, [selectedPosition, selectedCountry, selectedStatus, selectedAge]);
-
-  useEffect(() => {
-    if (searchTerm) {
-      const delayedSearch = setTimeout(() => {
-        fetchPlayers(true);
-      }, 500);
-      return () => clearTimeout(delayedSearch);
-    } else {
+    const delay = searchTerm ? 500 : 0;
+    const timer = setTimeout(() => {
       fetchPlayers(true);
-    }
-  }, [searchTerm]);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, selectedPosition, selectedCountry, selectedStatus, selectedAge]);
 
   const fetchPlayers = async (reset = false) => {
     try {
