@@ -56,7 +56,7 @@ export default function NotificationsManager({
   showTestButtons = false,
   accountType
 }: NotificationsManagerProps) {
-  const { user, userData } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [systemNotifications, setSystemNotifications] = useState<Notification[]>([]);
@@ -65,12 +65,13 @@ export default function NotificationsManager({
 
   // جلب الإشعارات
   useEffect(() => {
-    if (!user || !userData) return;
+    const userId = user?.uid;
+    if (!userId) return;
 
     // جلب الإشعارات النظامية
     const notificationsQuery = query(
       collection(db, 'notifications'),
-      where('userId', '==', user.uid),
+      where('userId', '==', userId),
       orderBy('createdAt', 'desc'),
       limit(100)
     );
@@ -78,7 +79,7 @@ export default function NotificationsManager({
     // جلب الإشعارات التفاعلية
     const interactionNotificationsQuery = query(
       collection(db, 'interaction_notifications'),
-      where('userId', '==', user.uid),
+      where('userId', '==', userId),
       limit(50)
     );
 
@@ -94,8 +95,7 @@ export default function NotificationsManager({
     });
 
     const unsubscribeInteractionNotifications = onSnapshot(interactionNotificationsQuery, async (snapshot) => {
-      const interactionNotificationsData = await Promise.all(
-        snapshot.docs.map(async (doc) => {
+      const interactionNotificationsData = snapshot.docs.map((doc) => {
           const data = doc.data();
           
           // Performance: استخدم بيانات المرسل المضمنة في الإشعار.
@@ -124,8 +124,7 @@ export default function NotificationsManager({
             actionType: data.type,
             ...senderInfo
           } as Notification;
-        })
-      );
+        });
       
       // ترتيب البيانات يدوياً حسب التاريخ
       const sortedData = interactionNotificationsData.sort((a, b) => {
