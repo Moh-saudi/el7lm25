@@ -108,7 +108,7 @@ interface PlayerData {
     goals: number;
     assists: number;
   };
-  mediaCount: {
+  mediaCount?: {
     images: number;
     videos: number;
     documents: number;
@@ -210,17 +210,7 @@ export default function PlayersManagement() {
               }
             }
 
-            // Performance: القائمة لا تجلب media/stats لكل لاعب.
-            // هذه البيانات التفصيلية تُحمّل فقط عند الحاجة في شاشة التفاصيل.
-            const mediaCount = { images: 0, videos: 0, documents: 0 };
-            const stats = {
-              profileViews: 0,
-              videoViews: 0,
-              matches: 0,
-              goals: 0,
-              assists: 0
-            };
-
+            // Performance: لا توجد طلبات إضافية لكل لاعب أثناء تحميل القائمة.
             return {
               id: docSnap.id,
               firstName: data.firstName || '',
@@ -241,9 +231,7 @@ export default function PlayersManagement() {
               isActive: data.isActive !== false,
               registrationDate: data.createdAt,
               lastLogin: data.lastLogin,
-              stats,
-              mediaCount,
-              bio: data.bio,
+               bio: data.bio,
               achievements: data.achievements || [],
               marketValue: data.marketValue || 0,
               currentClub: data.currentClub,
@@ -403,12 +391,6 @@ export default function PlayersManagement() {
       'نشط': player.isActive ? 'نعم' : 'لا',
       'النادي الحالي': player.currentClub || '',
       'القيمة السوقية': player.marketValue || 0,
-      'عدد الصور': player.mediaCount.images,
-      'عدد الفيديوهات': player.mediaCount.videos,
-      'مشاهدات الملف': player.stats?.profileViews || 0,
-      'عدد المباريات': player.stats?.matches || 0,
-      'عدد الأهداف': player.stats?.goals || 0,
-      'عدد التمريرات الحاسمة': player.stats?.assists || 0,
       'تاريخ التسجيل': player.registrationDate?.toDate()?.toLocaleDateString('ar-SA') || ''
     }));
 
@@ -750,10 +732,7 @@ export default function PlayersManagement() {
                     
                     <TableCell>
                       <div className="space-y-1 text-sm">
-                        <div>👁️ {player.stats?.profileViews || 0} مشاهدة</div>
-                        <div>⚽ {player.stats?.matches || 0} مباراة</div>
-                        <div>🥅 {player.stats?.goals || 0} هدف</div>
-                        <div>🎯 {player.stats?.assists || 0} تمريرة</div>
+                        <div className="text-gray-400">الإحصائيات: تُحمّل عند فتح التفاصيل</div>
                       </div>
                     </TableCell>
                     
@@ -761,15 +740,15 @@ export default function PlayersManagement() {
                       <div className="flex gap-3 text-sm">
                         <div className="flex items-center gap-1">
                           <ImageIcon className="w-3 h-3" />
-                          {player.mediaCount.images}
+                          {player.mediaCount?.images ?? '—'}
                         </div>
                         <div className="flex items-center gap-1">
                           <Video className="w-3 h-3" />
-                          {player.mediaCount.videos}
+                          {player.mediaCount?.videos ?? '—'}
                         </div>
                         <div className="flex items-center gap-1">
                           <FileText className="w-3 h-3" />
-                          {player.mediaCount.documents}
+                          {player.mediaCount?.documents ?? '—'}
                         </div>
                       </div>
                     </TableCell>
