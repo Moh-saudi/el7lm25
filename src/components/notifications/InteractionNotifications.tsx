@@ -68,7 +68,6 @@ const InteractionNotifications: React.FC = () => {
     const notificationsQuery = query(
       collection(db, 'interaction_notifications'),
       where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc'),
       limit(20)
     );
 
